@@ -21,6 +21,8 @@
     "element-plus": "^2.13.3",
     "mitt": "^3.0.1",
     "pinia": "^3.0.4",
+    "sass-loader": "^16.0.7",
+    "style-loader": "^4.0.0",
     "vue": "^3.5.29",
     "vue-router": "^5.0.3"
   },

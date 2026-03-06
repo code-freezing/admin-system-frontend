@@ -3,8 +3,7 @@
 </script>
 
 <template>
-  <el-button type="primary">Hello Element Plus</el-button>
-
+  
   <RouterView />
 </template>
 
