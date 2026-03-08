@@ -89,7 +89,7 @@
                 <Message />
               </el-icon>
             </el-badge>
-            <el-avatar :size="24" :src="circleUrl" />
+            <el-avatar :size="24" :src="userStore.imageUrl || circleUrl" />
             <el-dropdown>
               <span class="el-dropdown-link"> 设置 </span>
               <template #dropdown>
@@ -122,6 +122,10 @@ import {
 } from '@element-plus/icons-vue'
 import { reactive, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserInfo } from '@/stores/userinfor'
+
+const userStore = useUserInfo()
+
 const router = useRouter()
 const goLogin = () => {
   router.push('/login')

@@ -35,7 +35,7 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="state.changePasswordDialog = false">取消</el-button>
-        <el-button type="primary"> 确定 </el-button>
+        <el-button type="primary" @click="resetPassword"> 确定 </el-button>
       </span>
     </template>
   </el-dialog>
@@ -44,6 +44,8 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
 import type { FormProps } from 'element-plus'
+import { verify, reset } from '@/api/login'
+import { ElMessage } from 'element-plus'
 // 表单对齐方式
 const labelPosition = ref<FormProps['labelPosition']>('top')
 // 表单对象接口
@@ -75,9 +77,38 @@ const state = reactive({
 
 // 打开验证邮箱和账号的弹窗
 const verifyAccount = async () => {
-  state.forgetPasswordDialog = false
-  state.changePasswordDialog = true
+  const res = (await verify(forgetData)) as any
+  console.log(res)
+  if (res.data.status == 0) {
+    ElMessage({
+      message: '验证成功',
+      type: 'success',
+    })
+    // localStorage.setItem 存放到浏览器的本地存储空间
+    // sessionStorage.setItem 存放到浏览器的会话存储空间
+    localStorage.setItem('id', res.data.id)
+    state.forgetPasswordDialog = false
+    state.changePasswordDialog = true
+  } else {
+    ElMessage.error('验证失败')
+  }
 }
+// 重置密码
+const resetPassword = async () => {
+  if (forgetData.password == forgetData.nextPassword) {
+    const newPassword = forgetData.nextPassword
+    // localStorage/sessionStorage.getItem获取我们存储在浏览器的数据
+    // 调用接口
+    await reset(localStorage.getItem('id') as unknown as number, newPassword)
+    ElMessage({
+      message: '修改成功',
+      type: 'success',
+    })
+  } else {
+    ElMessage.error('修改失败,请检查密码是否一致')
+  }
+}
+
 // 打开弹窗
 const open = () => {
   state.forgetPasswordDialog = true

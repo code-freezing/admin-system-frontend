@@ -17,7 +17,7 @@
                     <el-input v-model="loginData.account" placeholder="请输入账号" />
                   </el-form-item>
                   <el-form-item label="密码">
-                    <el-input v-model="loginData.password" placeholder="请输入密码" />
+                    <el-input v-model="loginData.password" placeholder="请输入密码" show-password />
                   </el-form-item>
                   <!-- 底部外壳 -->
                   <div class="footer-wrapped">
@@ -76,7 +76,8 @@ import forget from './components/forget_password.vue'
 import { login, register } from '@/api/login'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-
+import { useUserInfo } from '@/stores/userinfor'
+const store = useUserInfo()
 const router = useRouter()
 // 表单接口
 interface FormData {
@@ -102,11 +103,12 @@ const activeName = ref('first')
 // 登录
 const Login = async () => {
   const res = (await login(loginData)) as any
-  console.log(res)
-  const token = res.data.token
   if (res.data.status === 0) {
+    const { id } = res.data.results
+    const token = res.data.token
     ElMessage.success('登录成功')
     localStorage.setItem('token', token)
+    await store.userInfo(id)
     router.push('/menu')
   } else {
     ElMessage.error('登录失败，请检查账号和密码是否正确')
