@@ -103,9 +103,9 @@ const activeName = ref('first')
 // 登录
 const Login = async () => {
   const res = (await login(loginData)) as any
-  if (res.data.status === 0) {
-    const { id } = res.data.results
-    const token = res.data.token
+  if (res.status === 0) {
+    const { id } = res.results
+    const token = res.token
     ElMessage.success('登录成功')
     localStorage.setItem('token', token)
     await store.userInfo(id)
@@ -120,7 +120,7 @@ const Register = async () => {
   if (registerData.password == registerData.rePassword) {
     const res = (await register(registerData)) as any
     console.log(res)
-    if (res.data.status === 0) {
+    if (res.status === 0) {
       ElMessage.success('注册成功，请登录')
       activeName.value = 'first'
     } else {

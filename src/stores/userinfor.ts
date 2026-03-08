@@ -4,7 +4,7 @@ import { ref } from 'vue'
 export const useUserInfo = defineStore(
   'userinfo',
   () => {
-    const id = ref<number>()
+    const id = ref<number>(0)
     const account = ref<string>('')
     const name = ref<string>('')
     const sex = ref<string>('')
@@ -15,7 +15,7 @@ export const useUserInfo = defineStore(
 
     const userInfo = async (userId: number) => {
       const res = (await getUserInfo(userId)) as any
-      const data = res?.data?.results ?? res?.data
+      const data = res?.results ?? res
       imageUrl.value = data?.image_url ?? ''
       identity.value = data?.identity ?? ''
       account.value = data?.account ?? ''

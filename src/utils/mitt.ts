@@ -1,5 +1,5 @@
 import mitt from 'mitt'
 
-const bus = mitt()
+import type { Emitter } from 'mitt'
 
-export default bus
+export const bus: Emitter<any> = mitt()

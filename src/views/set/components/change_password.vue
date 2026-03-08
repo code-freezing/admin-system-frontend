@@ -64,7 +64,7 @@ const changeUserPassword = async () => {
     // 调用接口
     const res = await changePassword(userId, passwordData.oldPassword, passwordData.newPassword)
     console.log(res)
-    if (res.data.status == 0) {
+    if (res.status == 0) {
       ElMessage({
         message: '修改成功',
         type: 'success',

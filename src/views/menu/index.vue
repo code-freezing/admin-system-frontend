@@ -82,7 +82,7 @@
       </el-aside>
       <el-container>
         <el-header>
-          <span class="header-left-content">尊敬的 1 欢迎您登录本系统</span>
+          <span class="header-left-content">尊敬的 {{ userStore.name }} 欢迎您登录本系统</span>
           <div class="header-right-content">
             <el-badge>
               <el-icon :size="20" class="message">
