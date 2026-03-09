@@ -9,6 +9,8 @@ import router from './router'
 import 'virtual:svg-icons-register'
 // 导入pinia
 import pinia from './stores'
+// 引入全局样式
+import '@/assets/css/common.scss'
 
 const app = createApp(App)
 
