@@ -15,7 +15,7 @@ import { onBeforeUnmount, ref } from 'vue'
 import { bus } from '@/utils/mitt.js'
 import { changeIdentityToUser, deleteUser } from '@/api/userinfor.js'
 import { ElMessage } from 'element-plus'
-// import { tracking } from '@/utils/operation.js'
+import { tracking } from '@/utils/operation.js'
 const adminId = ref()
 const userid = ref()
 const account = ref()
@@ -53,7 +53,11 @@ const deleteAdmin = async () => {
         message: '删除用户成功',
         type: 'success',
       })
-      //   tracking('管理员', localStorage.getItem('name'), name.value, '高级')
+      const userInfoStr = localStorage.getItem('userinfo')
+      const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+      const operatorName = userInfo?.name ?? ''
+
+      tracking('管理员', operatorName, name.value, '高级')
       // 假设用户第二页 我们的用户为第一条数据 删除之后 页面变为第一页
       // 假设用户第二页 我们的用户不为第一条数据 删除之后 页面依然为第二页
       dialogFormVisible.value = false

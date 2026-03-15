@@ -77,6 +77,7 @@ import { login, register } from '@/api/login'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserInfo } from '@/stores/userinfor'
+import { loginLog } from '@/api/log'
 const store = useUserInfo()
 const router = useRouter()
 // 表单接口
@@ -104,11 +105,12 @@ const activeName = ref('first')
 const Login = async () => {
   const res = (await login(loginData)) as any
   if (res.status === 0) {
-    const { id } = res.results
+    const { id, account, name, email } = res.results
     const token = res.token
     ElMessage.success('登录成功')
     localStorage.setItem('token', token)
     await store.userInfo(id)
+    await loginLog(account, name, email)
     router.push('/menu')
   } else {
     ElMessage.error('登录失败，请检查账号和密码是否正确')

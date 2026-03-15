@@ -19,7 +19,7 @@ import { onBeforeUnmount, ref, reactive } from 'vue'
 import { bus } from '@/utils/mitt'
 import { auditProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
-// import { tracking } from '@/utils/operation'
+import { tracking } from '@/utils/operation'
 
 bus.on('productAudit', (row: any) => {
   formData.id = row.id
@@ -61,13 +61,10 @@ const audit = async () => {
       type: 'success',
     })
     emit('success')
-    // await tracking(
-    //   '产品',
-    //   localStorage.getItem('name') as unknown as string,
-    //   formData.product_name,
-    //   '高级',
-    //   formData.product_out_status,
-    // )
+    const userInfoStr = localStorage.getItem('userinfo')
+    const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+    const operatorName = userInfo?.name ?? ''
+    await tracking('产品', operatorName, formData.product_name, '高级', formData.product_out_status)
     dialogFormVisible.value = false
   } else {
     ElMessage.error('审核产品失败')
