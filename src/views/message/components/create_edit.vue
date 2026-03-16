@@ -97,6 +97,9 @@ import { publishMessage, editMessage } from '@/api/message'
 import { getDepartment } from '@/api/setting'
 import { bus } from '@/utils/mitt.js'
 import { ElMessage } from 'element-plus'
+import { changeUserReadList } from '@/api/dep_msg'
+import { useMsg } from '@/stores/message'
+const msgStore = useMsg()
 // 标题
 const title = ref()
 
@@ -255,6 +258,8 @@ const yes = async () => {
     formData.message_category = '公司公告'
     const res = (await publishMessage(formData)) as any
     if (res.status == 0) {
+      await changeUserReadList(res.id, formData.message_receipt_object)
+      await msgStore.returnReadList(localStorage.getItem('id') as unknown as number)
       ElMessage({
         message: '发布公告成功',
         type: 'success',
@@ -268,6 +273,7 @@ const yes = async () => {
   }
   if (title.value == '编辑公告') {
     const res = await editMessage(formData)
+    await msgStore.returnReadList(localStorage.getItem('id') as unknown as number)
     if (res.status == 0) {
       ElMessage({
         message: '编辑公告成功',

@@ -83,32 +83,33 @@
     </div>
   </div>
   <introduce ref="intro"></introduce>
+  <bulletin ref="bulletinDom"></bulletin>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { bus } from '@/utils/mitt.js'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
+import { bus } from '@/utils/mitt.js'
 import introduce from './components/introduce.vue'
-// import { companyMessageList, systemMessageList } from '@/api/message'
+import { companyMessageList, systemMessageList } from '@/api/message'
+import bulletin from '@/components/common_msg.vue'
 // 面包屑
 const breadcrumb = ref()
 // 面包屑参数
 const item = ref({
   first: '首页',
 })
-
 // 公司公告
 const companyData = ref()
 // 系统消息
 const systemData = ref()
 
-// const getMessageList = async () => {
-//   companyData.value = await companyMessageList()
-//   systemData.value = await systemMessageList()
-// }
-// getMessageList()
+const getMessageList = async () => {
+  companyData.value = await companyMessageList()
+  systemData.value = await systemMessageList()
+}
+getMessageList()
 // 轮播图
 const imageUrl = ref([])
 // 获取轮播图

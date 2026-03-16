@@ -82,14 +82,18 @@
       </el-aside>
       <el-container>
         <el-header>
-          <span class="header-left-content">尊敬的 {{ userStore.name }} 欢迎您登录本系统</span>
+          <span class="header-left-content">尊敬的 {{ name }} 欢迎您登录本系统</span>
           <div class="header-right-content">
-            <el-badge>
+            <el-badge
+              :is-dot="msgStore.read_list.length > 0"
+              class="item"
+              @click="openDepartmentMessage"
+            >
               <el-icon :size="20" class="message">
                 <Message />
               </el-icon>
             </el-badge>
-            <el-avatar :size="24" :src="userStore.imageUrl || circleUrl" />
+            <el-avatar :size="24" :src="userStore.imageUrl" />
             <el-dropdown>
               <span class="el-dropdown-link"> 设置 </span>
               <template #dropdown>
@@ -108,7 +112,9 @@
       </el-container>
     </el-container>
   </div>
+  <departmentMsg ref="department_msg"></departmentMsg>
 </template>
+
 <script lang="ts" setup>
 import {
   ChatSquare,
@@ -120,23 +126,26 @@ import {
   User,
   Message,
 } from '@element-plus/icons-vue'
-import { reactive, toRefs } from 'vue'
+import { ref } from 'vue'
+import departmentMsg from '@/components/department_message.vue'
 import { useRouter } from 'vue-router'
 import { useUserInfo } from '@/stores/userinfor'
-
+import { useMsg } from '@/stores/message'
+const msgStore = useMsg()
 const userStore = useUserInfo()
-
 const router = useRouter()
+const name = localStorage.getItem('name')
 const goLogin = () => {
   router.push('/login')
   localStorage.clear()
 }
 
-const state = reactive({
-  circleUrl: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
-})
-const { circleUrl } = toRefs(state)
+const department_msg = ref()
+const openDepartmentMessage = () => {
+  department_msg.value.open()
+}
 </script>
+
 <style lang="scss" scoped>
 // 侧边栏
 .el-aside {

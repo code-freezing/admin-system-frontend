@@ -105,10 +105,14 @@ const activeName = ref('first')
 const Login = async () => {
   const res = (await login(loginData)) as any
   if (res.status === 0) {
-    const { id, account, name, email } = res.results
+    const { id, account, name, email, department } = res.results
     const token = res.token
     ElMessage.success('登录成功')
     localStorage.setItem('token', token)
+    localStorage.setItem('id', String(id))
+    localStorage.setItem('name', name)
+    localStorage.setItem('department', department ?? '')
+    localStorage.setItem('userinfo', JSON.stringify(res.results))
     await store.userInfo(id)
     await loginLog(account, name, email)
     router.push('/menu')
