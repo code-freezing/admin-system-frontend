@@ -108,13 +108,16 @@ const item = ref({
   first: '系统概览',
 })
 const router = useRouter()
+const userInfoStr = localStorage.getItem('userinfo')
+const localUserInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+const currentUserId = localUserInfo?.id || localStorage.getItem('id')
 
 const routerTo = (x: string) => {
   router.push(`\/${x}`)
 }
 // // 获取用户信息
 const returnUserInfo = async () => {
-  const res = (await getUserInfo(userStore.id)) as any
+  const res = (await getUserInfo(currentUserId as unknown as number)) as any
   userData.name = res.name
   userData.sex = res.sex
   userData.identity = res.identity

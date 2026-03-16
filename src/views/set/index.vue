@@ -171,6 +171,31 @@
                 + 添加部门
               </el-button>
             </div>
+            <div class="product-set">
+              <span>产品设置</span>
+              <el-tag
+                v-for="tag in dynamicProductTags"
+                :key="tag"
+                class="mx-1"
+                closable
+                :disable-transitions="false"
+                @close="handleProductClose(tag)"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-input
+                v-if="inputProductVisible"
+                ref="InputProductRef"
+                v-model="inputProductValue"
+                class="ml-1 w-20"
+                size="small"
+                @keyup.enter="handleInputProductConfirm"
+                @blur="handleInputProductConfirm"
+              />
+              <el-button v-else class="button-new-tag ml-1" size="small" @click="showProductInput">
+                + 添加产品
+              </el-button>
+            </div>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -197,8 +222,8 @@ import {
   getAllSwiper,
   setDepartment,
   getDepartment,
-  // setProduct,
-  // getProduct,
+  setProduct,
+  getProduct,
 } from '@/api/setting'
 const userStore = useUserInfo()
 
@@ -379,20 +404,20 @@ const dynamicTags = ref()
 const inputVisible = ref(false)
 const InputRef = ref<InstanceType<typeof ElInput>>()
 // 产品设置
-// const inputProductValue = ref('')
-// const dynamicProductTags = ref()
-// const inputProductVisible = ref(false)
-// const InputProductRef = ref<InstanceType<typeof ElInput>>()
+const inputProductValue = ref('')
+const dynamicProductTags = ref()
+const inputProductVisible = ref(false)
+const InputProductRef = ref<InstanceType<typeof ElInput>>()
 // 获取部门数据
 const returnDepartment = async () => {
   dynamicTags.value = await getDepartment()
 }
 returnDepartment()
 // 获取产品数据
-// const returnProduct = async () => {
-//   dynamicProductTags.value = await getProduct()
-// }
-// returnProduct()
+const returnProduct = async () => {
+  dynamicProductTags.value = await getProduct()
+}
+returnProduct()
 // 部门设置关闭时的函数
 const handleClose = async (tag: string) => {
   dynamicTags.value.splice(dynamicTags.value.indexOf(tag), 1)
@@ -406,19 +431,19 @@ const handleClose = async (tag: string) => {
     ElMessage.error('删除部门失败，请重新输入！')
   }
 }
-// // 产品设置关闭时的函数
-// const handleProductClose = async (tag: string) => {
-//   dynamicProductTags.value.splice(dynamicProductTags.value.indexOf(tag), 1)
-//   const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
-//   if (res.status == 0) {
-//     ElMessage({
-//       message: '删除产品成功',
-//       type: 'success',
-//     })
-//   } else {
-//     ElMessage.error('删除产品失败，请重新输入！')
-//   }
-// }
+// 产品设置关闭时的函数
+const handleProductClose = async (tag: string) => {
+  dynamicProductTags.value.splice(dynamicProductTags.value.indexOf(tag), 1)
+  const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
+  if (res.status == 0) {
+    ElMessage({
+      message: '删除产品成功',
+      type: 'success',
+    })
+  } else {
+    ElMessage.error('删除产品失败，请重新输入！')
+  }
+}
 // 点击部门按钮出现输入框
 const showInput = () => {
   inputVisible.value = true
@@ -426,13 +451,13 @@ const showInput = () => {
     InputRef.value!.input!.focus()
   })
 }
-// // 点击产品按钮出现输入框
-// const showProductInput = () => {
-//   inputProductVisible.value = true
-//   nextTick(() => {
-//     InputProductRef.value!.input!.focus()
-//   })
-// }
+// 点击产品按钮出现输入框
+const showProductInput = () => {
+  inputProductVisible.value = true
+  nextTick(() => {
+    InputProductRef.value!.input!.focus()
+  })
+}
 // 输入数据后的一个函数 部门
 const handleInputConfirm = async () => {
   if (inputValue.value) {
@@ -450,23 +475,23 @@ const handleInputConfirm = async () => {
   inputVisible.value = false
   inputValue.value = ''
 }
-// // 输入数据后的一个函数 产品
-// const handleInputProductConfirm = async () => {
-//   if (inputProductValue.value) {
-//     dynamicProductTags.value.push(inputProductValue.value)
-//     const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
-//     if (res.status == 0) {
-//       ElMessage({
-//         message: '添加产品设置成功',
-//         type: 'success',
-//       })
-//     } else {
-//       ElMessage.error('添加产品失败，请重新输入！')
-//     }
-//   }
-//   inputProductVisible.value = false
-//   inputProductValue.value = ''
-// }
+// 输入数据后的一个函数 产品
+const handleInputProductConfirm = async () => {
+  if (inputProductValue.value) {
+    dynamicProductTags.value.push(inputProductValue.value)
+    const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
+    if (res.status == 0) {
+      ElMessage({
+        message: '添加产品设置成功',
+        type: 'success',
+      })
+    } else {
+      ElMessage.error('添加产品失败，请重新输入！')
+    }
+  }
+  inputProductVisible.value = false
+  inputProductValue.value = ''
+}
 </script>
 
 <style lang="scss" scoped>
