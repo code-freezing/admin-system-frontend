@@ -11,6 +11,8 @@ import 'virtual:svg-icons-register'
 import pinia from './stores'
 // 引入全局样式
 import '@/assets/css/common.scss'
+// 引入全局前置守卫
+import './guardian'
 
 const app = createApp(App)
 

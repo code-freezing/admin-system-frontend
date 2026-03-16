@@ -73,11 +73,13 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import forget from './components/forget_password.vue'
-import { login, register } from '@/api/login'
+import { login, register, returnMenuList } from '@/api/login'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserInfo } from '@/stores/userinfor'
 import { loginLog } from '@/api/log'
+import { useMenu } from '@/stores/menu'
+const menuStore = useMenu()
 const store = useUserInfo()
 const router = useRouter()
 // 表单接口
@@ -107,7 +109,9 @@ const Login = async () => {
   if (res.status === 0) {
     const { id, account, name, email, department } = res.results
     const token = res.token
+    const routerList = (await returnMenuList(id)) as any
     ElMessage.success('登录成功')
+    menuStore.setRouter(routerList)
     localStorage.setItem('token', token)
     localStorage.setItem('id', String(id))
     localStorage.setItem('name', name)

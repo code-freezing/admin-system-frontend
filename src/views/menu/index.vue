@@ -10,20 +10,23 @@
             </el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="overview">
+          <el-menu-item index="overview" v-if="userStore.identity == '超级管理员'">
             <el-icon>
               <Document />
             </el-icon>
             <span>系统概览</span>
           </el-menu-item>
-          <el-sub-menu index="3">
+          <el-sub-menu
+            index="3"
+            v-if="userStore.identity == '超级管理员' || userStore.identity == '用户管理员'"
+          >
             <template #title>
               <el-icon>
                 <User />
               </el-icon>
               <span>用户管理</span>
             </template>
-            <el-menu-item-group title="管理员管理">
+            <el-menu-item-group title="管理员管理" v-if="userStore.identity == '超级管理员'">
               <el-menu-item index="product_manage">产品管理员</el-menu-item>
               <el-menu-item index="users_manage">用户管理员</el-menu-item>
               <el-menu-item index="message_manage">消息管理员</el-menu-item>
@@ -32,7 +35,14 @@
               <el-menu-item index="user_list">用户列表</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-sub-menu index="4">
+          <el-sub-menu
+            index="4"
+            v-if="
+              userStore.identity == '超级管理员' ||
+              userStore.identity == '产品管理员' ||
+              userStore.identity == '用户'
+            "
+          >
             <template #title>
               <el-icon>
                 <TakeawayBox />
@@ -46,7 +56,10 @@
               <el-menu-item index="out_product_manage_list">出库列表</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-sub-menu index="5">
+          <el-sub-menu
+            index="5"
+            v-if="userStore.identity == '消息管理员' || userStore.identity == '超级管理员'"
+          >
             <template #title>
               <el-icon>
                 <ChatSquare />
@@ -60,15 +73,15 @@
               <el-menu-item index="recycle">回收站</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-menu-item index="file">
+          <el-menu-item index="file" v-if="userStore.identity == '超级管理员'">
             <el-icon><icon-menu /></el-icon>
             <span>合同管理</span>
           </el-menu-item>
-          <el-menu-item index="operation_log">
+          <el-menu-item index="operation_log" v-if="userStore.identity == '超级管理员'">
             <el-icon><icon-menu /></el-icon>
             <span>操作日志</span>
           </el-menu-item>
-          <el-menu-item index="login_log">
+          <el-menu-item index="login_log" v-if="userStore.identity == '超级管理员'">
             <el-icon><icon-menu /></el-icon>
             <span>登录日志</span>
           </el-menu-item>
@@ -126,6 +139,7 @@ import {
   User,
   Message,
 } from '@element-plus/icons-vue'
+
 import { ref } from 'vue'
 import departmentMsg from '@/components/department_message.vue'
 import { useRouter } from 'vue-router'
