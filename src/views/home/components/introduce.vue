@@ -8,44 +8,41 @@
   </el-dialog>
 </template>
 <script lang="ts" setup>
-import { onBeforeUnmount, ref, reactive } from 'vue'
-import { bus } from '@/utils/mitt'
+import { reactive, ref } from 'vue'
 import { getCompanyIntroduce } from '@/api/setting'
-const title = ref()
-const valueHtml = ref()
-bus.on('introduce', async (id: number) => {
-  if (id == 1) {
-    title.value = '公司介绍'
-    valueHtml.value = await getCompanyIntroduce('公司介绍')
-  }
-  if (id == 2) {
-    title.value = '公司架构'
-    valueHtml.value = await getCompanyIntroduce('公司架构')
-  }
-  if (id == 3) {
-    title.value = '公司战略'
-    valueHtml.value = await getCompanyIntroduce('公司战略')
-  }
-  if (id == 4) {
-    title.value = '公司高层'
-    valueHtml.value = await getCompanyIntroduce('公司高层')
-  }
-})
+
+const title = ref('')
+const valueHtml = ref('')
 const state = reactive({
   dialogFormVisible: false,
 })
 
-// 暴露open方法
-const open = () => {
+const open = async (id: number) => {
+  if (id == 1) {
+    title.value = '公司介绍'
+    const res = (await getCompanyIntroduce('公司介绍')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  if (id == 2) {
+    title.value = '公司架构'
+    const res = (await getCompanyIntroduce('公司架构')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  if (id == 3) {
+    title.value = '公司战略'
+    const res = (await getCompanyIntroduce('公司战略')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  if (id == 4) {
+    title.value = '公司高层'
+    const res = (await getCompanyIntroduce('公司高层')) as any
+    valueHtml.value = res?.results ?? res
+  }
   state.dialogFormVisible = true
 }
+
 defineExpose({
   open,
-})
-
-// 取消订阅/监听
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 
@@ -58,3 +55,4 @@ onBeforeUnmount(() => {
   min-height: 500px;
 }
 </style>
+

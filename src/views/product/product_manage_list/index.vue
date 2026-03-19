@@ -235,7 +235,6 @@ import {
   returnProductListData,
   returnApplyProductListData,
 } from '@/api/product'
-import { bus } from '@/utils/mitt.js'
 import { Search } from '@element-plus/icons-vue'
 import type { TabsPaneContext } from 'element-plus'
 // 面包屑
@@ -348,43 +347,37 @@ const productInWarehouse = () => {
 // 产品申请出库
 const apply_product = ref()
 const applyOut = (row: any) => {
-  bus.emit('applyId', row)
-  apply_product.value.open()
+  apply_product.value.open(row)
 }
 
 // 编辑产品信息
 const edit_product = ref()
 const editProduct = (row: any) => {
-  bus.emit('editProductId', row)
-  edit_product.value.open()
+  edit_product.value.open(row)
 }
 
 // 删除产品
 const delete_product = ref()
 const deleteProduct = (id: number) => {
-  bus.emit('deleteProductId', id)
-  delete_product.value.open()
+  delete_product.value.open(id)
 }
 
 // 审核产品
 const audit_product = ref()
 const auditProduct = (row: any) => {
-  bus.emit('productAudit', row)
-  audit_product.value.open()
+  audit_product.value.open(row)
 }
 
 // 撤回产品申请
 const withdraw_product = ref()
 const withdrawProduct = (id: number) => {
-  bus.emit('withdrawId', id)
-  withdraw_product.value.open()
+  withdraw_product.value.open(id)
 }
 
 // 再次申请产品出库
 const again_product = ref()
 const againApply = (row: any) => {
-  bus.emit('againId', row)
-  again_product.value.open()
+  again_product.value.open(row)
 }
 </script>
 

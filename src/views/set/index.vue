@@ -54,8 +54,8 @@
             <span>用户性别：</span>
             <div class="account-info-content">
               <el-select v-model="userStore.sex" class="m-2" style="width: 100px">
-                <el-option label="男" value="男" />
-                <el-option label="女" value="女" />
+                <el-option label="男 value=" 男 />
+                <el-option label="女 value=" 女 />
               </el-select>
             </div>
             <div class="account-save-button">
@@ -138,7 +138,7 @@
               >
                 <template #trigger>
                   <img v-if="imageUrl[index]" :src="imageUrl[index]" class="swiper" alt="轮播图" />
-                  <img src="@/assets/雪碧图.png" alt="" v-else />
+                  <img v-else src="@/assets/logo.png" alt="默认图片" />
                 </template>
               </el-upload>
             </div>
@@ -212,7 +212,6 @@ import { ref, nextTick, toRaw } from 'vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { ElMessage, ElInput } from 'element-plus'
 import editor from './components/editor.vue'
-import { bus } from '@/utils/mitt'
 import { changeName, changeSex, changeEmail, bind } from '@/api/userinfor.js'
 import { useUserInfo } from '@/stores/userinfor'
 import change from './components/change_password.vue'
@@ -357,8 +356,7 @@ const editorP = ref()
 // 打开富文本
 const openEditor = (id: number) => {
   // 第一个参数是 标记,第二个参数要传入的值
-  bus.emit('editorTitle', id)
-  editorP.value.open()
+  editorP.value.open(id)
 }
 
 // 首页管理

@@ -39,27 +39,13 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onBeforeUnmount } from 'vue'
-import { bus } from '@/utils/mitt'
+import { reactive, ref } from 'vue'
 import { getUserInfo, editAdmin } from '@/api/userinfor'
 import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
-bus.on('editId', async (id: number) => {
-  const res = (await getUserInfo(id)) as any
-  formDataInfo.id = res.id
-  formDataInfo.account = res.account
-  formDataInfo.name = res.name
-  formDataInfo.sex = res.sex
-  formDataInfo.email = res.email
-  formDataInfo.department = res.department
-})
 
-// 部门数据
-const departmentData = ref([])
-const getDepartmentData = async () => {
-  departmentData.value = (await getDepartment()) as any
-}
-getDepartmentData()
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
 
 interface FormData {
   id: number | null
@@ -79,6 +65,12 @@ const formDataInfo: FormData = reactive({
   department: '',
 })
 
+const departmentData = ref([])
+const getDepartmentData = async () => {
+  departmentData.value = (await getDepartment()) as any
+}
+getDepartmentData()
+
 const rules = reactive({
   account: [{ required: true, message: '请输入管理员的注册账号', trigger: 'blur' }],
   name: [{ required: true, message: '请输入管理员的名字', trigger: 'blur' }],
@@ -86,6 +78,17 @@ const rules = reactive({
   email: [{ required: true, message: '请输入管理员的邮箱', trigger: 'blur' }],
   department: [{ required: true, message: '请输入管理员的部门', trigger: 'blur' }],
 })
+
+const open = async (id: number) => {
+  const res = (await getUserInfo(id)) as any
+  formDataInfo.id = res.id
+  formDataInfo.account = res.account
+  formDataInfo.name = res.name
+  formDataInfo.sex = res.sex
+  formDataInfo.email = res.email
+  formDataInfo.department = res.department
+  dialogFormVisible.value = true
+}
 
 const edit = async () => {
   const res = await editAdmin(formDataInfo)
@@ -95,7 +98,7 @@ const edit = async () => {
       message: '编辑管理员信息成功',
       type: 'success',
     })
-    bus.emit('adminDialogOff', 2)
+    emit('success', 'edit')
     dialogFormVisible.value = false
   } else {
     ElMessage.error('编辑管理员信息失败')
@@ -103,20 +106,8 @@ const edit = async () => {
   }
 }
 
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
 defineExpose({
   open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 

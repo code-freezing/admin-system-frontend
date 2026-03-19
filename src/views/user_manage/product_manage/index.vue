@@ -5,7 +5,7 @@
     <div class="table-top">
       <!-- 表格顶部 -->
       <div class="table-header">
-        <!-- 搜索框 -->
+        <!-- 鎼滅储妗?-->
         <div class="search-wrapped">
           <el-input
             v-model="adminAccount"
@@ -63,19 +63,18 @@
       />
     </div>
   </div>
-  <createA ref="create_admin"></createA>
-  <editA ref="edit_admin"></editA>
-  <deleteA ref="delete_admin"></deleteA>
+  <createA ref="create_admin" @success="refreshTable('create')"></createA>
+  <editA ref="edit_admin" @success="refreshTable('edit')"></editA>
+  <deleteA ref="delete_admin" @success="refreshTable('delete')"></deleteA>
 </template>
 
 <script lang="ts" setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import createA from '../components/create_admin.vue'
 import editA from '../components/edit_admin.vue'
 import deleteA from '../components/delete_admin.vue'
-import { bus } from '@/utils/mitt.js'
 import { useTable } from '@/hooks'
 const {
   adminAccount,
@@ -85,6 +84,7 @@ const {
   currentChange,
   searchAdmin,
   clearInput,
+  refreshTable,
 } = useTable('产品管理员')
 // 面包屑
 const breadcrumb = ref()
@@ -97,25 +97,18 @@ const item = ref({
 // 创建管理员
 const create_admin = ref()
 const openCreate = (id: number) => {
-  bus.emit('createId', id)
-  create_admin.value.open()
+  create_admin.value.open(id)
 }
 // 编辑管理员
 const edit_admin = ref()
 const openEdit = (id: number) => {
-  bus.emit('editId', id)
-  edit_admin.value.open()
+  edit_admin.value.open(id)
 }
 // 降级管理员
 const delete_admin = ref()
 const openDelete = (id: number) => {
-  bus.emit('deleteId', id)
-  delete_admin.value.open()
+  delete_admin.value.open({ kind: 'admin', id })
 }
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
 </script>
 
 <style lang="scss" scoped></style>

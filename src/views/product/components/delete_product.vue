@@ -10,25 +10,23 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, ref } from 'vue'
-import { bus } from '@/utils/mitt.js'
+import { ref } from 'vue'
 import { deleteProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 
-const productId = ref()
-
-bus.on('deleteProductId', (id: number) => {
-  productId.value = id
-})
+const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
+const productId = ref<number | null>(null)
+
+const open = (id: number) => {
+  productId.value = id
+  dialogFormVisible.value = true
+}
 
 const remove = async () => {
-  const res = await deleteProduct(productId.value)
+  const res = await deleteProduct(productId.value as number)
   if (res.status == 0) {
-    ElMessage({
-      message: '删除产品成功',
-      type: 'success',
-    })
+    ElMessage({ message: '删除产品成功', type: 'success' })
     emit('success')
     dialogFormVisible.value = false
   } else {
@@ -37,21 +35,8 @@ const remove = async () => {
   }
 }
 
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
-defineExpose({
-  open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
+defineExpose({ open })
 </script>
 
 <style lang="scss" scoped></style>
+

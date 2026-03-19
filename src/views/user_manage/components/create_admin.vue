@@ -13,8 +13,8 @@
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-select v-model="formData.sex" placeholder="请选择性别">
-            <el-option label="男" value="男" />
-            <el-option label="女" value="女" />
+            <el-option label="男 value=" 男 />
+            <el-option label="女 value=" 女 />
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -36,42 +36,20 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onBeforeUnmount } from 'vue'
-import { bus } from '@/utils/mitt.js'
+import { reactive, ref } from 'vue'
 import { createAdmin } from '@/api/userinfor.js'
 import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
-const title = ref()
-bus.on('createId', (id: number) => {
-  Object.assign(formData, {
-    account: '',
-    password: '',
-    name: '',
-    sex: '',
-    email: '',
-    department: '',
-    identity: '',
-  })
-  if (id == 1) {
-    title.value = '新建产品管理员'
-    formData.identity = '产品管理员'
-  }
-  if (id == 2) {
-    title.value = '新建用户管理员'
-    formData.identity = '用户管理员'
-  }
-  if (id == 3) {
-    title.value = '新建消息管理员'
-    formData.identity = '消息管理员'
-  }
-})
-// 部门数据
-const departmentData = ref<string[]>([])
-const returnDepartment = async () => {
-  const res = (await getDepartment()) as any
-  departmentData.value = Array.isArray(res) ? res : (res?.results ?? [])
+
+const title = ref('')
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+
+const identityMap: Record<number, { title: string; identity: string }> = {
+  1: { title: '新建产品管理员', identity: '产品管理员' },
+  2: { title: '新建用户管理员', identity: '用户管理员' },
+  3: { title: '新建消息管理员', identity: '消息管理员' },
 }
-returnDepartment()
 
 interface FormData {
   account: string
@@ -92,6 +70,14 @@ const formData: FormData = reactive({
   department: '',
   identity: '',
 })
+
+const departmentData = ref<string[]>([])
+const returnDepartment = async () => {
+  const res = (await getDepartment()) as any
+  departmentData.value = Array.isArray(res) ? res : (res?.results ?? [])
+}
+returnDepartment()
+
 const rules = reactive({
   account: [{ required: true, message: '请输入管理员的注册账号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入管理员的注册密码', trigger: 'blur' }],
@@ -100,8 +86,25 @@ const rules = reactive({
   email: [{ required: true, message: '请输入管理员的邮箱', trigger: 'blur' }],
   department: [{ required: true, message: '请输入管理员的部门', trigger: 'blur' }],
 })
-// const emit = defineEmits(['success'])
-// 创建管理员
+
+const open = (id: number) => {
+  Object.assign(formData, {
+    account: '',
+    password: '',
+    name: '',
+    sex: '',
+    email: '',
+    department: '',
+    identity: '',
+  })
+  const config = identityMap[id]
+  if (config) {
+    title.value = config.title
+    formData.identity = config.identity
+  }
+  dialogFormVisible.value = true
+}
+
 const addAdmin = async () => {
   const res = await createAdmin(formData)
   if (res.status == 0) {
@@ -109,28 +112,16 @@ const addAdmin = async () => {
       message: '创建管理员成功',
       type: 'success',
     })
-    // emit('success')
-    bus.emit('adminDialogOff', 1)
+    emit('success', 'create')
     dialogFormVisible.value = false
   } else {
     ElMessage.error('创建管理员失败')
     dialogFormVisible.value = false
   }
 }
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开创建管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
 
 defineExpose({
   open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 

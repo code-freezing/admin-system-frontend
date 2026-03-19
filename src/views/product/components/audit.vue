@@ -5,7 +5,7 @@
       <el-radio label="同意" size="large">同意</el-radio>
       <el-radio label="否决" size="large">否决</el-radio>
     </el-radio-group>
-    <el-input type="textarea" placeholder="请输入审核备注" v-model="formData.audit_memo" />
+    <el-input v-model="formData.audit_memo" type="textarea" placeholder="请输入审核备注" />
     <template #footer>
       <span class="dialog-footer">
         <el-button type="primary" @click="audit"> 确定 </el-button>
@@ -15,25 +15,13 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, ref, reactive } from 'vue'
-import { bus } from '@/utils/mitt'
+import { ref, reactive } from 'vue'
 import { auditProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 import { tracking } from '@/utils/operation'
 
-bus.on('productAudit', (row: any) => {
-  formData.id = row.id
-  formData.product_out_id = row.product_out_id
-  formData.product_name = row.product_name
-  formData.product_out_status = row.product_out_status
-  formData.audit_memo = row.audit_memo
-  formData.product_out_price = row.product_out_price
-  formData.product_out_apply_person = row.product_out_apply_person
-  formData.product_in_warehouse_number = row.product_in_warehouse_number
-  formData.product_single_price = row.product_single_price
-  formData.product_out_number = row.product_out_number
-  formData.product_apply_time = row.product_apply_time
-})
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
 
 const formData = reactive({
   id: 0,
@@ -50,16 +38,26 @@ const formData = reactive({
   product_apply_time: '',
 })
 
-const emit = defineEmits(['success'])
+const open = (row: any) => {
+  formData.id = row.id
+  formData.product_out_id = row.product_out_id
+  formData.product_name = row.product_name
+  formData.product_out_status = row.product_out_status
+  formData.audit_memo = row.audit_memo
+  formData.product_out_price = row.product_out_price
+  formData.product_out_apply_person = row.product_out_apply_person
+  formData.product_in_warehouse_number = row.product_in_warehouse_number
+  formData.product_single_price = row.product_single_price
+  formData.product_out_number = row.product_out_number
+  formData.product_apply_time = row.product_apply_time
+  dialogFormVisible.value = true
+}
 
 const audit = async () => {
   const res = await auditProduct(formData)
   console.log(res)
   if (res.status == 0) {
-    ElMessage({
-      message: '审核产品成功',
-      type: 'success',
-    })
+    ElMessage({ message: '审核产品成功', type: 'success' })
     emit('success')
     const userInfoStr = localStorage.getItem('userinfo')
     const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
@@ -72,21 +70,7 @@ const audit = async () => {
   }
 }
 
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
-defineExpose({
-  open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
+defineExpose({ open })
 </script>
 
 <style lang="scss" scoped>

@@ -17,7 +17,7 @@
           <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <div>
-                <el-button type="success" @click="renew(row)">还原</el-button>
+                <el-button type="success" @click="renew(row)">杩樺師</el-button>
                 <el-button type="danger" @click="realDelete(row.id)">删除</el-button>
               </div>
             </template>
@@ -44,7 +44,6 @@
 import { ref, reactive } from 'vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getRecycleMessageLength, returnRecycleListData } from '@/api/message'
-import { bus } from '@/utils/mitt.js'
 import renewAndDelete from '../components/delete.vue'
 // 面包屑
 const breadcrumb = ref()
@@ -84,16 +83,14 @@ const recycleCurrentChange = async (value: number) => {
   tableData.value = (await returnRecycleListData(paginationData.recycleCurrentPage)) as any
 }
 
-// 恢复跟删除 组件
+// 恢复跟删除组件
 const rad = ref()
 const renew = (row: any) => {
-  bus.emit('renewID', row)
-  rad.value.open()
+  rad.value.openRecover(row)
 }
 
 const realDelete = (id: number) => {
-  bus.emit('realDelete', id)
-  rad.value.open()
+  rad.value.openRealDelete(id)
 }
 </script>
 

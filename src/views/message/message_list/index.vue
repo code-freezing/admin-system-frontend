@@ -28,9 +28,9 @@
                     @change="getMessageListByLevel"
                     style="flex-wrap: nowrap"
                   >
-                    <el-radio label="一般">一般</el-radio>
+                    <el-radio label="涓€鑸?">涓€鑸?</el-radio>
                     <el-radio label="重要">重要</el-radio>
-                    <el-radio label="必要">必要</el-radio>
+                    <el-radio label="蹇呰">蹇呰</el-radio>
                   </el-radio-group>
                 </div>
                 <div class="button-wrapped">
@@ -99,7 +99,7 @@
                 <el-table :data="systemTableData" border style="width: 100%">
                   <el-table-column type="index" width="50"></el-table-column>
                   <el-table-column prop="message_title" label="消息主题" />
-                  <el-table-column prop="message_publish_name" label="发布者" />
+                  <el-table-column prop="message_publish_name" label="鍙戝竷鑰?" />
                   <el-table-column prop="message_click_number" label="阅读人数" />
                   <el-table-column prop="message_publish_time" label="发布时间" width="200">
                     <template #default="{ row }">
@@ -111,7 +111,9 @@
                     <template #default="{ row }">
                       <div>
                         <el-button type="success" @click="editSystemMessage(row)">编辑</el-button>
-                        <el-button type="danger" @click="deleteMessage(row.id)">删除</el-button>
+                        <el-button type="danger" @click="deleteSystemMessage(row.id)"
+                          >删除</el-button
+                        >
                       </div>
                     </template>
                   </el-table-column>
@@ -150,82 +152,66 @@ import {
   returnSystemListData,
 } from '@/api/message'
 import { getDepartment } from '@/api/setting'
-import { bus } from '@/utils/mitt.js'
 import createEdit from '../components/create_edit.vue'
 import deleteM from '../components/delete.vue'
-// 面包屑
+
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '消息管理',
   second: '消息列表',
 })
 const activeName = ref('first')
-
 const department = ref<string>()
-// 部门数据
 const departmentData = ref<object[]>([])
-// 公司公告表格数据
 const companyTableData = ref<object[]>([])
-// 系统消息表格数据
 const systemTableData = ref<object[]>([])
+const radio2 = ref()
+
+const paginationData = reactive({
+  companyTotal: 1,
+  companyPageCount: 1,
+  companyCurrentPage: 1,
+  systemTotal: 1,
+  systemCount: 1,
+  systemCurrentPage: 1,
+})
+
 const getDepartmentList = async () => {
   departmentData.value = (await getDepartment()) as any
 }
 getDepartmentList()
 
-// 根据部门进行筛选
 const getListByDepartment = async () => {
   companyTableData.value = (await searchMessageBydepartment(department.value as string)) as any
 }
-// 根据消息等级进行筛选
-const radio2 = ref()
-
 const getMessageListByLevel = async () => {
   companyTableData.value = (await searchMessageByLevel(radio2.value)) as any
 }
 
-// 分页数据
-const paginationData = reactive({
-  // 公司公告总数
-  companyTotal: 1,
-  // 公司公告列表总页数
-  companyPageCount: 1,
-  // 公司公告列表当前所处页数
-  companyCurrentPage: 1,
-  // 系统消息总数
-  systemTotal: 1,
-  // 系统消息总页数
-  systemCount: 1,
-  // 系统消息当前所处页数
-  systemCurrentPage: 1,
-})
-// 获取公司公告列表的页数
 const getCompanyListLength = async () => {
   const res = (await getCompanyMessageLength()) as any
   paginationData.companyTotal = res.length
   paginationData.companyPageCount = Math.ceil(res.length / 10)
 }
 getCompanyListLength()
-// 获取系统消息列表的页数
+
 const getSystemListLength = async () => {
   const res = (await getSystemMessageLength()) as any
   paginationData.systemTotal = res.length
   paginationData.systemCount = Math.ceil(res.length / 10)
 }
 getSystemListLength()
-// 默认获取公司公告列表第一页的数据
+
 const getCompanyFirstPageList = async () => {
   companyTableData.value = (await returnCompanyListData(1)) as any
 }
 getCompanyFirstPageList()
-// 默认获取系统消息第一页的数据
+
 const getSystemFirstPageList = async () => {
   systemTableData.value = (await returnSystemListData(1)) as any
 }
 getSystemFirstPageList()
 
-// 更新公司公告列表及系统消息列表的第一页数据
 const changeTwoPageList = () => {
   department.value = undefined
   radio2.value = null
@@ -233,40 +219,32 @@ const changeTwoPageList = () => {
   getSystemFirstPageList()
 }
 
-// 公司公告列表监听换页
 const companyCurrentChange = async (value: number) => {
   paginationData.companyCurrentPage = value
   companyTableData.value = (await returnCompanyListData(paginationData.companyCurrentPage)) as any
 }
 
-// 系统消息列表监听换页
 const systemCurrentChange = async (value: number) => {
   paginationData.systemCurrentPage = value
   systemTableData.value = (await returnSystemListData(paginationData.systemCurrentPage)) as any
 }
 
-// 发布公告/编辑公告
 const cre = ref()
 const createMessage = (id: number) => {
-  bus.emit('createMessage', id)
-  cre.value.open()
+  cre.value.openCreate(id)
 }
-
 const editMessage = (row: any) => {
-  bus.emit('editMessage', row)
-  cre.value.open()
+  cre.value.openEdit(row)
 }
-
 const editSystemMessage = (row: any) => {
-  bus.emit('editSystemMessage', row)
-  cre.value.open()
+  cre.value.openEditSystem(row)
 }
-
 const delete_msg = ref()
-// 删除公司公告/系统消息
 const deleteMessage = (row: any) => {
-  bus.emit('deleteMessageId', row)
-  delete_msg.value.open()
+  delete_msg.value.openDelete(row)
+}
+const deleteSystemMessage = (id: number) => {
+  delete_msg.value.openRealDelete(id)
 }
 </script>
 

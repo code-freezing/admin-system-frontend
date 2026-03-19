@@ -19,33 +19,23 @@
     </div>
     <div class="action-wrap">
       <span @click="openEdit(userData.id)">编辑</span>
-      <span @click="openPromote(userData.id)">赋权</span>
+      <span @click="openPromote(userData.id)">璧嬫潈</span>
       <span @click="openDelete(userData.id)">删除用户</span>
     </div>
   </el-dialog>
-  <promote ref="pro"></promote>
-  <edit ref="edit_user"></edit>
-  <remove ref="delete_user"></remove>
+  <promote ref="pro" @success="handleChildSuccess"></promote>
+  <edit ref="edit_user" @success="handleChildSuccess"></edit>
+  <remove ref="delete_user" @success="handleChildSuccess"></remove>
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onBeforeUnmount, computed } from 'vue'
-import { bus } from '@/utils/mitt.js'
+import { reactive, ref, computed } from 'vue'
 import promote from '../components/promote.vue'
 import edit from '../components/edit_user.vue'
 import remove from '../components/delete_admin.vue'
-bus.on('userId', (row: any) => {
-  userData.id = row.id
-  // 兼容后端不同字段命名
-  userData.imageUrl = row.image_url
-  userData.account = row.account
-  userData.name = row.name
-  userData.sex = row.sex
-  userData.email = row.email
-  userData.department = row.department
-  userData.status = row.status
-})
 
+const emit = defineEmits(['success'])
+const dialogUserVisible = ref(false)
 const userData = reactive({
   id: 0,
   imageUrl: '',
@@ -62,49 +52,40 @@ const avatarSrc = computed(() => {
   if (/^https?:\/\//.test(userData.imageUrl)) return userData.imageUrl
   return `http://127.0.0.1:3007${userData.imageUrl}`
 })
-bus.on('offDialog', (id: number) => {
-  if (id) {
-    dialogUserVisible.value = false
-  }
-})
-// 对用户进行赋权
-const pro = ref()
-const openPromote = (id: number) => {
-  bus.emit('promoteId', id)
-  pro.value.open()
-}
-// 对用户进行编辑
-const edit_user = ref()
-const openEdit = (id: number) => {
-  bus.emit('editId', id)
-  edit_user.value.open()
-}
-// 删除用户
-const delete_user = ref()
-const openDelete = (id: number) => {
-  const userInfo = {
-    id: id,
-    account: userData.account,
-    name: userData.name,
-  }
-  bus.emit('deleteUserId', userInfo)
-  delete_user.value.open()
-}
 
-// 弹窗开关
-const dialogUserVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
+const open = (row: any) => {
+  userData.id = row.id
+  userData.imageUrl = row.image_url
+  userData.account = row.account
+  userData.name = row.name
+  userData.sex = row.sex
+  userData.email = row.email
+  userData.department = row.department
+  userData.status = row.status
   dialogUserVisible.value = true
+}
+
+const pro = ref()
+const edit_user = ref()
+const delete_user = ref()
+
+const openPromote = (id: number) => {
+  pro.value.open(id)
+}
+const openEdit = (id: number) => {
+  edit_user.value.open(id)
+}
+const openDelete = (id: number) => {
+  delete_user.value.open({ kind: 'user', id, account: userData.account, name: userData.name })
+}
+
+const handleChildSuccess = () => {
+  dialogUserVisible.value = false
+  emit('success')
 }
 
 defineExpose({
   open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 
@@ -149,3 +130,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+

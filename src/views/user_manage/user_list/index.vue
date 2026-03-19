@@ -5,7 +5,7 @@
     <div class="table-top">
       <!-- 表格顶部 -->
       <div class="table-header">
-        <!-- 搜索框 -->
+        <!-- 鎼滅储妗?-->
         <div class="left-wrapped">
           <div class="search-wrapped">
             <el-input
@@ -89,15 +89,14 @@
       />
     </div>
   </div>
-  <userinfo ref="user_info"></userinfo>
+  <userinfo ref="user_info" @success="refreshAfterUserAction"></userinfo>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onBeforeUnmount } from 'vue'
+import { ref, reactive } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import userinfo from '../components/user_infor.vue'
-import { bus } from '@/utils/mitt.js'
 import {
   searchUser,
   searchDepartment,
@@ -110,33 +109,59 @@ import {
 import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
 
-// 面包屑
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '用户管理',
   second: '用户列表',
 })
-// 搜索框的modelValue
+
 const adminAccount = ref<number>()
-// 表格内容
-const tableData = ref()
-// 通过账号进行搜索
-const searchUserByAccount = async () => {
-  const res = await searchUser(adminAccount.value, '用户')
-  tableData.value = Array.isArray(res) ? res : []
-}
-// 部门数据
+const tableData = ref<any[]>([])
 const departmentData = ref<string[]>([])
+const department = ref<string | undefined>()
+
+const paginationData = reactive({
+  pageCount: 1,
+  currentPage: 1,
+})
+const adminTotal = ref<number>(0)
+
 const returnDepartment = async () => {
   const res = await getDepartment()
   departmentData.value = Array.isArray(res) ? (res as string[]) : []
 }
 returnDepartment()
-// 部门
-const department = ref<string | undefined>()
+
+const searchUserByAccount = async () => {
+  const res = await searchUser(adminAccount.value, '用户')
+  tableData.value = Array.isArray(res) ? res : []
+}
+
+const getListByPage = async (page = paginationData.currentPage) => {
+  const res = await returnListData(page, '用户')
+  tableData.value = Array.isArray(res) ? res : []
+  if (tableData.value.length === 0 && page > 1) {
+    paginationData.currentPage = page - 1
+    await returnAdminListLength()
+    const prev = await returnListData(paginationData.currentPage, '用户')
+    tableData.value = Array.isArray(prev) ? prev : []
+  }
+}
+
+const returnAdminListLength = async () => {
+  const res = await getAdminListLength('用户')
+  adminTotal.value = (res as any).length
+  paginationData.pageCount = Math.ceil((res as any).length / 10)
+}
+returnAdminListLength()
+
+const getFirstPageList = async () => {
+  paginationData.currentPage = 1
+  await getListByPage(1)
+}
+getFirstPageList()
+
 const searchForDepartment = async (value?: string) => {
-  // clearable 清空时，change 可能传空值，直接回到默认列表
   if (!value) {
     await getFirstPageList()
     return
@@ -144,47 +169,22 @@ const searchForDepartment = async (value?: string) => {
   const res = await searchDepartment(value)
   tableData.value = Array.isArray(res) ? res : []
 }
-// 清空选择框
+
 const clearOperation = async () => {
   department.value = undefined
   await getFirstPageList()
 }
 
-// 分页数据
-const paginationData = reactive({
-  // 总页数
-  pageCount: 1,
-  // 当前所处页数
-  currentPage: 1,
-})
-const adminTotal = ref<number>(0)
-// 获取管理员的数量
-const returnAdminListLength = async () => {
-  const res = await getAdminListLength('用户')
-  adminTotal.value = (res as any).length
-  paginationData.pageCount = Math.ceil((res as any).length / 10)
-}
-returnAdminListLength()
-// 默认获取第一页的数据
-const getFirstPageList = async () => {
-  const res = await returnListData(1, '用户')
-  tableData.value = Array.isArray(res) ? res : []
-}
-getFirstPageList()
-// 监听换页
 const currentChange = async (value: number) => {
   paginationData.currentPage = value
-  const res = await returnListData(value, '用户')
-  tableData.value = Array.isArray(res) ? res : []
+  await getListByPage(value)
 }
 
-// 筛选冻结用户
 const banUserList = async () => {
   const res = await getBanList()
   tableData.value = Array.isArray(res) ? res : []
 }
 
-// 冻结用户
 const banUserById = async (id: number) => {
   const res = await banUser(id)
   if (res.status == 0) {
@@ -192,14 +192,12 @@ const banUserById = async (id: number) => {
       message: '冻结用户成功',
       type: 'success',
     })
-    const list = await returnListData(paginationData.currentPage, '用户')
-    tableData.value = Array.isArray(list) ? list : []
+    await getListByPage()
   } else {
     ElMessage.error('冻结用户失败')
   }
 }
 
-// 解冻用户
 const hotUserById = async (id: number) => {
   const res = await hotUser(id)
   if (res.status == 0) {
@@ -207,35 +205,20 @@ const hotUserById = async (id: number) => {
       message: '解冻用户成功',
       type: 'success',
     })
-    const list = await returnListData(paginationData.currentPage, '用户')
-    tableData.value = Array.isArray(list) ? list : []
+    await getListByPage()
   } else {
     ElMessage.error('解冻用户失败')
   }
 }
 
-const user_info = ref()
-const openUser = (row: any) => {
-  bus.emit('userId', row)
-  user_info.value.open()
+const refreshAfterUserAction = async () => {
+  await getListByPage()
 }
 
-bus.on('offDialog', async (id: number) => {
-  // 当前页数
-  const current = paginationData.currentPage
-  if (id) {
-    const list = await returnListData(paginationData.currentPage, '用户')
-    tableData.value = Array.isArray(list) ? list : []
-    if (tableData.value.length == 0) {
-      paginationData.currentPage = current - 1
-      returnAdminListLength()
-    }
-  }
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
+const user_info = ref()
+const openUser = (row: any) => {
+  user_info.value.open(row)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -245,3 +228,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+

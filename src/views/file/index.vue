@@ -28,7 +28,7 @@
               <div>{{ row.file_size?.slice(0, 2) }}KB</div>
             </template>
           </el-table-column>
-          <el-table-column prop="upload_person" label="上传者" />
+          <el-table-column prop="upload_person" label="涓婁紶鑰?" />
           <el-table-column prop="download_number" label="下载次数" />
           <el-table-column prop="upload_time" label="上传时间" width="200">
             <template #default="{ row }">
@@ -75,7 +75,6 @@ import tips from './components/tips.vue'
 import { bindFileAndUser, fileListLength, returnFilesListData, updateDownload } from '@/api/file'
 import type { UploadUserFile } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { bus } from '@/utils/mitt'
 // 面包屑
 const breadcrumb = ref()
 // 面包屑参数
@@ -148,8 +147,7 @@ const changeClick = async (download_number: number, id: number) => {
 
 const tip = ref()
 const deleteFile = (row: any) => {
-  bus.emit('deleteFile', row)
-  tip.value.open()
+  tip.value.open(row)
 }
 </script>
 

@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="dialogFormVisible" title="申请出库" width="600px" align-center draggable>
-    <div class="product-name">您申请出库的产品是:&nbsp;&nbsp;{{ formDataInfo.product_name }}</div>
+    <div class="product-name">您申请出库的产品是&nbsp;&nbsp;{{ formDataInfo.product_name }}</div>
     <div class="product-name">
       该产品的库存还有:&nbsp;&nbsp;{{ formDataInfo.product_in_warehouse_number }}
     </div>
@@ -40,22 +40,14 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onBeforeUnmount, computed } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { applyOutProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 import type { FormProps } from 'element-plus'
-import { bus } from '@/utils/mitt'
-
-bus.on('applyId', (row: any) => {
-  formDataInfo.id = row.id
-  formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
-  formDataInfo.product_name = row.product_name
-  formDataInfo.product_single_price = row.product_single_price
-  formDataInfo.product_out_number = null
-  formDataInfo.product_out_id = null
-})
 
 const labelPosition = ref<FormProps['labelPosition']>('left')
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
 
 interface FormData {
   id: number | null
@@ -79,6 +71,16 @@ const formDataInfo: FormData = reactive({
   apply_memo: '',
 })
 
+const open = (row: any) => {
+  formDataInfo.id = row.id
+  formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
+  formDataInfo.product_name = row.product_name
+  formDataInfo.product_single_price = row.product_single_price
+  formDataInfo.product_out_number = null
+  formDataInfo.product_out_id = null
+  dialogFormVisible.value = true
+}
+
 const rules = reactive({
   product_out_id: [{ required: true, message: '请输入申请出库编号', trigger: 'blur' }],
   product_out_number: [{ required: true, message: '请输入申请出库数量', trigger: 'blur' }],
@@ -88,23 +90,14 @@ const rules = reactive({
 const canSubmitOutApply = computed(() => {
   const warehouseNumber = formDataInfo.product_in_warehouse_number
   const outNumber = formDataInfo.product_out_number
-
-  if (warehouseNumber == null || outNumber == null) {
-    return false
-  }
-
+  if (warehouseNumber == null || outNumber == null) return false
   return warehouseNumber >= outNumber
 })
 
-const emit = defineEmits(['success'])
-// 产品出库
 const addProduct = async () => {
   const res = (await applyOutProduct(formDataInfo)) as any
   if (res.status == 0) {
-    ElMessage({
-      message: '产品申请出库成功',
-      type: 'success',
-    })
+    ElMessage({ message: '产品申请出库成功', type: 'success' })
     emit('success')
     dialogFormVisible.value = false
   } else {
@@ -112,21 +105,8 @@ const addProduct = async () => {
     dialogFormVisible.value = false
   }
 }
-// 弹窗开关
-const dialogFormVisible = ref(false)
 
-// 打开创建管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
-defineExpose({
-  open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
+defineExpose({ open })
 </script>
 
 <style lang="scss" scoped>
@@ -147,3 +127,4 @@ onBeforeUnmount(() => {
   margin: 30px;
 }
 </style>
+

@@ -10,25 +10,24 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, ref } from 'vue'
-import { bus } from '@/utils/mitt'
+import { ref } from 'vue'
 import { withdrawApplyProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 
-const withdrawId = ref()
-
-bus.on('withdrawId', (id: number) => {
-  withdrawId.value = id
-})
+const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
+const withdrawId = ref<number | null>(null)
+
+const open = (id: number) => {
+  withdrawId.value = id
+  dialogFormVisible.value = true
+}
 
 const withdraw = async () => {
+  if (!withdrawId.value) return
   const res = await withdrawApplyProduct(withdrawId.value)
   if (res.status == 0) {
-    ElMessage({
-      message: '撤回申请成功',
-      type: 'success',
-    })
+    ElMessage({ message: '撤回申请成功', type: 'success' })
     emit('success')
     dialogFormVisible.value = false
   } else {
@@ -37,21 +36,8 @@ const withdraw = async () => {
   }
 }
 
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
-defineExpose({
-  open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
+defineExpose({ open })
 </script>
 
 <style lang="scss" scoped></style>
+

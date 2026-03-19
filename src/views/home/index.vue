@@ -44,13 +44,13 @@
           </el-table-column>
           <el-table-column prop="message_level" label="等级">
             <template #default="{ row }">
-              <el-tag class="mx-1" round v-if="row.message_level == '一般'">{{
+              <el-tag class="mx-1" round v-if="row.message_level == '涓€鑸?'">{{
                 row.message_level
               }}</el-tag>
               <el-tag type="warning" class="mx-1" round v-if="row.message_level == '重要'">{{
                 row.message_level
               }}</el-tag>
-              <el-tag type="danger" class="mx-1" round v-if="row.message_level == '必要'">{{
+              <el-tag type="danger" class="mx-1" round v-if="row.message_level == '蹇呰'">{{
                 row.message_level
               }}</el-tag>
             </template>
@@ -90,7 +90,6 @@
 import { ref } from 'vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
-import { bus } from '@/utils/mitt.js'
 import introduce from './components/introduce.vue'
 import { companyMessageList, systemMessageList } from '@/api/message'
 import bulletin from '@/components/common_msg.vue'
@@ -134,22 +133,19 @@ const allCompanyIntroduce = async () => {
 }
 allCompanyIntroduce()
 
-// 弹窗
+// 寮圭獥
 const intro = ref()
 const openIntroduce = (id: number) => {
-  bus.emit('introduce', id)
-  intro.value.open()
+  intro.value.open(id)
 }
 
 const bulletinDom: any = ref()
 const openCompany = (row: any) => {
-  bus.emit('homeCompany', row)
-  bulletinDom.value.open()
+  bulletinDom.value.openCompany(row)
 }
 
 const openSystem = (row: any) => {
-  bus.emit('homeSystem', row)
-  bulletinDom.value.open()
+  bulletinDom.value.openSystem(row)
 }
 </script>
 

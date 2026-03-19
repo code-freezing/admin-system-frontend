@@ -25,38 +25,20 @@
   </el-dialog>
 </template>
 <script lang="ts" setup>
-import '@wangeditor/editor/dist/css/style.css' // 引入 css
+import '@wangeditor/editor/dist/css/style.css'
 import { onBeforeUnmount, ref, shallowRef, reactive } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { bus } from '@/utils/mitt.js'
 import { ElMessage } from 'element-plus'
 
 import { changeCompanyIntroduce, getCompanyIntroduce } from '@/api/setting'
-const title = ref()
-bus.on('editorTitle', async (id: number) => {
-  if (id == 1) {
-    title.value = '编辑公司介绍'
-    valueHtml.value = await getCompanyIntroduce('公司介绍')
-  }
-  if (id == 2) {
-    title.value = '编辑公司架构'
-    valueHtml.value = await getCompanyIntroduce('公司架构')
-  }
-  if (id == 3) {
-    title.value = '编辑公司战略'
-    valueHtml.value = await getCompanyIntroduce('公司战略')
-  }
-  if (id == 4) {
-    title.value = '编辑公司高层'
-    valueHtml.value = await getCompanyIntroduce('公司高层')
-  }
-})
-// 编辑器实例，必须用 shallowRef
+const title = ref('')
 const editorRef = shallowRef()
-// mode
 const mode = ref('default')
-// 内容 HTML
-const valueHtml = ref()
+const valueHtml = ref('')
+const state = reactive({
+  dialogFormVisible: false,
+})
+
 const toolbarConfig = {
   excludeKeys: [],
 }
@@ -64,23 +46,16 @@ const editorConfig = {
   placeholder: '请输入内容...',
   MENU_CONF: {
     uploadImage: {
-      //上传图片配置
-      server: `${import.meta.env.VITE_API_BASEURL}/set/uploadCompanyPicture`, //上传接口地址
-      fieldName: 'file', //上传文件名
+      server: `${import.meta.env.VITE_API_BASEURL}/set/uploadCompanyPicture`,
+      fieldName: 'file',
       methods: 'post',
-      metaWithUrl: true, // 参数拼接到 url 上
-      // 单个文件上传成功之后
-      // onSuccess(file, res) {
-      // },
-      // 自定义插入图片
+      metaWithUrl: true,
       customInsert(res: any, insertFn: any) {
         insertFn(res.url)
       },
     },
   },
 }
-// 上传图片，修改 uploadImage 菜单配置
-// 需要注意的是，如何去修改参数？
 toolbarConfig.excludeKeys = [
   'blockquote',
   'bgColor',
@@ -98,20 +73,39 @@ toolbarConfig.excludeKeys = [
   'codeBlock',
   'divider',
   'fullScreen',
-  // 'group-image',
-
-  // 排除菜单组，写菜单组 key 的值即可
 ] as never[]
-// 点击确认 修改文案
+
+const open = async (id: number) => {
+  if (id == 1) {
+    title.value = '编辑公司介绍'
+    const res = (await getCompanyIntroduce('公司介绍')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  if (id == 2) {
+    title.value = '编辑公司架构'
+    const res = (await getCompanyIntroduce('公司架构')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  if (id == 3) {
+    title.value = '编辑公司战略'
+    const res = (await getCompanyIntroduce('公司战略')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  if (id == 4) {
+    title.value = '编辑公司高层'
+    const res = (await getCompanyIntroduce('公司高层')) as any
+    valueHtml.value = res?.results ?? res
+  }
+  state.dialogFormVisible = true
+}
+
 const yes = async () => {
-  // 去除 编辑两个字
   console.log(title.value.slice(-4))
-  // 两个参数 set_text set_name
   const res = await changeCompanyIntroduce(valueHtml.value, title.value.slice(-4))
   console.log(res)
   if (res.status == 0) {
     ElMessage({
-      message: '修改公司介绍成功！',
+      message: '修改公司介绍成功',
       type: 'success',
     })
     state.dialogFormVisible = false
@@ -119,11 +113,10 @@ const yes = async () => {
   } else {
     state.dialogFormVisible = false
     valueHtml.value = ''
-    ElMessage.error('修改公司介绍失败，请检查网络是否通畅！')
+    ElMessage.error('修改公司介绍失败，请检查网络是否通畅')
   }
 }
 
-// 组件销毁时，也及时销毁编辑器
 onBeforeUnmount(() => {
   const editor = editorRef.value
   if (editor == null) return
@@ -131,30 +124,19 @@ onBeforeUnmount(() => {
 })
 
 const handleCreated = (editor: any) => {
-  editorRef.value = editor // 记录 editor 实例，重要！
+  editorRef.value = editor
 }
-const state = reactive({
-  dialogFormVisible: false,
-})
 
-// 取消删除
 const cancel = () => {
-  ElMessage.error('取消赋权！')
+  ElMessage.error('取消编辑')
   state.dialogFormVisible = false
 }
 
-// 暴露open方法
-const open = () => {
-  state.dialogFormVisible = true
-}
 defineExpose({
   open,
-})
-
-// 取消订阅/监听
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 
 <style lang="scss" scoped></style>
+
+

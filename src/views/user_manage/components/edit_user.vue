@@ -10,8 +10,8 @@
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-select v-model="formData.sex" placeholder="请选择性别">
-            <el-option label="男" value="男" />
-            <el-option label="女" value="女" />
+            <el-option label="男 value=" 男 />
+            <el-option label="女 value=" 女 />
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -33,27 +33,13 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onBeforeUnmount } from 'vue'
-import { bus } from '@/utils/mitt.js'
+import { reactive, ref } from 'vue'
 import { getUserInfo, editAdmin } from '@/api/userinfor.js'
 import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
-bus.on('editId', async (id: number) => {
-  const res = await getUserInfo(id)
-  formData.id = (res as any).id
-  formData.account = (res as any).account
-  formData.name = (res as any).name
-  formData.sex = (res as any).sex
-  formData.email = (res as any).email
-  formData.department = (res as any).department
-})
 
-// 部门数据
-const departmentData = ref([])
-const returnDepartment = async () => {
-  departmentData.value = (await getDepartment()) as any
-}
-returnDepartment()
+const emit = defineEmits(['success'])
+const dialogFormVisible = ref(false)
 
 interface formData {
   id?: number
@@ -72,7 +58,13 @@ const formData: formData = reactive({
   email: '',
   department: '',
   identity: '用户',
-})
+} as any)
+
+const departmentData = ref([])
+const returnDepartment = async () => {
+  departmentData.value = (await getDepartment()) as any
+}
+returnDepartment()
 
 const rules = reactive({
   name: [{ required: true, message: '请输入要修改的名字', trigger: 'blur' }],
@@ -80,7 +72,18 @@ const rules = reactive({
   email: [{ required: true, message: '请输入要修改的邮箱', trigger: 'blur' }],
   department: [{ required: true, message: '请输入要修改的部门', trigger: 'blur' }],
 })
-// 编辑用户信息
+
+const open = async (id: number) => {
+  const res = await getUserInfo(id)
+  formData.id = (res as any).id
+  formData.account = (res as any).account
+  formData.name = (res as any).name
+  formData.sex = (res as any).sex
+  formData.email = (res as any).email
+  formData.department = (res as any).department
+  dialogFormVisible.value = true
+}
+
 const editUser = async () => {
   const res = await editAdmin(formData)
   if (res.status == 0) {
@@ -88,7 +91,7 @@ const editUser = async () => {
       message: '编辑用户信息成功',
       type: 'success',
     })
-    bus.emit('offDialog', 1)
+    emit('success')
     dialogFormVisible.value = false
   } else {
     ElMessage.error('编辑用户信息失败')
@@ -96,20 +99,8 @@ const editUser = async () => {
   }
 }
 
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
 defineExpose({
   open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 

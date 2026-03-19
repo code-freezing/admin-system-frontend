@@ -21,8 +21,8 @@
         </el-form-item>
         <el-form-item label="产品单位" prop="product_unit">
           <el-select v-model="formDataInfo.product_unit" placeholder="请选择产品单位">
-            <el-option label="个" value="个" />
-            <el-option label="件" value="件" />
+            <el-option label="涓?" value="涓?" />
+            <el-option label="浠?" value="浠?" />
           </el-select>
         </el-form-item>
         <el-form-item label="产品入库数量" prop="product_in_warehouse_number">
@@ -31,7 +31,7 @@
         <el-form-item label="产品入库单价" prop="product_single_price">
           <el-input v-model="formDataInfo.product_single_price" />
         </el-form-item>
-        <el-form-item label="入库操作人" prop="product_create_person">
+        <el-form-item label="鍏ュ簱操作浜?" prop="product_create_person">
           <el-input v-model="formDataInfo.product_create_person" disabled />
         </el-form-item>
         <el-form-item label="入库备注" prop="in_memo">
@@ -48,33 +48,23 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onBeforeUnmount } from 'vue'
+import { reactive, ref } from 'vue'
 import { editProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 import type { FormProps } from 'element-plus'
-import { bus } from '@/utils/mitt'
 import { getProduct } from '@/api/setting'
 
-bus.on('editProductId', (row: any) => {
-  formDataInfo.id = row.id
-  formDataInfo.product_id = row.product_id
-  formDataInfo.product_name = row.product_name
-  formDataInfo.product_category = row.product_category
-  formDataInfo.product_unit = row.product_unit
-  formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
-  formDataInfo.product_single_price = row.product_single_price
-  formDataInfo.product_create_person = row.product_create_person
-  formDataInfo.in_memo = row.in_memo
-})
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
 const labelPosition = ref<FormProps['labelPosition']>('left')
 
-// 产品类别数据
 const categoryData = ref<string[]>([])
 const getProductCategory = async () => {
   categoryData.value = (await getProduct()) as any
 }
 getProductCategory()
-interface formData {
+
+interface FormData {
   id: number | null
   product_id: number | null
   product_name: string
@@ -86,7 +76,7 @@ interface formData {
   in_memo: string
 }
 
-const formDataInfo: formData = reactive({
+const formDataInfo: FormData = reactive({
   id: null,
   product_id: null,
   product_name: '',
@@ -98,6 +88,19 @@ const formDataInfo: formData = reactive({
   in_memo: '',
 })
 
+const open = (row: any) => {
+  formDataInfo.id = row.id
+  formDataInfo.product_id = row.product_id
+  formDataInfo.product_name = row.product_name
+  formDataInfo.product_category = row.product_category
+  formDataInfo.product_unit = row.product_unit
+  formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
+  formDataInfo.product_single_price = row.product_single_price
+  formDataInfo.product_create_person = row.product_create_person
+  formDataInfo.in_memo = row.in_memo
+  dialogFormVisible.value = true
+}
+
 const rules = reactive({
   product_id: [{ required: true, message: '请输入入库编号', trigger: 'blur' }],
   product_name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
@@ -107,15 +110,11 @@ const rules = reactive({
   product_single_price: [{ required: true, message: '请输入产品入库单价', trigger: 'blur' }],
   product_create_person: [{ required: true, message: '请输入入库操作人', trigger: 'blur' }],
 })
-const emit = defineEmits(['success'])
-// 产品出库
+
 const edit = async () => {
   const res = await editProduct(formDataInfo)
   if (res.status == 0) {
-    ElMessage({
-      message: '编辑产品信息成功',
-      type: 'success',
-    })
+    ElMessage({ message: '编辑产品信息成功', type: 'success' })
     emit('success')
     dialogFormVisible.value = false
   } else {
@@ -123,21 +122,8 @@ const edit = async () => {
     dialogFormVisible.value = false
   }
 }
-// 弹窗开关
-const dialogFormVisible = ref(false)
 
-// 打开创建管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
-defineExpose({
-  open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
-})
+defineExpose({ open })
 </script>
 
 <style lang="scss" scoped>

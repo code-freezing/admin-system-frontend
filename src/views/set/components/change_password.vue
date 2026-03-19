@@ -34,7 +34,7 @@ const menuStore = useMenu()
 // 表单对齐方式
 const labelPosition = ref('top')
 // 表单对象接口
-// 密码是有字母跟数字 所有是string
+// 瀵嗙爜鏄湁瀛楁瘝璺熸暟瀛?鎵€鏈夋槸string
 interface passwordData {
   oldPassword: string
   newPassword: string
@@ -54,7 +54,7 @@ const state = reactive({
   changePasswordDialog: false,
 })
 
-// 修改密码 id 跟 两个 password
+// 淇敼瀵嗙爜 id 璺?涓や釜 password
 const changeUserPassword = async () => {
   if (passwordData.oldPassword && passwordData.newPassword) {
     const userId = userStore.id
@@ -75,13 +75,13 @@ const changeUserPassword = async () => {
       menuStore.clearRouter()
       router.push('/login')
     } else {
-      ElMessage.error('修改密码失败，请重新输入！')
+      ElMessage.error('淇敼瀵嗙爜澶辫触锛岃閲嶆柊杈撳叆锛?')
     }
   } else {
     ElMessage.error('请检查输入的数据！')
   }
 }
-// 打开修改密码的弹窗
+// 鎵撳紑淇敼瀵嗙爜鐨勫脊绐?
 const open = () => {
   state.changePasswordDialog = true
 }
@@ -91,7 +91,6 @@ defineExpose({
 })
 
 // onBeforeUnmount(()=>{
-// 	bus.all.clear()
 // })
 </script>
 

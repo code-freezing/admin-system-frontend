@@ -10,22 +10,20 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, ref } from 'vue'
-import { bus } from '@/utils/mitt.js'
+import { ref } from 'vue'
 import { deleteFile } from '@/api/file'
 import { ElMessage } from 'element-plus'
-const title = ref<string>()
-// 消息ID
+
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
 const fileId = ref<number>()
-// 文件名
 const fileName = ref<string>()
 
-bus.on('deleteFile', (row: any) => {
-  title.value = '删除文件'
+const open = (row: any) => {
   fileId.value = row.id
   fileName.value = row.file_name
-})
-const emit = defineEmits(['success'])
+  dialogFormVisible.value = true
+}
 
 const operationFiles = async () => {
   const res = await deleteFile(fileId.value as number, fileName.value as string)
@@ -42,20 +40,8 @@ const operationFiles = async () => {
   }
 }
 
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
-
 defineExpose({
   open,
-})
-
-onBeforeUnmount(() => {
-  bus.all.clear()
 })
 </script>
 
