@@ -1,18 +1,15 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
+  <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
-    <!-- 顶部 -->
     <div class="table-top">
-      <!-- 表格顶部 -->
       <div class="table-header">
-        <!-- 鎼滅储妗?-->
         <div class="left-wrapped">
           <div class="search-wrapped">
             <el-input
               v-model="adminAccount"
               class="w-50 m-2"
               size="large"
-              placeholder="输入账号进行搜索"
+              placeholder="按账号搜索"
               :prefix-icon="Search"
               @change="searchUserByAccount()"
             />
@@ -20,7 +17,7 @@
           <div class="select-wrapped">
             <el-select
               v-model="department"
-              placeholder="请选择部门"
+              placeholder="按部门筛选"
               clearable
               @change="searchForDepartment"
               @clear="clearOperation"
@@ -30,13 +27,12 @@
           </div>
         </div>
         <div class="button-wrapped">
-          <el-button plain type="primary" @click="banUserList">筛选冻结用户</el-button>
-          <el-button plain type="primary" @click="getFirstPageList">显示全部用户</el-button>
+          <el-button plain type="primary" @click="banUserList">查看冻结用户</el-button>
+          <el-button plain type="primary" @click="getFirstPageList">查看全部用户</el-button>
         </div>
       </div>
-      <!-- 表格内容 -->
       <div class="table-content">
-        <el-table :data="tableData" style="width: 100%" border @row-dblclick="openUser">
+        <el-table :data="tableData" border style="width: 100%" @row-dblclick="openUser">
           <el-table-column type="index" width="50" />
           <el-table-column prop="account" label="账号" />
           <el-table-column prop="name" label="姓名" />
@@ -45,10 +41,8 @@
           <el-table-column prop="email" label="邮箱" />
           <el-table-column prop="status" label="状态">
             <template #default="{ row }">
-              <div>
-                <el-tag v-if="row.status == '1'" class="ml-2">冻结</el-tag>
-                <el-tag class="ml-2" type="success" v-else>正常</el-tag>
-              </div>
+              <el-tag v-if="row.status == '1'" class="ml-2">冻结</el-tag>
+              <el-tag v-else class="ml-2" type="success">正常</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="create_time" label="创建时间">
@@ -64,19 +58,18 @@
           <el-table-column label="操作" width="200">
             <template #default="{ row }">
               <div>
-                <el-button type="primary" @click="banUserById(row.id)" :disabled="row.status == 1"
-                  >冻结</el-button
-                >
-                <el-button type="success" @click="hotUserById(row.id)" :disabled="row.status == 0"
-                  >解冻</el-button
-                >
+                <el-button type="primary" @click="banUserById(row.id)" :disabled="row.status == 1">
+                  冻结
+                </el-button>
+                <el-button type="success" @click="hotUserById(row.id)" :disabled="row.status == 0">
+                  解冻
+                </el-button>
               </div>
             </template>
           </el-table-column>
         </el-table>
       </div>
     </div>
-    <!-- 底部 -->
     <div class="table-footer">
       <el-pagination
         :page-size="1"
@@ -84,30 +77,38 @@
         :pager-count="7"
         :total="adminTotal"
         :page-count="paginationData.pageCount"
-        @current-change="currentChange"
         layout="prev, pager, next"
+        @current-change="currentChange"
       />
     </div>
   </div>
-  <userinfo ref="user_info" @success="refreshAfterUserAction"></userinfo>
+  <userinfo ref="user_info" @success="refreshAfterUserAction" />
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import breadCrumb from '@/components/bread_crumb.vue'
-import userinfo from '../components/user_infor.vue'
-import {
-  searchUser,
-  searchDepartment,
-  getAdminListLength,
-  returnListData,
-  getBanList,
-  banUser,
-  hotUser,
-} from '@/api/userinfor.js'
-import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
+import breadCrumb from '@/components/bread_crumb.vue'
+import { getDepartment } from '@/api/setting'
+import {
+  banUser,
+  getAdminListLength,
+  getBanList,
+  hotUser,
+  returnListData,
+  searchDepartment,
+  searchUser,
+} from '@/api/userinfor'
+import userinfo from '../components/user_infor.vue'
+
+interface UserRow {
+  id: number
+  status?: string
+  create_time?: string
+  update_time?: string
+  [key: string]: unknown
+}
 
 const breadcrumb = ref()
 const item = ref({
@@ -116,50 +117,42 @@ const item = ref({
 })
 
 const adminAccount = ref<number>()
-const tableData = ref<any[]>([])
+const tableData = ref<UserRow[]>([])
 const departmentData = ref<string[]>([])
-const department = ref<string | undefined>()
+const department = ref<string>()
+const adminTotal = ref(0)
+const user_info = ref()
 
 const paginationData = reactive({
   pageCount: 1,
   currentPage: 1,
 })
-const adminTotal = ref<number>(0)
 
-const returnDepartment = async () => {
+const loadDepartment = async () => {
   const res = await getDepartment()
   departmentData.value = Array.isArray(res) ? (res as string[]) : []
 }
-returnDepartment()
 
-const searchUserByAccount = async () => {
-  const res = await searchUser(adminAccount.value, '用户')
-  tableData.value = Array.isArray(res) ? res : []
+const loadUserLength = async () => {
+  const res = await getAdminListLength('用户')
+  adminTotal.value = Array.isArray(res) ? res.length : 0
+  paginationData.pageCount = Math.max(1, Math.ceil(adminTotal.value / 10))
 }
 
 const getListByPage = async (page = paginationData.currentPage) => {
   const res = await returnListData(page, '用户')
-  tableData.value = Array.isArray(res) ? res : []
-  if (tableData.value.length === 0 && page > 1) {
-    paginationData.currentPage = page - 1
-    await returnAdminListLength()
-    const prev = await returnListData(paginationData.currentPage, '用户')
-    tableData.value = Array.isArray(prev) ? prev : []
-  }
+  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
 }
-
-const returnAdminListLength = async () => {
-  const res = await getAdminListLength('用户')
-  adminTotal.value = (res as any).length
-  paginationData.pageCount = Math.ceil((res as any).length / 10)
-}
-returnAdminListLength()
 
 const getFirstPageList = async () => {
   paginationData.currentPage = 1
   await getListByPage(1)
 }
-getFirstPageList()
+
+const searchUserByAccount = async () => {
+  const res = await searchUser(adminAccount.value, '用户')
+  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
+}
 
 const searchForDepartment = async (value?: string) => {
   if (!value) {
@@ -167,7 +160,7 @@ const searchForDepartment = async (value?: string) => {
     return
   }
   const res = await searchDepartment(value)
-  tableData.value = Array.isArray(res) ? res : []
+  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
 }
 
 const clearOperation = async () => {
@@ -182,32 +175,26 @@ const currentChange = async (value: number) => {
 
 const banUserList = async () => {
   const res = await getBanList()
-  tableData.value = Array.isArray(res) ? res : []
+  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
 }
 
 const banUserById = async (id: number) => {
   const res = await banUser(id)
   if (res.status == 0) {
-    ElMessage({
-      message: '冻结用户成功',
-      type: 'success',
-    })
+    ElMessage.success('用户已冻结')
     await getListByPage()
   } else {
-    ElMessage.error('冻结用户失败')
+    ElMessage.error('冻结失败')
   }
 }
 
 const hotUserById = async (id: number) => {
   const res = await hotUser(id)
   if (res.status == 0) {
-    ElMessage({
-      message: '解冻用户成功',
-      type: 'success',
-    })
+    ElMessage.success('用户已解冻')
     await getListByPage()
   } else {
-    ElMessage.error('解冻用户失败')
+    ElMessage.error('解冻失败')
   }
 }
 
@@ -215,10 +202,13 @@ const refreshAfterUserAction = async () => {
   await getListByPage()
 }
 
-const user_info = ref()
-const openUser = (row: any) => {
+const openUser = (row: UserRow) => {
   user_info.value.open(row)
 }
+
+onMounted(async () => {
+  await Promise.all([loadDepartment(), loadUserLength(), getFirstPageList()])
+})
 </script>
 
 <style lang="scss" scoped>
@@ -228,5 +218,3 @@ const openUser = (row: any) => {
   }
 }
 </style>
-
-

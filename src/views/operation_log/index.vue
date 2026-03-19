@@ -1,5 +1,5 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
+  <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
     <div class="table-top">
       <div class="table-header">
@@ -8,9 +8,9 @@
             v-model="name"
             class="w-50 m-2"
             size="large"
-            placeholder="输入操作者进行搜索"
-            @change="searchOperationPerson()"
+            placeholder="按操作人搜索"
             clearable
+            @change="searchOperationPerson()"
             @clear="getOperationFirstPageList"
           >
             <template #prefix>
@@ -24,7 +24,7 @@
       </div>
       <div class="table-content">
         <el-table :data="tableData" style="width: 100%">
-          <el-table-column prop="operation_person" label="操作者">
+          <el-table-column prop="operation_person" label="操作人">
             <template #default="{ row }">
               <div :class="level(row.operation_level)">
                 <span class="person">{{ row.operation_person }}</span>
@@ -32,11 +32,11 @@
             </template>
           </el-table-column>
           <el-table-column prop="operation_content" label="操作内容" />
-          <el-table-column prop="operation_level" label="操作等级">
+          <el-table-column prop="operation_level" label="操作级别">
             <template #default="{ row }">
-              <el-tag class="ml-2" :type="level(row.operation_level) as any">{{
-                row.operation_level
-              }}</el-tag>
+              <el-tag class="ml-2" :type="level(row.operation_level) as any">
+                {{ row.operation_level }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="operation_time" label="操作时间" width="200">
@@ -54,85 +54,82 @@
         :pager-count="7"
         :total="paginationData.operationTotal"
         :page-count="paginationData.operationPageCount"
-        @current-change="operationCurrentChange"
         layout="prev, pager, next"
+        @current-change="operationCurrentChange"
       />
     </div>
   </div>
-  <tips ref="tip" @success="getOperationFirstPageList"></tips>
+  <tips ref="tip" @success="getOperationFirstPageList" />
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { Search } from '@element-plus/icons-vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import tips from './components/tips.vue'
 import { operationLogListLength, returnOperationListData, searchOperationLogList } from '@/api/log'
-import { Search } from '@element-plus/icons-vue'
-// 面包屑
+
+interface OperationRow {
+  operation_person?: string
+  operation_content?: string
+  operation_level?: string
+  operation_time?: string
+}
+
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '操作日志',
   second: '',
 })
 
-// 操作次数表格数据
-const tableData = ref([])
+const name = ref('')
+const tableData = ref<OperationRow[]>([])
+const tip = ref()
 
-// 分页数据
 const paginationData = reactive({
-  // 操作次数总数
-  operationTotal: 1,
-  // 操作次数列表总页数
-  operationPageCount: 1,
-  // 操作次数列表当前所处页数
+  operationTotal: 0,
+  operationPageCount: 0,
   operationCurrentPage: 1,
 })
-// 获取操作次数列表的页数
-const getOperationListLength = async () => {
-  const res = (await operationLogListLength()) as any
-  paginationData.operationTotal = res.length
-  paginationData.operationPageCount = Math.ceil(res.length / 10)
-}
-getOperationListLength()
-// 默认获取操作次数列表第一页的数据
-const getOperationFirstPageList = async () => {
-  tableData.value = (await returnOperationListData(1)) as any
-}
-getOperationFirstPageList()
 
-// 操作次数列表监听换页
+const loadOperationLength = async () => {
+  const res = await operationLogListLength()
+  const total = Array.isArray(res) ? res.length : 0
+  paginationData.operationTotal = total
+  paginationData.operationPageCount = Math.max(1, Math.ceil(total / 10))
+}
+
+const getOperationFirstPageList = async () => {
+  tableData.value = (await returnOperationListData(1)) as OperationRow[]
+}
+
 const operationCurrentChange = async (value: number) => {
   paginationData.operationCurrentPage = value
-  tableData.value = (await returnOperationListData(paginationData.operationCurrentPage)) as any
+  tableData.value = (await returnOperationListData(value)) as OperationRow[]
 }
-const name = ref()
-// 搜索之后函数
+
 const searchOperationPerson = async () => {
-  tableData.value = (await searchOperationLogList(name.value)) as any
+  tableData.value = (await searchOperationLogList(name.value)) as OperationRow[]
 }
 
-const level = (level: string) => {
-  if (level == '高级') return 'danger'
-  if (level == '中级') return 'warning'
-  if (level == '低级') return 'normal'
+const level = (value?: string) => {
+  if (value == '错误') return 'danger'
+  if (value == '警告') return 'warning'
+  return 'normal'
 }
 
-const tip = ref()
 const clearList = () => {
   tip.value.open()
 }
+
+onMounted(async () => {
+  await Promise.all([loadOperationLength(), getOperationFirstPageList()])
+})
 </script>
 
 <style lang="scss" scoped>
 :deep(.el-table .cell) {
   font-weight: 400;
-}
-
-a {
-  color: #fff;
-  display: block;
-  text-decoration: none;
 }
 
 .person {

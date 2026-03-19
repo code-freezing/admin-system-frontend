@@ -1,9 +1,9 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
+  <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
     <div class="table-top">
       <div class="table-header">
-        <div></div>
+        <div />
         <div class="upload-wrapped">
           <el-upload
             v-model:file-list="fileList"
@@ -21,30 +21,27 @@
       </div>
       <div class="table-content">
         <el-table :data="tableData" style="width: 100%">
-          <el-table-column type="index" width="50"></el-table-column>
+          <el-table-column type="index" width="50" />
           <el-table-column prop="file_name" label="文件名" />
           <el-table-column prop="file_size" label="文件大小">
             <template #default="{ row }">
               <div>{{ row.file_size?.slice(0, 2) }}KB</div>
             </template>
           </el-table-column>
-          <el-table-column prop="upload_person" label="涓婁紶鑰?" />
+          <el-table-column prop="upload_person" label="上传人" />
           <el-table-column prop="download_number" label="下载次数" />
           <el-table-column prop="upload_time" label="上传时间" width="200">
             <template #default="{ row }">
               <div>{{ row.upload_time?.slice(0, 10) }}</div>
             </template>
           </el-table-column>
-
           <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <div>
                 <el-button type="success">
-                  <template #default>
-                    <a :href="row.file_url" @click="changeClick(row.download_number, row.id)"
-                      >下载文件</a
-                    >
-                  </template>
+                  <a :href="row.file_url" @click="changeClick(row.download_number, row.id)"
+                    >下载文件</a
+                  >
                 </el-button>
                 <el-button type="danger" @click="deleteFile(row)">删除</el-button>
               </div>
@@ -60,95 +57,98 @@
         :pager-count="7"
         :total="paginationData.fileTotal"
         :page-count="paginationData.filePageCount"
-        @current-change="fileCurrentChange"
         layout="prev, pager, next"
+        @current-change="fileCurrentChange"
       />
     </div>
   </div>
-  <tips ref="tip" @success="getFileFirstPageList"></tips>
+  <tips ref="tip" @success="getFileFirstPageList" />
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import type { UploadUserFile } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
 import tips from './components/tips.vue'
 import { bindFileAndUser, fileListLength, returnFilesListData, updateDownload } from '@/api/file'
-import type { UploadUserFile } from 'element-plus'
-import { ElMessage } from 'element-plus'
-// 面包屑
+
+interface FileRow {
+  id: number
+  file_name: string
+  file_size?: string
+  upload_person?: string
+  download_number: number
+  upload_time?: string
+  file_url: string
+}
+
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '文件管理',
   second: '',
 })
 
-const userInfoStr = localStorage.getItem('userinfo')
-const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-const name = userInfo?.name ?? ''
-
 const apiBaseUrl = (import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')
 const baseUrl = ref(`${apiBaseUrl}/file/uploadFile`)
 const fileList = ref<UploadUserFile[]>([])
-// 文件数量限制回调
-const handleExceed = () => {
-  ElMessage.warning('最多上传三个文件！')
-}
-// 文件上传成功回调
-const handleSuccess = (response: any) => {
-  if (response.status == 0) {
-    ;(async () => {
-      await bindFileAndUser(name as string, response.url)
-    })()
-    ElMessage({
-      message: '上传文件成功',
-      type: 'success',
-    })
-    getFileFirstPageList()
-  } else {
-    ElMessage.error('上传文件失败，请检查网络问题！')
-  }
-}
+const tableData = ref<FileRow[]>([])
+const tip = ref()
 
-// 文件表格数据
-const tableData = ref<any[]>([])
-
-// 分页数据
 const paginationData = reactive({
-  // 文件总数
-  fileTotal: 1,
-  // 文件列表总页数
-  filePageCount: 1,
-  // 文件列表当前所处页数
+  fileTotal: 0,
+  filePageCount: 0,
   fileCurrentPage: 1,
 })
-// 获取文件列表的页数
-const getFiletListLength = async () => {
-  const res = (await fileListLength()) as any
-  paginationData.fileTotal = res.length
-  paginationData.filePageCount = Math.ceil(res.length / 10)
-}
-getFiletListLength()
-// 默认获取文件列表第一页的数据
-const getFileFirstPageList = async () => {
-  tableData.value = (await returnFilesListData(1)) as any
-}
-getFileFirstPageList()
 
-// 文件列表监听换页
+const userInfo = localStorage.getItem('userinfo')
+const userName = userInfo ? JSON.parse(userInfo)?.name ?? '' : ''
+
+const loadFileLength = async () => {
+  const res = await fileListLength()
+  const total = Array.isArray(res) ? res.length : 0
+  paginationData.fileTotal = total
+  paginationData.filePageCount = Math.max(1, Math.ceil(total / 10))
+}
+
+const getFileFirstPageList = async () => {
+  tableData.value = (await returnFilesListData(1)) as FileRow[]
+}
+
 const fileCurrentChange = async (value: number) => {
   paginationData.fileCurrentPage = value
-  tableData.value = (await returnFilesListData(paginationData.fileCurrentPage)) as any
-}
-// 更新点击率
-const changeClick = async (download_number: number, id: number) => {
-  await updateDownload(download_number, id)
+  tableData.value = (await returnFilesListData(value)) as FileRow[]
 }
 
-const tip = ref()
-const deleteFile = (row: any) => {
+const changeClick = async (downloadNumber: number, id: number) => {
+  await updateDownload(downloadNumber, id)
+}
+
+const deleteFile = (row: FileRow) => {
   tip.value.open(row)
 }
+
+const handleExceed = () => {
+  ElMessage.warning('最多只能同时上传 3 个文件')
+}
+
+const handleSuccess = async (response: any) => {
+  if (response.status !== 0) {
+    ElMessage.error('文件上传失败')
+    return
+  }
+
+  if (userName) {
+    await bindFileAndUser(userName, response.url)
+  }
+
+  ElMessage.success('文件上传成功')
+  await Promise.all([loadFileLength(), getFileFirstPageList()])
+}
+
+onMounted(async () => {
+  await Promise.all([loadFileLength(), getFileFirstPageList()])
+})
 </script>
 
 <style lang="scss" scoped>

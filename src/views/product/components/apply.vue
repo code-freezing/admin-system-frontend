@@ -1,8 +1,8 @@
 <template>
-  <el-dialog v-model="dialogFormVisible" title="申请出库" width="600px" align-center draggable>
-    <div class="product-name">您申请出库的产品是&nbsp;&nbsp;{{ formDataInfo.product_name }}</div>
+  <el-dialog v-model="dialogFormVisible" title="产品出库申请" width="600px" align-center draggable>
+    <div class="product-name">产品名称：{{ formDataInfo.product_name }}</div>
     <div class="product-name">
-      该产品的库存还有:&nbsp;&nbsp;{{ formDataInfo.product_in_warehouse_number }}
+      当前库存：{{ formDataInfo.product_in_warehouse_number }}
     </div>
     <div class="dialog-content">
       <el-form
@@ -12,27 +12,27 @@
         :rules="rules"
         label-width="120px"
       >
-        <el-form-item label="申请出库编号" prop="product_out_id">
+        <el-form-item label="出库编号" prop="product_out_id">
           <el-input v-model="formDataInfo.product_out_id" />
         </el-form-item>
         <el-form-item label="出库数量" prop="product_out_number">
           <el-input v-model="formDataInfo.product_out_number" />
         </el-form-item>
-        <el-form-item label="出库申请人" prop="product_out_apply_person">
+        <el-form-item label="申请人" prop="product_out_apply_person">
           <el-input v-model="formDataInfo.product_out_apply_person" disabled />
         </el-form-item>
-        <el-form-item label="产品单价" prop="product_single_price">
+        <el-form-item label="单价" prop="product_single_price">
           <el-input v-model="formDataInfo.product_single_price" disabled />
         </el-form-item>
-        <el-form-item label="申请出库备注" prop="apply_memo">
+        <el-form-item label="申请备注" prop="apply_memo">
           <el-input v-model="formDataInfo.apply_memo" :rows="2" type="textarea" />
         </el-form-item>
       </el-form>
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="addProduct" :disabled="!canSubmitOutApply">
-          确定
+        <el-button type="primary" :disabled="!canSubmitOutApply" @click="addProduct">
+          确认
         </el-button>
       </span>
     </template>
@@ -40,14 +40,10 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, computed } from 'vue'
-import { applyOutProduct } from '@/api/product'
-import { ElMessage } from 'element-plus'
+import { computed, reactive, ref } from 'vue'
 import type { FormProps } from 'element-plus'
-
-const labelPosition = ref<FormProps['labelPosition']>('left')
-const dialogFormVisible = ref(false)
-const emit = defineEmits(['success'])
+import { ElMessage } from 'element-plus'
+import { applyOutProduct } from '@/api/product'
 
 interface FormData {
   id: number | null
@@ -60,7 +56,11 @@ interface FormData {
   apply_memo: string
 }
 
-const formDataInfo: FormData = reactive({
+const labelPosition = ref<FormProps['labelPosition']>('left')
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+
+const formDataInfo = reactive<FormData>({
   id: null,
   product_name: '',
   product_out_id: null,
@@ -71,20 +71,10 @@ const formDataInfo: FormData = reactive({
   apply_memo: '',
 })
 
-const open = (row: any) => {
-  formDataInfo.id = row.id
-  formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
-  formDataInfo.product_name = row.product_name
-  formDataInfo.product_single_price = row.product_single_price
-  formDataInfo.product_out_number = null
-  formDataInfo.product_out_id = null
-  dialogFormVisible.value = true
-}
-
 const rules = reactive({
-  product_out_id: [{ required: true, message: '请输入申请出库编号', trigger: 'blur' }],
-  product_out_number: [{ required: true, message: '请输入申请出库数量', trigger: 'blur' }],
-  product_out_apply_person: [{ required: true, message: '请输入申请人', trigger: 'blur' }],
+  product_out_id: [{ required: true, message: '请输入出库编号', trigger: 'blur' }],
+  product_out_number: [{ required: true, message: '请输入出库数量', trigger: 'blur' }],
+  product_out_apply_person: [{ required: true, message: '申请人不能为空', trigger: 'blur' }],
 })
 
 const canSubmitOutApply = computed(() => {
@@ -94,14 +84,25 @@ const canSubmitOutApply = computed(() => {
   return warehouseNumber >= outNumber
 })
 
+const open = (row: any) => {
+  formDataInfo.id = row.id
+  formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
+  formDataInfo.product_name = row.product_name
+  formDataInfo.product_single_price = row.product_single_price
+  formDataInfo.product_out_number = null
+  formDataInfo.product_out_id = null
+  formDataInfo.apply_memo = ''
+  dialogFormVisible.value = true
+}
+
 const addProduct = async () => {
-  const res = (await applyOutProduct(formDataInfo)) as any
+  const res = await applyOutProduct(formDataInfo)
   if (res.status == 0) {
-    ElMessage({ message: '产品申请出库成功', type: 'success' })
+    ElMessage.success('出库申请已提交')
     emit('success')
     dialogFormVisible.value = false
   } else {
-    ElMessage.error('产品申请出库失败')
+    ElMessage.error('出库申请提交失败')
     dialogFormVisible.value = false
   }
 }
@@ -127,4 +128,3 @@ defineExpose({ open })
   margin: 30px;
 }
 </style>
-

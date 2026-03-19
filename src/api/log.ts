@@ -1,122 +1,54 @@
-import instance from '@/http/index'
+import { post } from './request'
 
-// 登录记录
+// 登录日志和操作日志共用同一套请求模式。
 export const loginLog = (account: number, name: string, email: string) => {
-  return instance({
-    url: '/llog/loginLog',
-    method: 'POST',
-    data: {
-      account,
-      name,
-      email,
-    },
-  })
+  return post('/llog/loginLog', { account, name, email })
 }
 
-// 操作记录
 export const operationLog = (
   operation_person: string,
-  operation_content: any,
+  operation_content: string,
   operation_level: string,
 ) => {
-  return instance({
-    url: '/olog/operationLog',
-    method: 'POST',
-    data: {
-      operation_person,
-      operation_content,
-      operation_level,
-    },
-  })
+  return post('/olog/operationLog', { operation_person, operation_content, operation_level })
 }
 
-// 返回登录日志列表
 export const loginLogList = () => {
-  return instance({
-    url: '/llog/loginLogList',
-    method: 'POST',
-  })
+  return post('/llog/loginLogList')
 }
 
-// 返回操作日志列表
 export const operationLogList = () => {
-  return instance({
-    url: '/olog/operationLogList',
-    method: 'POST',
-  })
+  return post('/olog/operationLogList')
 }
 
-// 返回最近十条登录日志
 export const searchLoginLogList = (account: number) => {
-  return instance({
-    url: '/llog/searchLoginLogList',
-    method: 'POST',
-    data: {
-      account,
-    },
-  })
+  return post('/llog/searchLoginLogList', { account })
 }
 
-// 返回最近十条操作日志
 export const searchOperationLogList = (operation_person: string) => {
-  return instance({
-    url: '/olog/searchOperationLogList',
-    method: 'POST',
-    data: {
-      operation_person,
-    },
-  })
+  return post('/olog/searchOperationLogList', { operation_person })
 }
 
-// 返回登录日志列表的长度
 export const loginLogListLength = () => {
-  return instance({
-    url: '/llog/loginLogListLength',
-    method: 'POST',
-  })
+  return post('/llog/loginLogListLength')
 }
 
-// 返回操作日志列表的长度
 export const operationLogListLength = () => {
-  return instance({
-    url: '/olog/operationLogListLength',
-    method: 'POST',
-  })
+  return post('/olog/operationLogListLength')
 }
 
-// 监听换页返回数据
 export const returnLoginListData = (pager: number) => {
-  return instance({
-    url: '/llog/returnLoginListData',
-    method: 'POST',
-    data: {
-      pager,
-    },
-  })
+  return post('/llog/returnLoginListData', { pager })
 }
 
 export const returnOperationListData = (pager: number) => {
-  return instance({
-    url: '/olog/returnOperationListData',
-    method: 'POST',
-    data: {
-      pager,
-    },
-  })
+  return post('/olog/returnOperationListData', { pager })
 }
 
-// 清空登录日志
 export const clearLoginLogList = () => {
-  return instance({
-    url: '/llog/clearLoginLogList',
-    method: 'POST',
-  })
+  return post('/llog/clearLoginLogList')
 }
 
-// 清空操作日志
 export const clearOperationLogList = () => {
-  return instance({
-    url: '/olog/clearOperationLogList',
-    method: 'POST',
-  })
+  return post('/olog/clearOperationLogList')
 }

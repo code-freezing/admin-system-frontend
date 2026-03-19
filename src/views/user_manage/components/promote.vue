@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogPromoteVisible" title="赋权操作" center width="30%">
+  <el-dialog v-model="dialogPromoteVisible" title="提升权限" center width="30%">
     <el-radio-group v-model="radio" class="ml-4">
       <el-radio label="产品管理员" size="large">产品管理员</el-radio>
       <el-radio label="用户管理员" size="large">用户管理员</el-radio>
@@ -7,7 +7,7 @@
     </el-radio-group>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="yes"> 确定 </el-button>
+        <el-button type="primary" @click="yes">确认</el-button>
       </span>
     </template>
   </el-dialog>
@@ -15,8 +15,8 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { changeIdentityToAdmin } from '@/api/userinfor.js'
 import { ElMessage } from 'element-plus'
+import { changeIdentityToAdmin } from '@/api/userinfor'
 
 const emit = defineEmits(['success'])
 const dialogPromoteVisible = ref(false)
@@ -30,17 +30,18 @@ const open = (id: number) => {
 }
 
 const yes = async () => {
-  if (!userid.value) return
+  if (!userid.value || !radio.value) {
+    ElMessage.error('请选择要提升的身份')
+    return
+  }
+
   const res = await changeIdentityToAdmin(userid.value, radio.value)
   if (res.status == 0) {
-    ElMessage({
-      message: '赋权管理员成功',
-      type: 'success',
-    })
+    ElMessage.success('用户权限已更新')
     emit('success')
     dialogPromoteVisible.value = false
   } else {
-    ElMessage.error('赋权管理员失败')
+    ElMessage.error('权限更新失败')
     dialogPromoteVisible.value = false
   }
 }
@@ -56,4 +57,3 @@ defineExpose({
   justify-content: center;
 }
 </style>
-

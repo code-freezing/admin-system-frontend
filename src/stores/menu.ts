@@ -1,15 +1,26 @@
 import { defineStore } from 'pinia'
 import router from '@/router'
+import type { Component } from 'vue'
 import { ref } from 'vue'
+
+interface MenuNode {
+  name: string
+  path: string
+  component?: string
+  meta?: Record<string, unknown>
+  children?: MenuNode[]
+}
+
+type RouteLoader = (() => Promise<{ default: Component }>) | undefined
 
 export const useMenu = defineStore(
   'menuInfo',
   () => {
-    const menuData = ref<any[]>([])
+    const menuData = ref<MenuNode[]>([])
     const addedRouteNames = ref<string[]>([])
 
-    const loadComponent = (url: string) => {
-      const modules = import.meta.glob('@/views/**/*.vue')
+    const loadComponent = (url: string): RouteLoader => {
+      const modules = import.meta.glob<{ default: Component }>('@/views/**/*.vue')
       return modules[`/src/views/${url}.vue`]
     }
 
@@ -22,13 +33,13 @@ export const useMenu = defineStore(
       addedRouteNames.value = []
     }
 
-    const compilerMenu = (arr: any[]) => {
+    const compilerMenu = (arr: MenuNode[]) => {
       if (!Array.isArray(arr) || arr.length === 0) {
         return
       }
 
-      arr.forEach((item: any) => {
-        if (item.children && item.children.length) {
+      arr.forEach((item) => {
+        if (Array.isArray(item.children) && item.children.length > 0) {
           compilerMenu(item.children)
           return
         }
@@ -37,7 +48,7 @@ export const useMenu = defineStore(
           return
         }
 
-        const component = loadComponent(item.component)
+        const component = loadComponent(item.component ?? '')
         if (!component) {
           return
         }
@@ -52,7 +63,7 @@ export const useMenu = defineStore(
       })
     }
 
-    const setRouter = (arr: any[]) => {
+    const setRouter = (arr: MenuNode[]) => {
       clearRouter()
       menuData.value = Array.isArray(arr) ? arr : []
       compilerMenu(menuData.value)

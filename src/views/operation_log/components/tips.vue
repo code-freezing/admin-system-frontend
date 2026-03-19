@@ -1,9 +1,9 @@
 <template>
-  <el-dialog v-model="dialogFormVisible" title="清空列表" width="30%" center>
-    <span>请慎重操作！您确定要真正清空列表吗？</span>
+  <el-dialog v-model="dialogFormVisible" title="清空操作日志" width="30%" center>
+    <span>确认后会清空全部操作日志，无法恢复。</span>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="clearList"> 确定 </el-button>
+        <el-button type="primary" @click="clearList">清空</el-button>
       </span>
     </template>
   </el-dialog>
@@ -11,32 +11,25 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { clearOperationLogList } from '@/api/log'
 import { ElMessage } from 'element-plus'
+import { clearOperationLogList } from '@/api/log'
 
 const emit = defineEmits(['success'])
+const dialogFormVisible = ref(false)
+
+const open = () => {
+  dialogFormVisible.value = true
+}
 
 const clearList = async () => {
   const res = await clearOperationLogList()
   if (res.status == 0) {
-    ElMessage({
-      message: '清空列表成功',
-      type: 'success',
-    })
+    ElMessage.success('操作日志已清空')
     emit('success')
-    dialogFormVisible.value = false
   } else {
-    ElMessage.error('清空列表失败')
-    dialogFormVisible.value = false
+    ElMessage.error('清空操作日志失败')
   }
-}
-
-// 弹窗开关
-const dialogFormVisible = ref(false)
-
-// 打开编辑管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
+  dialogFormVisible.value = false
 }
 
 defineExpose({

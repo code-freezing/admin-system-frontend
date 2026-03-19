@@ -1,5 +1,5 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
+  <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
     <div class="table-top">
       <div class="table-header">
@@ -8,9 +8,9 @@
             v-model="productOutId"
             class="w-50 m-2"
             size="large"
-            placeholder="输入出库编号进行搜索"
-            @change="searchProductOutId()"
+            placeholder="按出库编号搜索"
             clearable
+            @change="searchProductOutId()"
             @clear="getFirstPageList"
           >
             <template #prefix>
@@ -21,12 +21,12 @@
       </div>
       <div class="table-content">
         <el-table :data="tableData" border style="width: 100%">
-          <el-table-column type="index" width="50"></el-table-column>
+          <el-table-column type="index" width="50" />
           <el-table-column prop="product_out_id" label="出库编号" width="200" />
-          <el-table-column prop="product_out_number" label="申请数量" />
-          <el-table-column prop="product_out_price" label="申请出库总价" />
-          <el-table-column prop="product_out_apply_person" label="出库申请人" />
-          <el-table-column prop="product_apply_time" label="申请出库时间" width="180">
+          <el-table-column prop="product_out_number" label="出库数量" />
+          <el-table-column prop="product_out_price" label="出库价格" />
+          <el-table-column prop="product_out_apply_person" label="申请人" />
+          <el-table-column prop="product_apply_time" label="申请时间" width="180">
             <template #default="{ row }">
               <div>{{ row.product_apply_time?.slice(0, 10) }}</div>
             </template>
@@ -48,60 +48,63 @@
         :pager-count="7"
         :total="outProductTotal"
         :page-count="paginationData.pageCount"
-        @current-change="currentChange"
         layout="prev, pager, next"
+        @current-change="currentChange"
       />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
-import breadCrumb from '@/components/bread_crumb.vue'
-import { searchProductForOutId, returnOutProductListData, getOutProductLength } from '@/api/product'
+import { onMounted, reactive, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-// 面包屑
+import breadCrumb from '@/components/bread_crumb.vue'
+import { getOutProductLength, returnOutProductListData, searchProductForOutId } from '@/api/product'
+
+interface OutProductRow {
+  product_apply_time?: string
+  product_audit_time?: string
+  [key: string]: unknown
+}
+
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '产品管理',
   second: '出库列表',
 })
-// 出库编号
-const productOutId = ref<number>()
-// 出库表格
-const tableData = ref<object[]>([])
 
-// 分页数据
+const productOutId = ref<number>()
+const tableData = ref<OutProductRow[]>([])
+const outProductTotal = ref(0)
+
 const paginationData = reactive({
-  // 总页数
-  pageCount: 1,
-  // 当前所处页数
+  pageCount: 0,
   currentPage: 1,
 })
-const outProductTotal = ref<number>(0)
-// 获取管理员的数量
-const getOutProductListLength = async () => {
-  const res = (await getOutProductLength()) as any
-  outProductTotal.value = res.length
-  paginationData.pageCount = Math.ceil(res.length / 10)
-}
-getOutProductListLength()
-// 默认获取第一页的数据
-const getFirstPageList = async () => {
-  tableData.value = (await returnOutProductListData(1)) as any
-}
-getFirstPageList()
-// 监听换页
-const currentChange = async (value: number) => {
-  paginationData.currentPage = value
-  tableData.value = (await returnOutProductListData(paginationData.currentPage)) as any
+
+const loadOutProductLength = async () => {
+  const res = await getOutProductLength()
+  const total = Array.isArray(res) ? res.length : 0
+  outProductTotal.value = total
+  paginationData.pageCount = Math.max(1, Math.ceil(total / 10))
 }
 
-// 通过出库编号对产品进行搜索
-const searchProductOutId = async () => {
-  tableData.value = (await searchProductForOutId(productOutId.value as number)) as any
+const getFirstPageList = async () => {
+  tableData.value = (await returnOutProductListData(1)) as OutProductRow[]
 }
+
+const currentChange = async (value: number) => {
+  paginationData.currentPage = value
+  tableData.value = (await returnOutProductListData(value)) as OutProductRow[]
+}
+
+const searchProductOutId = async () => {
+  tableData.value = (await searchProductForOutId(productOutId.value as number)) as OutProductRow[]
+}
+
+onMounted(async () => {
+  await Promise.all([loadOutProductLength(), getFirstPageList()])
+})
 </script>
 
 <style lang="scss" scoped>

@@ -1,189 +1,77 @@
-import instance from '@/http/index'
+import { post } from './request'
 
-// 创建产品
-export const createProduct = (data: any) => {
-  const { product_id, ...in_memo } = data
-  return instance({
-    url: '/pro/createProduct',
-    method: 'POST',
-    data: {
-      product_id,
-      ...in_memo,
-    },
-  })
+export const createProduct = (data: Record<string, unknown>) => {
+  const { product_id, ...rest } = data
+  return post('/pro/createProduct', { product_id, ...rest })
 }
 
-// 删除产品
 export const deleteProduct = (id: number) => {
-  return instance({
-    url: '/pro/deleteProduct',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/pro/deleteProduct', { id })
 }
 
-// 编辑产品信息
-export const editProduct = (data: any) => {
-  const { id, ...product_name } = data
-  return instance({
-    url: '/pro/editProduct',
-    method: 'POST',
-    data: {
-      id,
-      ...product_name,
-    },
-  })
+export const editProduct = (data: Record<string, unknown>) => {
+  const { id, ...rest } = data
+  return post('/pro/editProduct', { id, ...rest })
 }
 
-// 获取产品列表 getProductList
 export const getProductList = () => {
-  return instance({
-    url: '/pro/getProductList',
-    method: 'POST',
-  })
+  return post('/pro/getProductList')
 }
 
-// 产品申请出库
-export const applyOutProduct = (data: any) => {
-  const { id, ...apply_memo } = data
-  return instance({
-    url: '/pro/applyOutProduct',
-    method: 'POST',
-    data: {
-      id,
-      ...apply_memo,
-    },
-  })
+export const applyOutProduct = (data: Record<string, unknown>) => {
+  const { id, ...rest } = data
+  return post('/pro/applyOutProduct', { id, ...rest })
 }
 
-// 产品审核列表
 export const applyProductList = () => {
-  return instance({
-    url: '/pro/applyProductList',
-    method: 'POST',
-  })
+  return post('/pro/applyProductList')
 }
 
-// 对产品进行撤回申请
 export const withdrawApplyProduct = (id: number) => {
-  return instance({
-    url: '/pro/withdrawApplyProduct',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/pro/withdrawApplyProduct', { id })
 }
 
-// 产品审核
-export const auditProduct = (data: any) => {
-  const { id, ...product_out_number } = data
-  return instance({
-    url: '/pro/auditProduct',
-    method: 'POST',
-    data: {
-      id,
-      ...product_out_number,
-    },
-  })
+export const auditProduct = (data: Record<string, unknown>) => {
+  const { id, ...rest } = data
+  return post('/pro/auditProduct', { id, ...rest })
 }
 
-// 通过入库编号对产品进行搜索 searchProductForId
 export const searchProductForId = (product_id: number) => {
-  return instance({
-    url: '/pro/searchProductForId',
-    method: 'POST',
-    data: {
-      product_id,
-    },
-  })
+  return post('/pro/searchProductForId', { product_id })
 }
 
-// 通过出库申请编号对产品进行搜索
 export const searchProductForApplyId = (product_out_id: number) => {
-  return instance({
-    url: '/pro/searchProductForApplyId',
-    method: 'POST',
-    data: {
-      product_out_id,
-    },
-  })
+  return post('/pro/searchProductForApplyId', { product_out_id })
 }
 
-// 通过出库编号对产品进行搜索
 export const searchProductForOutId = (product_out_id: number) => {
-  return instance({
-    url: '/pro/searchProductForOutId',
-    method: 'POST',
-    data: {
-      product_out_id,
-    },
-  })
+  return post('/pro/searchProductForOutId', { product_out_id })
 }
 
-// 获取产品总数
 export const getProductLength = () => {
-  return instance({
-    url: '/pro/getProductLength',
-    method: 'POST',
-  })
+  return post('/pro/getProductLength')
 }
 
-// 获取申请出库产品总数
 export const getApplyProductLength = () => {
-  return instance({
-    url: '/pro/getApplyProductLength',
-    method: 'POST',
-  })
+  return post('/pro/getApplyProductLength')
 }
 
-// 获取出库产品列表
 export const auditProductList = () => {
-  return instance({
-    url: '/pro/auditProductList',
-    method: 'POST',
-  })
+  return post('/pro/auditProductList')
 }
 
-// 获取出库产品总数
 export const getOutProductLength = () => {
-  return instance({
-    url: '/pro/getOutProductLength',
-    method: 'POST',
-  })
+  return post('/pro/getOutProductLength')
 }
 
-// 监听换页返回数据  产品页面
 export const returnProductListData = (pager: number) => {
-  return instance({
-    url: '/pro/returnProductListData',
-    method: 'POST',
-    data: {
-      pager,
-    },
-  })
+  return post('/pro/returnProductListData', { pager })
 }
 
-// 监听换页返回数据  申请出库页面
 export const returnApplyProductListData = (pager: number) => {
-  return instance({
-    url: '/pro/returnApplyProductListData',
-    method: 'POST',
-    data: {
-      pager,
-    },
-  })
+  return post('/pro/returnApplyProductListData', { pager })
 }
 
-// 监听换页返回数据  出库页面
 export const returnOutProductListData = (pager: number) => {
-  return instance({
-    url: '/pro/returnOutProductListData',
-    method: 'POST',
-    data: {
-      pager,
-    },
-  })
+  return post('/pro/returnOutProductListData', { pager })
 }

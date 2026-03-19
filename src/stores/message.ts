@@ -2,34 +2,48 @@ import { defineStore } from 'pinia'
 import { getReadListAndStatus, getDepartmentMsgList } from '@/api/dep_msg'
 import { ref } from 'vue'
 
-// 使用了setup写法
+interface DepartmentMessageItem {
+  [key: string]: unknown
+}
+
+interface ReadStatusItem {
+  read_list?: string
+}
+
 export const useMsg = defineStore(
   'messageinfor',
   () => {
     const read_list = ref<number[]>([])
-    const msg_list = ref<any[]>([])
+    const msg_list = ref<DepartmentMessageItem[]>([])
+
+    const getCurrentDepartment = () => {
+      const userInfoStr = localStorage.getItem('userinfo')
+      const localUserInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+      return localUserInfo?.department || localStorage.getItem('department')
+    }
 
     const returnReadList = async (id: number) => {
       read_list.value = []
       msg_list.value = []
 
-      const userInfoStr = localStorage.getItem('userinfo')
-      const localUserInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-      const currentUserdepartment = localUserInfo?.department || localStorage.getItem('department')
+      const currentDepartment = getCurrentDepartment()
 
-      if (!id || !currentUserdepartment) {
+      if (!id || !currentDepartment) {
         return
       }
 
-      const res = (await getReadListAndStatus(id)) as any
-      const department: string | null = currentUserdepartment
-
+      const res = (await getReadListAndStatus(id)) as unknown
       if (!Array.isArray(res) || !res[0]) {
         return
       }
 
-      read_list.value = JSON.parse(res[0].read_list || '[]') as number[]
-      msg_list.value = (await getDepartmentMsgList(department as string)) as any
+      const firstRow = res[0] as ReadStatusItem
+      read_list.value = JSON.parse(firstRow.read_list || '[]') as number[]
+
+      const departmentMessages = await getDepartmentMsgList(currentDepartment)
+      msg_list.value = Array.isArray(departmentMessages)
+        ? (departmentMessages as DepartmentMessageItem[])
+        : []
     }
 
     return {

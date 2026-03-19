@@ -1,38 +1,57 @@
-import { searchUser, getAdminListLength, returnListData } from '@/api/userinfor'
-import { ref, reactive } from 'vue'
+import { getAdminListLength, returnListData, searchUser } from '@/api/userinfor'
+import { reactive, ref } from 'vue'
+
+type TableRow = Record<string, unknown>
+
+interface AdminLengthResponse {
+  length?: number
+}
+
+const toRows = <T>(value: unknown): T[] => {
+  return Array.isArray(value) ? (value as T[]) : []
+}
 
 export const useTable = (identity: string) => {
   const paginationData = reactive({
     pageCount: 1,
     currentPage: 1,
   })
-  const adminTotal = ref<number>(0)
-  const adminAccount = ref<number>()
-  const tableData = ref<object[]>([])
+  const adminTotal = ref(0)
+  const adminAccount = ref<number | string | undefined>(undefined)
+  const tableData = ref<TableRow[]>([])
 
-  const returnAdminListLength = async () => {
-    const res = (await getAdminListLength(identity)) as any
-    adminTotal.value = res.length
-    paginationData.pageCount = Math.max(1, Math.ceil(res.length / 10))
+  const syncTotalCount = async () => {
+    const res = (await getAdminListLength(identity)) as AdminLengthResponse | number
+    const total = Number((res as AdminLengthResponse)?.length ?? 0)
+
+    adminTotal.value = total
+    paginationData.pageCount = Math.max(1, Math.ceil(total / 10))
   }
 
   const loadPage = async (page: number) => {
-    tableData.value = (await returnListData(page, identity)) as any
+    const list = await returnListData(page, identity)
+    tableData.value = toRows<TableRow>(list)
   }
 
   const getFirstPageList = async () => {
     paginationData.currentPage = 1
-    await returnAdminListLength()
+    await syncTotalCount()
     await loadPage(1)
   }
 
   const currentChange = async (value: number) => {
     paginationData.currentPage = value
-    await loadPage(paginationData.currentPage)
+    await loadPage(value)
   }
 
   const searchAdmin = async () => {
-    tableData.value = (await searchUser(adminAccount.value as number, identity)) as any
+    if (adminAccount.value === undefined || adminAccount.value === '') {
+      await loadPage(paginationData.currentPage)
+      return
+    }
+
+    const list = await searchUser(Number(adminAccount.value), identity)
+    tableData.value = toRows<TableRow>(list)
   }
 
   const clearInput = async () => {
@@ -40,16 +59,19 @@ export const useTable = (identity: string) => {
   }
 
   const refreshTable = async (action: 'create' | 'edit' | 'delete' = 'edit') => {
-    await returnAdminListLength()
-    const list = (await returnListData(paginationData.currentPage, identity)) as any
-    if (action === 'delete' && Array.isArray(list) && list.length === 0 && paginationData.currentPage > 1) {
+    await syncTotalCount()
+
+    const list = await returnListData(paginationData.currentPage, identity)
+    const normalizedList = toRows<TableRow>(list)
+
+    if (action === 'delete' && normalizedList.length === 0 && paginationData.currentPage > 1) {
       paginationData.currentPage -= 1
       await loadPage(paginationData.currentPage)
-      await returnAdminListLength()
+      await syncTotalCount()
       return
     }
 
-    tableData.value = Array.isArray(list) ? list : []
+    tableData.value = normalizedList
   }
 
   getFirstPageList()

@@ -1,16 +1,14 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
-  <!-- 首页外壳 -->
+  <breadCrumb :item="breadcrumbItem" />
   <div class="home-wrapped">
-    <!-- 轮播图外壳 -->
     <div class="swiper-wrapped">
       <el-carousel :interval="4000" indicator-position="outside" type="card" height="320px">
-        <el-carousel-item v-for="(item, index) in imageUrl" :key="index">
-          <img :src="item" class="swiper" alt="" />
+        <el-carousel-item v-for="(url, index) in imageUrls" :key="index">
+          <img :src="url" class="swiper" alt="" />
         </el-carousel-item>
       </el-carousel>
     </div>
-    <!-- 栅格布局外壳 -->
+
     <div class="layout-wrapped">
       <el-row :gutter="20">
         <el-col
@@ -26,17 +24,11 @@
         </el-col>
       </el-row>
     </div>
-    <!-- 表格外壳 -->
+
     <div class="two-table-wrapped">
-      <!-- 公司公告 -->
       <div class="company-notice">
         <span class="title">公司公告</span>
-        <el-table
-          :data="companyData"
-          style="width: 100%"
-          :show-header="false"
-          @row-dblclick="openCompany"
-        >
+        <el-table :data="companyMessages" style="width: 100%" :show-header="false" @row-dblclick="openCompany">
           <el-table-column prop="message_title" label="公告主题">
             <template #default="{ row }">
               <div class="message_title">{{ row.message_title }}</div>
@@ -44,15 +36,13 @@
           </el-table-column>
           <el-table-column prop="message_level" label="等级">
             <template #default="{ row }">
-              <el-tag class="mx-1" round v-if="row.message_level == '涓€鑸?'">{{
-                row.message_level
-              }}</el-tag>
-              <el-tag type="warning" class="mx-1" round v-if="row.message_level == '重要'">{{
-                row.message_level
-              }}</el-tag>
-              <el-tag type="danger" class="mx-1" round v-if="row.message_level == '蹇呰'">{{
-                row.message_level
-              }}</el-tag>
+              <el-tag class="mx-1" round v-if="row.message_level === '一般'">{{ row.message_level }}</el-tag>
+              <el-tag type="warning" class="mx-1" round v-if="row.message_level === '重要'">
+                {{ row.message_level }}
+              </el-tag>
+              <el-tag type="danger" class="mx-1" round v-if="row.message_level === '紧急'">
+                {{ row.message_level }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="message_publish_department" label="发布部门" />
@@ -63,15 +53,10 @@
           </el-table-column>
         </el-table>
       </div>
-      <!-- 系统消息 -->
+
       <div class="system-message">
         <span class="title">系统消息</span>
-        <el-table
-          :data="systemData"
-          style="width: 100%"
-          :show-header="false"
-          @row-dblclick="openSystem"
-        >
+        <el-table :data="systemMessages" style="width: 100%" :show-header="false" @row-dblclick="openSystem">
           <el-table-column prop="message_title" label="公告主题" />
           <el-table-column prop="message_publish_time" label="发布时间" width="200">
             <template #default="{ row }">
@@ -82,82 +67,95 @@
       </div>
     </div>
   </div>
-  <introduce ref="intro"></introduce>
-  <bulletin ref="bulletinDom"></bulletin>
+
+  <introduce ref="introduceRef" />
+  <bulletin ref="bulletinRef" />
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import breadCrumb from '@/components/bread_crumb.vue'
-import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
 import introduce from './components/introduce.vue'
-import { companyMessageList, systemMessageList } from '@/api/message'
 import bulletin from '@/components/common_msg.vue'
-// 面包屑
-const breadcrumb = ref()
-// 面包屑参数
-const item = ref({
-  first: '首页',
-})
-// 公司公告
-const companyData = ref()
-// 系统消息
-const systemData = ref()
+import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
+import { companyMessageList, systemMessageList } from '@/api/message'
+import { useUserInfo } from '@/stores/userinfor'
 
-const getMessageList = async () => {
-  companyData.value = await companyMessageList()
-  systemData.value = await systemMessageList()
-}
-getMessageList()
-// 轮播图
-const imageUrl = ref([])
-// 获取轮播图
-const allSwiper = async () => {
-  imageUrl.value = (await getAllSwiper()) as any
-}
-allSwiper()
-
-interface CompanyDataType {
+interface CompanyIntroduceItem {
   id: number
   set_name: string
   set_value: string | null
-  set_text: any
+  set_text: string
 }
 
-// 公司介绍
-const companyIntroduce = ref<CompanyDataType[]>([])
-const allCompanyIntroduce = async () => {
-  const res = (await getAllCompanyIntroduce()) as any
-  const [...intro] = res
-  companyIntroduce.value = intro
+interface BulletinRow {
+  message_title: string
+  message_content: string
+  message_level?: string
+  message_publish_department?: string
+  message_publish_time?: string
+  [key: string]: any
 }
-allCompanyIntroduce()
 
-// 寮圭獥
-const intro = ref()
+const router = useRouter()
+const userStore = useUserInfo()
+
+const breadcrumbItem = ref({
+  first: '首页',
+})
+
+const imageUrls = ref<string[]>([])
+const companyIntroduce = ref<CompanyIntroduceItem[]>([])
+const companyMessages = ref<BulletinRow[]>([])
+const systemMessages = ref<BulletinRow[]>([])
+
+const introduceRef = ref<InstanceType<typeof introduce> | null>(null)
+const bulletinRef = ref<InstanceType<typeof bulletin> | null>(null)
+
 const openIntroduce = (id: number) => {
-  intro.value.open(id)
+  introduceRef.value?.open(id)
 }
 
-const bulletinDom: any = ref()
-const openCompany = (row: any) => {
-  bulletinDom.value.openCompany(row)
+const openCompany = (row: BulletinRow) => {
+  bulletinRef.value?.openCompany(row)
 }
 
-const openSystem = (row: any) => {
-  bulletinDom.value.openSystem(row)
+const openSystem = (row: BulletinRow) => {
+  bulletinRef.value?.openSystem(row)
 }
+
+const loadSwiper = async () => {
+  imageUrls.value = (await getAllSwiper()) as string[]
+}
+
+const loadCompanyIntroduce = async () => {
+  const res = (await getAllCompanyIntroduce()) as CompanyIntroduceItem[]
+  companyIntroduce.value = Array.isArray(res) ? res : []
+}
+
+const loadMessages = async () => {
+  companyMessages.value = (await companyMessageList()) as BulletinRow[]
+  systemMessages.value = (await systemMessageList()) as BulletinRow[]
+}
+
+onMounted(() => {
+  loadSwiper()
+  loadCompanyIntroduce()
+  loadMessages()
+})
+
+if (!userStore.id && localStorage.getItem('token')) {
+  const id = Number(localStorage.getItem('id') || 0)
+  if (id > 0) {
+    userStore.userInfo(id)
+  }
+}
+
+void router
 </script>
 
 <style lang="scss" scoped>
-@mixin table-class {
-  height: 232px;
-  width: 48%;
-  display: flex;
-  flex-direction: column;
-}
-
-// 首页外壳
 .home-wrapped {
   padding: 8px;
   height: calc(100vh - 101px);
@@ -165,7 +163,6 @@ const openSystem = (row: any) => {
   display: flex;
   flex-direction: column;
 
-  // 轮播图外壳
   .swiper-wrapped {
     padding: 0 20px;
     background: #fff;
@@ -177,13 +174,11 @@ const openSystem = (row: any) => {
     }
   }
 
-  // 栅格布局外壳
   .layout-wrapped {
     padding: 8px;
     margin-bottom: 8px;
     background: #fff;
 
-    // 公司信息区域
     .company-message-area {
       background: #f5f5f5;
       height: 200px;
@@ -213,7 +208,6 @@ const openSystem = (row: any) => {
     }
   }
 
-  // 表格外壳
   .two-table-wrapped {
     height: 232px;
     width: 100%;
@@ -222,14 +216,12 @@ const openSystem = (row: any) => {
     justify-content: space-around;
     background: #fff;
 
-    // 公司公告
-    .company-notice {
-      @include table-class;
-    }
-
-    // 系统消息
+    .company-notice,
     .system-message {
-      @include table-class;
+      height: 232px;
+      width: 48%;
+      display: flex;
+      flex-direction: column;
     }
 
     .title {
@@ -246,7 +238,6 @@ const openSystem = (row: any) => {
   text-overflow: ellipsis;
 }
 
-// 轮播图默认样式
 .el-carousel__item h3 {
   color: #475669;
   opacity: 0.75;

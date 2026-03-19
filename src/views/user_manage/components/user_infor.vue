@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogUserVisible" title="用户信息" width="620px" center draggable>
+  <el-dialog v-model="dialogUserVisible" title="用户详情" width="620px" center draggable>
     <div class="user-info-body">
       <div class="avatar-wrap">
         <el-avatar shape="square" :size="140" :src="avatarSrc" />
@@ -19,23 +19,24 @@
     </div>
     <div class="action-wrap">
       <span @click="openEdit(userData.id)">编辑</span>
-      <span @click="openPromote(userData.id)">璧嬫潈</span>
+      <span @click="openPromote(userData.id)">提升权限</span>
       <span @click="openDelete(userData.id)">删除用户</span>
     </div>
   </el-dialog>
-  <promote ref="pro" @success="handleChildSuccess"></promote>
-  <edit ref="edit_user" @success="handleChildSuccess"></edit>
-  <remove ref="delete_user" @success="handleChildSuccess"></remove>
+  <promote ref="pro" @success="handleChildSuccess" />
+  <edit ref="edit_user" @success="handleChildSuccess" />
+  <remove ref="delete_user" @success="handleChildSuccess" />
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import promote from '../components/promote.vue'
 import edit from '../components/edit_user.vue'
 import remove from '../components/delete_admin.vue'
 
 const emit = defineEmits(['success'])
 const dialogUserVisible = ref(false)
+
 const userData = reactive({
   id: 0,
   imageUrl: '',
@@ -130,5 +131,3 @@ defineExpose({
   }
 }
 </style>
-
-

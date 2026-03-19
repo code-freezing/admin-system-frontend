@@ -15,13 +15,13 @@
         :rules="rules"
         :label-position="labelPosition"
       >
-        <el-form-item label="涓婚" prop="message_title">
+        <el-form-item label="消息标题" prop="message_title">
           <el-input v-model="formData.message_title" />
         </el-form-item>
         <el-form-item
+          v-if="needsDepartmentFields"
           label="发布部门"
           prop="message_publish_department"
-          v-if="title == '发布公告' || title == '编辑公告'"
         >
           <el-select v-model="formData.message_publish_department" placeholder="请选择发布部门">
             <el-option
@@ -35,12 +35,8 @@
         <el-form-item label="发布人" prop="message_publish_name">
           <el-input v-model="formData.message_publish_name" disabled />
         </el-form-item>
-        <el-form-item
-          label="接收部门"
-          prop="message_receipt_object"
-          v-if="title == '发布公告' || title == '编辑公告'"
-        >
-          <el-select v-model="formData.message_receipt_object" placeholder="请选择接收部门">
+        <el-form-item v-if="needsDepartmentFields" label="接收对象" prop="message_receipt_object">
+          <el-select v-model="formData.message_receipt_object" placeholder="请选择接收对象">
             <el-option
               v-for="item in allOptions"
               :key="item.value"
@@ -49,20 +45,15 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          label="公告等级"
-          prop="message_level"
-          v-if="title == '发布公告' || title == '编辑公告'"
-        >
-          <el-select v-model="formData.message_level" placeholder="选择公告等级">
-            <el-option label="涓€鑸?" value="涓€鑸?" />
+        <el-form-item v-if="needsDepartmentFields" label="消息级别" prop="message_level">
+          <el-select v-model="formData.message_level" placeholder="请选择消息级别">
+            <el-option label="一般" value="一般" />
             <el-option label="重要" value="重要" />
-            <el-option label="蹇呰" value="蹇呰" />
+            <el-option label="紧急" value="紧急" />
           </el-select>
         </el-form-item>
-        <el-form-item label="内容" prop="message_content">
+        <el-form-item label="消息内容" prop="message_content">
           <div style="border: 1px solid #ccc">
-            <!-- wangEditor结构 -->
             <Toolbar
               style="border-bottom: 1px solid #ccc; width: 600px"
               :editor="editorRef"
@@ -82,46 +73,25 @@
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="yes"> 确定 </el-button>
+        <el-button type="primary" @click="yes">保存</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, reactive, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, shallowRef } from 'vue'
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import type { FormProps } from 'element-plus'
-import { publishMessage, editMessage as editMessageApi } from '@/api/message'
-import { getDepartment } from '@/api/setting'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormProps } from 'element-plus'
 import { changeUserReadList } from '@/api/dep_msg'
+import { editMessage as editMessageApi, publishMessage } from '@/api/message'
+import { getDepartment } from '@/api/setting'
 import { useMsg } from '@/stores/message'
 
-const msgStore = useMsg()
-const title = ref('')
-const labelPosition = ref<FormProps['labelPosition']>('left')
-const dialogFormVisible = ref(false)
-const emit = defineEmits(['success'])
-
-const options = ref()
-const allOptions = ref()
-
-const departmentData = async () => {
-  const res = (await getDepartment()) as any
-  const data: { value: string }[] = []
-  const dataAddAll: { value: string }[] = []
-  for (let i = 0; i < res.length; i++) {
-    const obj = { value: res[i] }
-    data.push(obj)
-    dataAddAll.push(obj)
-  }
-  options.value = data
-  dataAddAll.push({ value: '全体成员' })
-  allOptions.value = dataAddAll
+interface SelectOption {
+  value: string
 }
-departmentData()
 
 interface FormData {
   id: number | null
@@ -129,12 +99,24 @@ interface FormData {
   message_publish_department: string
   message_publish_name: string | null
   message_category: string
-  message_receipt_object: any
+  message_receipt_object: string
   message_level: string
   message_content: string
 }
 
-const formData: FormData = reactive({
+const msgStore = useMsg()
+const title = ref('')
+const labelPosition = ref<FormProps['labelPosition']>('left')
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+
+const options = ref<SelectOption[]>([])
+const allOptions = ref<SelectOption[]>([])
+const editorRef = shallowRef()
+const mode = ref('default')
+const valueHtml = ref('')
+
+const formData = reactive<FormData>({
   id: null,
   message_title: '',
   message_publish_department: '',
@@ -145,41 +127,51 @@ const formData: FormData = reactive({
   message_content: '',
 })
 
-const rules = reactive({
-  message_title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
-  message_publish_department: [{ required: true, message: '请选择发布部门', trigger: 'blur' }],
-  message_publish_name: [{ required: true, message: '请输入发布人', trigger: 'blur' }],
-  message_receipt_object: [{ required: true, message: '请选择接收对象', trigger: 'blur' }],
-  message_level: [{ required: true, message: '请选择公告等级', trigger: 'blur' }],
-  message_content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }],
+const needsDepartmentFields = computed(() => {
+  return title.value === '发布公司消息' || title.value === '编辑公司消息'
 })
 
-const editorRef = shallowRef()
-const mode = ref('default')
-const valueHtml = ref('')
-const toolbarConfig = { excludeKeys: [] }
+const rules = reactive({
+  message_title: [{ required: true, message: '请输入消息标题', trigger: 'blur' }],
+  message_publish_department: [{ required: true, message: '请选择发布部门', trigger: 'blur' }],
+  message_publish_name: [{ required: true, message: '发布人不能为空', trigger: 'blur' }],
+  message_receipt_object: [{ required: true, message: '请选择接收对象', trigger: 'blur' }],
+  message_level: [{ required: true, message: '请选择消息级别', trigger: 'blur' }],
+  message_content: [{ required: true, message: '请输入消息内容', trigger: 'blur' }],
+})
+
+const toolbarConfig = {
+  excludeKeys: [
+    'blockquote',
+    'bgColor',
+    'color',
+    'group-more-style',
+    'fontFamily',
+    'bulletedList',
+    'numberedList',
+    'lineHeight',
+    'todo',
+    'emotion',
+    'insertLink',
+    'group-video',
+    'insertTable',
+    'codeBlock',
+    'divider',
+    'fullScreen',
+  ] as never[],
+}
+
 const editorConfig = {
-  placeholder: '',
+  placeholder: '请输入消息内容',
   MENU_CONF: {},
 }
-toolbarConfig.excludeKeys = [
-  'blockquote',
-  'bgColor',
-  'color',
-  'group-more-style',
-  'fontFamily',
-  'bulletedList',
-  'numberedList',
-  'lineHeight',
-  'todo',
-  'emotion',
-  'insertLink',
-  'group-video',
-  'insertTable',
-  'codeBlock',
-  'divider',
-  'fullScreen',
-] as never[]
+
+const loadDepartmentList = async () => {
+  const res = await getDepartment()
+  const list = Array.isArray(res) ? (res as string[]) : []
+  options.value = list.map((value) => ({ value }))
+  allOptions.value = [...options.value, { value: '全体员工' }]
+}
 
 const resetForm = () => {
   Object.assign(formData, {
@@ -197,18 +189,12 @@ const resetForm = () => {
 
 const openCreate = (id: number) => {
   resetForm()
-  if (id == 1) {
-    title.value = '发布公告'
-  }
-  if (id == 2) {
-    title.value = '发布系统消息'
-  }
+  title.value = id == 1 ? '发布公司消息' : '发布系统消息'
   dialogFormVisible.value = true
 }
 
 const openEdit = (row: any) => {
-  title.value = '编辑公告'
-  valueHtml.value = ''
+  title.value = '编辑公司消息'
   formData.id = row.id
   formData.message_title = row.message_title
   formData.message_publish_department = row.message_publish_department
@@ -216,16 +202,17 @@ const openEdit = (row: any) => {
   formData.message_receipt_object = row.message_receipt_object
   formData.message_level = row.message_level
   formData.message_content = row.message_content
+  valueHtml.value = row.message_content ?? ''
   dialogFormVisible.value = true
 }
 
 const openEditSystem = (row: any) => {
   title.value = '编辑系统消息'
-  valueHtml.value = ''
   formData.id = row.id
   formData.message_title = row.message_title
   formData.message_publish_name = row.message_publish_name
   formData.message_content = row.message_content
+  valueHtml.value = row.message_content ?? ''
   dialogFormVisible.value = true
 }
 
@@ -234,66 +221,69 @@ const handleCreated = (editor: any) => {
 }
 
 const yes = async () => {
-  if (title.value == '发布公告') {
-    formData.message_category = '公司公告'
-    const res = (await publishMessage(formData)) as any
+  formData.message_content = valueHtml.value
+
+  if (title.value === '发布公司消息') {
+    formData.message_category = '公司消息'
+    const res = await publishMessage(formData)
     if (res.status == 0) {
       await changeUserReadList(res.id, formData.message_receipt_object)
-      await msgStore.returnReadList(localStorage.getItem('id') as unknown as number)
-      ElMessage({ message: '发布公告成功', type: 'success' })
+      await msgStore.returnReadList(Number(localStorage.getItem('id')))
+      ElMessage.success('公司消息发布成功')
       emit('success')
-      dialogFormVisible.value = false
     } else {
-      ElMessage.error('发布公告失败')
-      dialogFormVisible.value = false
+      ElMessage.error('公司消息发布失败')
     }
+    dialogFormVisible.value = false
+    return
   }
-  if (title.value == '编辑公告') {
+
+  if (title.value === '编辑公司消息') {
     const res = await editMessageApi(formData)
-    await msgStore.returnReadList(localStorage.getItem('id') as unknown as number)
+    await msgStore.returnReadList(Number(localStorage.getItem('id')))
     if (res.status == 0) {
-      ElMessage({ message: '编辑公告成功', type: 'success' })
+      ElMessage.success('公司消息编辑成功')
       emit('success')
-      dialogFormVisible.value = false
     } else {
-      ElMessage.error('编辑公告失败')
-      dialogFormVisible.value = false
+      ElMessage.error('公司消息编辑失败')
     }
+    dialogFormVisible.value = false
+    return
   }
-  if (title.value == '发布系统消息') {
+
+  if (title.value === '发布系统消息') {
     formData.message_category = '系统消息'
     const res = await publishMessage(formData)
     if (res.status == 0) {
-      ElMessage({ message: '发布系统消息成功', type: 'success' })
+      ElMessage.success('系统消息发布成功')
       emit('success')
-      dialogFormVisible.value = false
     } else {
-      ElMessage.error('发布系统消息失败')
-      dialogFormVisible.value = false
+      ElMessage.error('系统消息发布失败')
     }
+    dialogFormVisible.value = false
+    return
   }
-  if (title.value == '编辑系统消息') {
+
+  if (title.value === '编辑系统消息') {
     const res = await editMessageApi(formData)
     if (res.status == 0) {
-      ElMessage({ message: '编辑系统消息成功', type: 'success' })
+      ElMessage.success('系统消息编辑成功')
       emit('success')
-      dialogFormVisible.value = false
     } else {
-      ElMessage.error('编辑系统消息失败')
-      dialogFormVisible.value = false
+      ElMessage.error('系统消息编辑失败')
     }
+    dialogFormVisible.value = false
   }
-}
-
-const editorDestroy = () => {
-  const editor = editorRef.value
-  if (editor == null) return
-  editor.destroy()
 }
 
 onBeforeUnmount(() => {
-  editorDestroy()
+  const editor = editorRef.value
+  if (editor) {
+    editor.destroy()
+  }
 })
+
+loadDepartmentList()
 
 defineExpose({
   openCreate,

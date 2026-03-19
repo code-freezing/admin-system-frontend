@@ -1,20 +1,23 @@
 import router from './index'
 
-router.beforeEach((to, from, next) => {
+// 路由守卫只做登录态和页面标题控制，不把业务逻辑塞进来。
+router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
+  const isLoginPage = to.name === 'login'
 
-  if (!token && to.name !== 'login') {
+  if (!token && !isLoginPage) {
     next({ name: 'login' })
     return
   }
 
-  if (token && to.name === 'login') {
+  if (token && isLoginPage) {
     next({ path: '/home' })
     return
   }
 
-  if (typeof to.meta?.title === 'string' && to.meta.title.length > 0) {
-    document.title = to.meta.title
+  const title = to.meta?.title
+  if (typeof title === 'string' && title.trim() !== '') {
+    document.title = title
   }
 
   next()

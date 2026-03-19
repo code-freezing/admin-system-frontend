@@ -1,16 +1,29 @@
 <template>
   <div class="bread-crumb">
-    <SvgIcon icon-name="location" class="bread-crumb-icon"></SvgIcon>
+    <SvgIcon icon-name="location" class="bread-crumb-icon" />
     <el-breadcrumb separator="/">
-      <el-breadcrumb-item>{{ props.item.first }}</el-breadcrumb-item>
-      <el-breadcrumb-item v-if="props.item.second">{{ props.item.second }}</el-breadcrumb-item>
+      <el-breadcrumb-item>{{ item.first }}</el-breadcrumb-item>
+      <el-breadcrumb-item v-if="item.second">{{ item.second }}</el-breadcrumb-item>
     </el-breadcrumb>
   </div>
 </template>
 
 <script lang="ts" setup>
 import SvgIcon from '@/components/SvgIcon.vue'
-const props = defineProps(['item'])
+
+interface BreadCrumbItem {
+  first: string
+  second?: string
+}
+
+// 面包屑只负责展示传入的两级标题，不承载任何业务状态。
+defineOptions({
+  name: 'BreadCrumb',
+})
+
+const { item } = defineProps<{
+  item: BreadCrumbItem
+}>()
 </script>
 
 <style lang="scss" scoped>

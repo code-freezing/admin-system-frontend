@@ -1,222 +1,79 @@
-import instance from '@/http/index'
+import { post } from './request'
 
-// 获取用户信息
 export const getUserInfo = (id: number) => {
-  return instance({
-    url: '/user/getUserInfo',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/user/getUserInfo', { id })
 }
 
-// 绑定图片地址跟账号
-export const bind = (account: string, onlyId: any, url: any) => {
-  return instance({
-    url: '/user/bindAccount',
-    method: 'POST',
-    data: {
-      account,
-      onlyId,
-      url,
-    },
-  })
+export const bind = (account: string, onlyId: string | number, url: string) => {
+  return post('/user/bindAccount', { account, onlyId, url })
 }
 
-// 修改密码
 export const changePassword = (id: number, oldPassword: string, newPassword: string) => {
-  return instance({
-    url: '/user/changePassword',
-    method: 'POST',
-    data: {
-      id,
-      oldPassword,
-      newPassword,
-    },
-  })
+  return post('/user/changePassword', { id, oldPassword, newPassword })
 }
 
-// 修改姓名
 export const changeName = (name: string, id: number) => {
-  return instance({
-    url: '/user/changeName',
-    method: 'POST',
-    data: {
-      name,
-      id,
-    },
-  })
+  return post('/user/changeName', { name, id })
 }
 
-// 修改性别
 export const changeSex = (sex: string, id: number) => {
-  return instance({
-    url: '/user/changeSex',
-    method: 'POST',
-    data: {
-      sex,
-      id,
-    },
-  })
+  return post('/user/changeSex', { sex, id })
 }
 
-// 修改邮箱
 export const changeEmail = (email: string, id: number) => {
-  return instance({
-    url: '/user/changeEmail',
-    method: 'POST',
-    data: {
-      email,
-      id,
-    },
-  })
-}
-// ----------------------------------------用户管理
-// 添加管理员
-export const createAdmin = (data: any) => {
-  const { account, ...identity } = data
-  return instance({
-    url: '/user/createAdmin',
-    method: 'POST',
-    data: {
-      account,
-      ...identity,
-    },
-  })
+  return post('/user/changeEmail', { email, id })
 }
 
-// 获取管理员列表
+export const createAdmin = (data: Record<string, unknown>) => {
+  const { account, ...rest } = data
+  return post('/user/createAdmin', { account, ...rest })
+}
+
 export const getAdminList = (identity: string) => {
-  return instance({
-    url: '/user/getAdminList',
-    method: 'POST',
-    data: {
-      identity,
-    },
-  })
+  return post('/user/getAdminList', { identity })
 }
 
-// 编辑管理员账号信息
-export const editAdmin = (data: any) => {
-  const { id, ...department } = data
-  return instance({
-    url: '/user/editAdmin',
-    method: 'POST',
-    data: {
-      id,
-      ...department,
-    },
-  })
+export const editAdmin = (data: Record<string, unknown>) => {
+  const { id, ...rest } = data
+  return post('/user/editAdmin', { id, ...rest })
 }
 
-// 对管理员取消赋权
 export const changeIdentityToUser = (id: number) => {
-  return instance({
-    url: '/user/changeIdentityToUser',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/user/changeIdentityToUser', { id })
 }
 
-// 对用户进行赋权
 export const changeIdentityToAdmin = (id: number, identity: string) => {
-  return instance({
-    url: '/user/changeIdentityToAdmin',
-    method: 'POST',
-    data: {
-      id,
-      identity,
-    },
-  })
+  return post('/user/changeIdentityToAdmin', { id, identity })
 }
 
-// 通过账号对用户搜索
 export const searchUser = (account: number | undefined, identity: string) => {
-  return instance({
-    url: '/user/searchUser',
-    method: 'POST',
-    data: {
-      account,
-      identity,
-    },
-  })
+  return post('/user/searchUser', { account, identity })
 }
 
-// 通过部门对用户搜索
 export const searchDepartment = (department: string) => {
-  return instance({
-    url: '/user/searchUserByDepartment',
-    method: 'POST',
-    data: {
-      department,
-    },
-  })
+  return post('/user/searchUserByDepartment', { department })
 }
 
-// 冻结用户
 export const banUser = (id: number) => {
-  return instance({
-    url: '/user/banUser',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/user/banUser', { id })
 }
 
-// 解冻用户
 export const hotUser = (id: number) => {
-  return instance({
-    url: '/user/hotUser',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/user/hotUser', { id })
 }
 
-// 获取冻结用户列表
 export const getBanList = () => {
-  return instance({
-    url: '/user/getBanList',
-    method: 'POST',
-  })
+  return post('/user/getBanList')
 }
 
-// 删除用户  deleteUser
 export const deleteUser = (id: number, account: number) => {
-  return instance({
-    url: '/user/deleteUser',
-    method: 'POST',
-    data: {
-      id,
-      account,
-    },
-  })
+  return post('/user/deleteUser', { id, account })
 }
 
-// 获取对应身份的一个总人数
 export const getAdminListLength = (identity: string) => {
-  return instance({
-    url: '/user/getAdminListLength',
-    method: 'POST',
-    data: {
-      identity,
-    },
-  })
+  return post('/user/getAdminListLength', { identity })
 }
 
-// 监听换页返回数据
 export const returnListData = (pager: number, identity: string) => {
-  return instance({
-    url: '/user/returnListData',
-    method: 'POST',
-    data: {
-      pager,
-      identity,
-    },
-  })
+  return post('/user/returnListData', { pager, identity })
 }

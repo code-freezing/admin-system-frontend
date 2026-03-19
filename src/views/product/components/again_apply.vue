@@ -1,21 +1,18 @@
 <template>
-  <el-dialog v-model="dialogFormVisible" title="再次申请出库" width="30%" center>
-    <span>请确认，此操作将再次申请产品出库</span>
+  <el-dialog v-model="dialogFormVisible" title="重新申请出库" width="30%" center>
+    <span>确认后将按当前信息重新提交申请。</span>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="applyProduct"> 确定 </el-button>
+        <el-button type="primary" @click="applyProduct">确认</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
-import { applyOutProduct } from '@/api/product'
+import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-
-const dialogFormVisible = ref(false)
-const emit = defineEmits(['success'])
+import { applyOutProduct } from '@/api/product'
 
 interface FormData {
   id: number | null
@@ -28,7 +25,10 @@ interface FormData {
   apply_memo: string
 }
 
-const formData: FormData = reactive({
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+
+const formData = reactive<FormData>({
   id: null,
   product_name: '',
   product_out_id: null,
@@ -46,17 +46,19 @@ const open = (row: any) => {
   formData.product_single_price = row.product_single_price
   formData.product_out_apply_person = row.product_out_apply_person
   formData.product_out_number = row.product_out_number
+  formData.product_out_id = row.product_out_id
+  formData.apply_memo = row.apply_memo ?? ''
   dialogFormVisible.value = true
 }
 
 const applyProduct = async () => {
   const res = await applyOutProduct(formData)
   if (res.status == 0) {
-    ElMessage({ message: '产品申请出库成功', type: 'success' })
+    ElMessage.success('重新申请成功')
     emit('success')
     dialogFormVisible.value = false
   } else {
-    ElMessage.error('产品申请出库失败')
+    ElMessage.error('重新申请失败')
     dialogFormVisible.value = false
   }
 }
@@ -65,4 +67,3 @@ defineExpose({ open })
 </script>
 
 <style lang="scss" scoped></style>
-

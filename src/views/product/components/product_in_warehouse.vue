@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogFormVisible" title="添加产品入库" width="600px" align-center draggable>
+  <el-dialog v-model="dialogFormVisible" title="产品入库" width="600px" align-center draggable>
     <div class="dialog-content">
       <el-form
         ref="ruleFormRef"
@@ -8,40 +8,40 @@
         :rules="rules"
         label-width="120px"
       >
-        <el-form-item label="入库编号" prop="product_id">
+        <el-form-item label="产品编号" prop="product_id">
           <el-input v-model="formDataInfo.product_id" />
         </el-form-item>
         <el-form-item label="产品名称" prop="product_name">
           <el-input v-model="formDataInfo.product_name" />
         </el-form-item>
-        <el-form-item label="产品类别" prop="product_category">
-          <el-select v-model="formDataInfo.product_category" placeholder="请选择产品类别">
+        <el-form-item label="产品分类" prop="product_category">
+          <el-select v-model="formDataInfo.product_category" placeholder="请选择产品分类">
             <el-option v-for="item in categoryData" :key="item" :label="item" :value="item" />
           </el-select>
         </el-form-item>
-        <el-form-item label="产品单位" prop="product_unit">
-          <el-select v-model="formDataInfo.product_unit" placeholder="请选择产品单位">
+        <el-form-item label="单位" prop="product_unit">
+          <el-select v-model="formDataInfo.product_unit" placeholder="请选择单位">
             <el-option label="个" value="个" />
-            <el-option label="件" value="件" />
+            <el-option label="箱" value="箱" />
           </el-select>
         </el-form-item>
-        <el-form-item label="产品入库数量" prop="product_in_warehouse_number">
+        <el-form-item label="入库数量" prop="product_in_warehouse_number">
           <el-input v-model="formDataInfo.product_in_warehouse_number" />
         </el-form-item>
-        <el-form-item label="产品入库单价" prop="product_single_price">
+        <el-form-item label="单价" prop="product_single_price">
           <el-input v-model="formDataInfo.product_single_price" />
         </el-form-item>
-        <el-form-item label="入库操作人" prop="product_create_person">
+        <el-form-item label="创建人" prop="product_create_person">
           <el-input v-model="formDataInfo.product_create_person" />
         </el-form-item>
-        <el-form-item label="入库备注" prop="in_memo">
+        <el-form-item label="备注" prop="in_memo">
           <el-input v-model="formDataInfo.in_memo" :rows="2" type="textarea" />
         </el-form-item>
       </el-form>
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="add"> 确定 </el-button>
+        <el-button type="primary" @click="add">确认</el-button>
       </span>
     </template>
   </el-dialog>
@@ -49,19 +49,12 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import { createProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 import type { FormProps } from 'element-plus'
+import { createProduct } from '@/api/product'
 import { getProduct } from '@/api/setting'
-const labelPosition = ref<FormProps['labelPosition']>('left')
 
-// 产品类别数据
-const categoryData = ref<string[]>([])
-const getProductCategory = async () => {
-  categoryData.value = (await getProduct()) as any
-}
-getProductCategory()
-interface formData {
+interface FormData {
   product_id: number | null
   product_name: string
   product_category: string
@@ -72,7 +65,12 @@ interface formData {
   in_memo: string
 }
 
-const formDataInfo: formData = reactive({
+const labelPosition = ref<FormProps['labelPosition']>('left')
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+const categoryData = ref<string[]>([])
+
+const formDataInfo = reactive<FormData>({
   product_id: null,
   product_name: '',
   product_category: '',
@@ -84,23 +82,28 @@ const formDataInfo: formData = reactive({
 })
 
 const rules = reactive({
-  product_id: [{ required: true, message: '请输入入库编号', trigger: 'blur' }],
+  product_id: [{ required: true, message: '请输入产品编号', trigger: 'blur' }],
   product_name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
-  product_category: [{ required: true, message: '请选择产品类别', trigger: 'blur' }],
-  product_unit: [{ required: true, message: '请选择产品单位', trigger: 'blur' }],
-  product_in_warehouse_number: [{ required: true, message: '请输入产品入库数量', trigger: 'blur' }],
-  product_single_price: [{ required: true, message: '请输入产品入库单价', trigger: 'blur' }],
-  product_create_person: [{ required: true, message: '请输入入库操作人', trigger: 'blur' }],
+  product_category: [{ required: true, message: '请选择产品分类', trigger: 'blur' }],
+  product_unit: [{ required: true, message: '请选择单位', trigger: 'blur' }],
+  product_in_warehouse_number: [{ required: true, message: '请输入入库数量', trigger: 'blur' }],
+  product_single_price: [{ required: true, message: '请输入单价', trigger: 'blur' }],
+  product_create_person: [{ required: true, message: '请输入创建人', trigger: 'blur' }],
 })
-const emit = defineEmits(['success'])
-// 产品出库
+
+const loadCategoryList = async () => {
+  const res = await getProduct()
+  categoryData.value = Array.isArray(res) ? (res as string[]) : []
+}
+
+const open = () => {
+  dialogFormVisible.value = true
+}
+
 const add = async () => {
-  const res = (await createProduct(formDataInfo)) as any
+  const res = await createProduct(formDataInfo)
   if (res.status == 0) {
-    ElMessage({
-      message: '产品入库成功',
-      type: 'success',
-    })
+    ElMessage.success('产品入库成功')
     emit('success')
     dialogFormVisible.value = false
   } else {
@@ -108,13 +111,8 @@ const add = async () => {
     dialogFormVisible.value = false
   }
 }
-// 弹窗开关
-const dialogFormVisible = ref(false)
 
-// 打开创建管理员的弹窗
-const open = () => {
-  dialogFormVisible.value = true
-}
+loadCategoryList()
 
 defineExpose({
   open,

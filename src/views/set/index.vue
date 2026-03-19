@@ -1,15 +1,12 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
-  <!-- 外壳 -->
+  <breadCrumb ref="breadcrumb" :item="item" />
   <div class="common-wrapped">
-    <!-- 内容 -->
     <div class="common-content">
       <el-tabs v-model="activeName" class="demo-tabs">
-        <el-tab-pane label="账号详情" name="first">
+        <el-tab-pane label="账号设置" name="first">
           <div class="account-info-wrapped">
-            <span>用户头像：</span>
+            <span>头像</span>
             <div class="account-info-content">
-              <!-- action 是上传头像的接口 -->
               <el-upload
                 class="avatar-uploader"
                 :action="avatarUrl"
@@ -21,7 +18,7 @@
                   v-if="userStore.imageUrl"
                   :src="userStore.imageUrl"
                   class="avatar"
-                  alt="用户头像"
+                  alt="头像"
                 />
                 <el-icon v-else class="avatar-uploader-icon">
                   <Plus />
@@ -30,32 +27,32 @@
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户账号：</span>
+            <span>账号</span>
             <div class="account-info-content">
-              <el-input v-model="userStore.account" disabled></el-input>
+              <el-input v-model="userStore.account" disabled />
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户密码：</span>
+            <span>密码</span>
             <div class="account-info-content">
               <el-button type="primary" @click="openChangePassword">修改密码</el-button>
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户姓名：</span>
+            <span>姓名</span>
             <div class="account-info-content">
-              <el-input v-model="userStore.name"></el-input>
+              <el-input v-model="userStore.name" />
             </div>
             <div class="account-save-button">
               <el-button type="primary" @click="saveName">保存</el-button>
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户性别：</span>
+            <span>性别</span>
             <div class="account-info-content">
               <el-select v-model="userStore.sex" class="m-2" style="width: 100px">
-                <el-option label="男 value=" 男 />
-                <el-option label="女 value=" 女 />
+                <el-option label="男" value="男" />
+                <el-option label="女" value="女" />
               </el-select>
             </div>
             <div class="account-save-button">
@@ -63,71 +60,69 @@
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户身份：</span>
+            <span>身份</span>
             <div class="account-info-content">
-              <el-input v-model="userStore.identity" disabled></el-input>
+              <el-input v-model="userStore.identity" disabled />
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户部门：</span>
+            <span>部门</span>
             <div class="account-info-content">
-              <el-input v-model="userStore.department" disabled></el-input>
+              <el-input v-model="userStore.department" disabled />
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>用户邮箱：</span>
+            <span>邮箱</span>
             <div class="account-info-content">
-              <el-input v-model="userStore.email"></el-input>
+              <el-input v-model="userStore.email" />
             </div>
             <div class="account-save-button">
               <el-button type="primary" @click="saveEmail">保存</el-button>
             </div>
           </div>
         </el-tab-pane>
-        <el-tab-pane label="公司信息" name="second">
+        <el-tab-pane label="公司设置" name="second">
           <div class="account-info-wrapped">
             <span>公司名称</span>
             <div class="account-info-content">
-              <el-input v-model="companyName"></el-input>
+              <el-input v-model="companyName" />
             </div>
             <div class="account-save-button">
-              <el-button type="primary" @click="resetCompanyName">编辑公司名称</el-button>
+              <el-button type="primary" @click="resetCompanyName">修改公司名称</el-button>
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>公司介绍</span>
+            <span>公司简介</span>
             <div class="account-info-content">
-              <el-button type="success" @click="openEditor(1)">编辑公司介绍</el-button>
+              <el-button type="success" @click="openEditor(1)">编辑公司简介</el-button>
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>公司架构</span>
+            <span>公司愿景</span>
             <div class="account-info-content">
-              <el-button type="success" @click="openEditor(2)">编辑公司架构</el-button>
+              <el-button type="success" @click="openEditor(2)">编辑公司愿景</el-button>
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>公司战略</span>
+            <span>企业文化</span>
             <div class="account-info-content">
-              <el-button type="success" @click="openEditor(3)">编辑公司战略</el-button>
+              <el-button type="success" @click="openEditor(3)">编辑企业文化</el-button>
             </div>
           </div>
           <div class="account-info-wrapped">
-            <span>公司高层</span>
+            <span>公司概览</span>
             <div class="account-info-content">
-              <el-button type="success" @click="openEditor(4)">编辑高层介绍</el-button>
+              <el-button type="success" @click="openEditor(4)">编辑公司概览</el-button>
             </div>
           </div>
         </el-tab-pane>
         <el-tab-pane label="首页管理" name="third">
           <div class="home-wrapped">
-            <!-- 提示 -->
             <div class="tips">
-              <span> 提示: 点击图片框进行切换首页轮播图 </span>
+              <span>提示：这里用于维护首页轮播图，建议使用清晰的横向图片。</span>
             </div>
-            <!-- 轮播图 -->
             <div class="swiper-wrapped" v-for="(item, index) in swiperData" :key="index">
-              <div class="swiper-name">轮播图{{ index + 1 }}:&nbsp;&nbsp;</div>
+              <div class="swiper-name">{{ item.name }}：</div>
               <el-upload
                 class="avatar-uploader"
                 :action="swiperUrl"
@@ -138,16 +133,16 @@
               >
                 <template #trigger>
                   <img v-if="imageUrl[index]" :src="imageUrl[index]" class="swiper" alt="轮播图" />
-                  <img v-else src="@/assets/logo.png" alt="默认图片" />
+                  <img v-else src="@/assets/logo.png" alt="默认图" />
                 </template>
               </el-upload>
             </div>
           </div>
         </el-tab-pane>
-        <el-tab-pane label="其他设置" name="fourth">
+        <el-tab-pane label="字典维护" name="fourth">
           <div class="other-set">
             <div class="department-set">
-              <span>部门设置</span>
+              <span>部门维护</span>
               <el-tag
                 v-for="tag in dynamicTags"
                 :key="tag"
@@ -172,7 +167,7 @@
               </el-button>
             </div>
             <div class="product-set">
-              <span>产品设置</span>
+              <span>产品分类</span>
               <el-tag
                 v-for="tag in dynamicProductTags"
                 :key="tag"
@@ -192,8 +187,13 @@
                 @keyup.enter="handleInputProductConfirm"
                 @blur="handleInputProductConfirm"
               />
-              <el-button v-else class="button-new-tag ml-1" size="small" @click="showProductInput">
-                + 添加产品
+              <el-button
+                v-else
+                class="button-new-tag ml-1"
+                size="small"
+                @click="showProductInput"
+              >
+                + 添加分类
               </el-button>
             </div>
           </div>
@@ -201,312 +201,245 @@
       </el-tabs>
     </div>
   </div>
-  <!-- 修改密码弹窗 -->
-  <change ref="changeP"></change>
-
-  <editor ref="editorP"></editor>
+  <change ref="changeP" />
+  <editor ref="editorP" />
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, toRaw } from 'vue'
+import { nextTick, onMounted, reactive, ref, toRaw } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
+import { ElInput, ElMessage } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
-import { ElMessage, ElInput } from 'element-plus'
-import editor from './components/editor.vue'
-import { changeName, changeSex, changeEmail, bind } from '@/api/userinfor.js'
-import { useUserInfo } from '@/stores/userinfor'
-import change from './components/change_password.vue'
+import { bind, changeEmail, changeName, changeSex } from '@/api/userinfor'
 import {
-  getCompanyName,
   changeCompanyName,
   getAllSwiper,
-  setDepartment,
+  getCompanyName,
   getDepartment,
-  setProduct,
   getProduct,
+  setDepartment,
+  setProduct,
 } from '@/api/setting'
+import { useUserInfo } from '@/stores/userinfor'
+import change from './components/change_password.vue'
+import editor from './components/editor.vue'
+
 const userStore = useUserInfo()
-
-const changeP = ref()
-
-const avatarUrl = ref(`http://localhost:3007/user/uploadAvatar`)
-const swiperUrl = ref(`http://localhost:3007/set/uploadSwiper`)
-// console.log(import.meta.env.VITE_API_BASEURL)
-
-// 面包屑
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '系统设置',
 })
 
-// 默认打开的标签页
 const activeName = ref('first')
+const avatarUrl = ref(`${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/user/uploadAvatar`)
+const swiperUrl = ref(`${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/set/uploadSwiper`)
+const companyName = ref('')
+const changeP = ref()
+const editorP = ref()
+const imageUrl = ref<string[]>([])
 
-// 头像上传成功的函数 response回应
-const handleAvatarSuccess = (response: any) => {
-  // imageUrl.value = URL.createObjectURL(uploadFile.raw!)
-  console.log(response)
-  if (response.status == 0) {
-    userStore.$patch({
-      imageUrl: response.url,
-    })
-    ElMessage({
-      message: '更新头像成功',
-      type: 'success',
-    })
-    ;(async () => {
-      const account = (userStore.account || '').trim()
-      if (!account) {
-        ElMessage.error('绑定失败：账号信息缺失，请重新登录')
-        return
-      }
+const swiperData = [
+  { name: 'swiper1' },
+  { name: 'swiper2' },
+  { name: 'swiper3' },
+  { name: 'swiper4' },
+  { name: 'swiper5' },
+  { name: 'swiper6' },
+]
 
-      const res = await bind(account, response.onlyId, response.url)
-      console.log(res)
+const dynamicTags = ref<string[]>([])
+const dynamicProductTags = ref<string[]>([])
+const inputValue = ref('')
+const inputVisible = ref(false)
+const InputRef = ref<InstanceType<typeof ElInput>>()
+const inputProductValue = ref('')
+const inputProductVisible = ref(false)
+const InputProductRef = ref<InstanceType<typeof ElInput>>()
 
-      if (res?.status !== 0) {
-        ElMessage.error((res as any)?.message || '头像与账号绑定失败')
-      }
-    })()
+const loadCompanyName = async () => {
+  companyName.value = (await getCompanyName()) as string
+}
+
+const loadSwiperList = async () => {
+  imageUrl.value = (await getAllSwiper()) as string[]
+}
+
+const loadDepartmentList = async () => {
+  dynamicTags.value = (await getDepartment()) as string[]
+}
+
+const loadProductList = async () => {
+  dynamicProductTags.value = (await getProduct()) as string[]
+}
+
+const handleAvatarSuccess = async (response: any) => {
+  if (response.status !== 0) {
+    ElMessage.error('头像上传失败')
+    return
+  }
+
+  userStore.$patch({
+    imageUrl: response.url,
+  })
+
+  const account = (userStore.account || '').trim()
+  if (!account) {
+    ElMessage.error('账号信息不完整，无法绑定头像')
+    return
+  }
+
+  const res = await bind(account, response.onlyId, response.url)
+  if (res?.status === 0) {
+    ElMessage.success('头像更新成功')
   } else {
-    ElMessage.error('更新头像失败！请重新上传')
+    ElMessage.error((res as any)?.message || '头像绑定失败')
   }
 }
-// 头像上传之前的函数
-const beforeAvatarUpload = (rawFile: any) => {
-  if (rawFile.type !== 'image/jpeg') {
-    ElMessage.error('头像必须是jpg格式！')
-    return false
-  } else if (rawFile.size / 1024 / 1024 > 2) {
-    ElMessage.error('头像必须小于2MB!')
+
+const beforeAvatarUpload = (rawFile: File) => {
+  const isImage = ['image/jpeg', 'image/png'].includes(rawFile.type)
+  if (!isImage) {
+    ElMessage.error('请上传 JPG 或 PNG 图片')
     return false
   }
+
+  const isLt2M = rawFile.size / 1024 / 1024 <= 2
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB')
+    return false
+  }
+
   return true
 }
 
-// 打开密码弹窗
+const handleSwiperSuccess = () => {
+  loadSwiperList()
+}
+
 const openChangePassword = () => {
   changeP.value.open()
 }
 
-// 保存姓名
 const saveName = async () => {
   const res = await changeName(userStore.name, userStore.id)
-  console.log(res)
-
   if (res.status == 0) {
-    ElMessage({
-      message: '修改成功',
-      type: 'success',
-    })
+    ElMessage.success('姓名修改成功')
   } else {
-    ElMessage.error('修改姓名失败，请重新输入！')
+    ElMessage.error('姓名修改失败')
   }
 }
 
-// 保存性别
 const saveSex = async () => {
   const res = await changeSex(userStore.sex, userStore.id)
   if (res.status == 0) {
-    ElMessage({
-      message: '修改成功',
-      type: 'success',
-    })
+    ElMessage.success('性别修改成功')
   } else {
-    ElMessage.error('修改性别失败，请重新输入！')
+    ElMessage.error('性别修改失败')
   }
 }
 
-// 保存邮箱
 const saveEmail = async () => {
   const res = await changeEmail(userStore.email, userStore.id)
   if (res.status == 0) {
-    ElMessage({
-      message: '修改成功',
-      type: 'success',
-    })
+    ElMessage.success('邮箱修改成功')
   } else {
-    ElMessage.error('修改邮箱失败，请重新输入！')
+    ElMessage.error('邮箱修改失败')
   }
 }
 
-// 公司信息
-// 公司名称
-const companyName = ref()
-// 获取公司名字
-const returnCompanyName = async () => {
-  companyName.value = await getCompanyName()
-}
-returnCompanyName()
-
-// 修改公司名字
 const resetCompanyName = async () => {
   const res = await changeCompanyName(companyName.value)
   if (res.status == 0) {
-    ElMessage({
-      message: '修改公司名称成功',
-      type: 'success',
-    })
+    ElMessage.success('公司名称修改成功')
   } else {
-    ElMessage.error('修改公司名称失败，请重新输入！')
+    ElMessage.error('公司名称修改失败')
   }
 }
 
-const editorP = ref()
-// 打开富文本
-const openEditor = (id: number) => {
-  // 第一个参数是 标记,第二个参数要传入的值
+const openEditor = async (id: number) => {
   editorP.value.open(id)
 }
 
-// 首页管理
-const swiperData = [
-  {
-    name: 'swiper1',
-  },
-  {
-    name: 'swiper2',
-  },
-  {
-    name: 'swiper3',
-  },
-  {
-    name: 'swiper4',
-  },
-  {
-    name: 'swiper5',
-  },
-  {
-    name: 'swiper6',
-  },
-]
-
-// 上传轮播图成功
-const handleSwiperSuccess = () => {
-  returnAllSwiper()
-}
-// 轮播图
-const imageUrl = ref<string[]>([])
-// 获取轮播图
-const returnAllSwiper = async () => {
-  imageUrl.value = (await getAllSwiper()) as any
-}
-returnAllSwiper()
-
-// 其他设置
-// setDepartment
-// getDepartment
-// 部门设置
-const inputValue = ref('')
-const dynamicTags = ref()
-const inputVisible = ref(false)
-const InputRef = ref<InstanceType<typeof ElInput>>()
-// 产品设置
-const inputProductValue = ref('')
-const dynamicProductTags = ref()
-const inputProductVisible = ref(false)
-const InputProductRef = ref<InstanceType<typeof ElInput>>()
-// 获取部门数据
-const returnDepartment = async () => {
-  dynamicTags.value = await getDepartment()
-}
-returnDepartment()
-// 获取产品数据
-const returnProduct = async () => {
-  dynamicProductTags.value = await getProduct()
-}
-returnProduct()
-// 部门设置关闭时的函数
 const handleClose = async (tag: string) => {
-  dynamicTags.value.splice(dynamicTags.value.indexOf(tag), 1)
+  dynamicTags.value = dynamicTags.value.filter((item) => item !== tag)
   const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))
   if (res.status == 0) {
-    ElMessage({
-      message: '删除部门成功',
-      type: 'success',
-    })
+    ElMessage.success('部门已更新')
   } else {
-    ElMessage.error('删除部门失败，请重新输入！')
+    ElMessage.error('部门更新失败')
   }
 }
-// 产品设置关闭时的函数
+
 const handleProductClose = async (tag: string) => {
-  dynamicProductTags.value.splice(dynamicProductTags.value.indexOf(tag), 1)
+  dynamicProductTags.value = dynamicProductTags.value.filter((item) => item !== tag)
   const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
   if (res.status == 0) {
-    ElMessage({
-      message: '删除产品成功',
-      type: 'success',
-    })
+    ElMessage.success('产品分类已更新')
   } else {
-    ElMessage.error('删除产品失败，请重新输入！')
+    ElMessage.error('产品分类更新失败')
   }
 }
-// 点击部门按钮出现输入框
+
 const showInput = () => {
   inputVisible.value = true
   nextTick(() => {
-    InputRef.value!.input!.focus()
+    InputRef.value?.input?.focus()
   })
 }
-// 点击产品按钮出现输入框
+
 const showProductInput = () => {
   inputProductVisible.value = true
   nextTick(() => {
-    InputProductRef.value!.input!.focus()
+    InputProductRef.value?.input?.focus()
   })
 }
-// 输入数据后的一个函数 部门
+
 const handleInputConfirm = async () => {
   if (inputValue.value) {
-    dynamicTags.value.push(inputValue.value)
+    dynamicTags.value = [...dynamicTags.value, inputValue.value]
     const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))
     if (res.status == 0) {
-      ElMessage({
-        message: '添加部门设置成功',
-        type: 'success',
-      })
+      ElMessage.success('部门添加成功')
     } else {
-      ElMessage.error('添加部门失败，请重新输入！')
+      ElMessage.error('部门添加失败')
     }
   }
+
   inputVisible.value = false
   inputValue.value = ''
 }
-// 输入数据后的一个函数 产品
+
 const handleInputProductConfirm = async () => {
   if (inputProductValue.value) {
-    dynamicProductTags.value.push(inputProductValue.value)
+    dynamicProductTags.value = [...dynamicProductTags.value, inputProductValue.value]
     const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
     if (res.status == 0) {
-      ElMessage({
-        message: '添加产品设置成功',
-        type: 'success',
-      })
+      ElMessage.success('产品分类添加成功')
     } else {
-      ElMessage.error('添加产品失败，请重新输入！')
+      ElMessage.error('产品分类添加失败')
     }
   }
+
   inputProductVisible.value = false
   inputProductValue.value = ''
 }
+
+onMounted(async () => {
+  await Promise.all([loadCompanyName(), loadSwiperList(), loadDepartmentList(), loadProductList()])
+})
 </script>
 
 <style lang="scss" scoped>
-// 外壳
 .common-wrapped {
   padding: 8px;
   background: #f5f5f5;
-  // 计算 减去了头部还有面包屑 + 2X8=16边距
   height: calc(100vh - 101px);
 
-  // 内容
   .common-content {
     padding: 0 10px;
     height: 100%;
     background: #fff;
 
-    // 账号信息外壳
     .account-info-wrapped {
       display: flex;
       align-items: center;
@@ -514,26 +447,22 @@ const handleInputProductConfirm = async () => {
       margin-bottom: 24px;
       font-size: 14px;
 
-      // 账号信息内容
       .account-info-content {
         margin-left: 24px;
         margin-right: 16px;
       }
 
-      // 按钮
       .account-save-button {
         margin-left: 16px;
       }
     }
 
-    // 首页管理外壳
     .home-wrapped {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 24px;
       padding: 20px 50px;
 
-      // 提示
       .tips {
         grid-column: 1 / -1;
         display: flex;
@@ -542,17 +471,15 @@ const handleInputProductConfirm = async () => {
 
         span {
           font-size: 14px;
-          color: silver;
+          color: #888;
         }
       }
 
-      // 轮播图
       .swiper-wrapped {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
 
-        // 轮播图名字
         .swiper-name {
           font-size: 14px;
           margin-bottom: 8px;
@@ -579,27 +506,20 @@ const handleInputProductConfirm = async () => {
   }
 }
 
-// 其他设置
 .other-set {
   padding-left: 50px;
   font-size: 14px;
 
-  .department-set {
+  .department-set,
+  .product-set {
     margin-bottom: 24px;
 
     span {
       margin-right: 24px;
     }
   }
-
-  .product-set {
-    span {
-      margin-right: 24px;
-    }
-  }
 }
 
-// 标签页
 .demo-tabs > .el-tabs__content {
   padding: 32px;
   color: #6b778c;
@@ -607,38 +527,21 @@ const handleInputProductConfirm = async () => {
   font-weight: 600;
 }
 
-// 上传头像
 .avatar-uploader .avatar {
   width: 178px;
   height: 178px;
   display: block;
 }
 
-// 输入框的长度
-:deep(.el-input) {
-  width: 240px;
-}
-</style>
-
-<style>
-.avatar-uploader .el-upload {
-  border: 1px dashed var(--el-border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: var(--el-transition-duration-fast);
-}
-
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
-}
-
-.el-icon.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
+.avatar-uploader-icon {
   width: 178px;
   height: 178px;
+  font-size: 28px;
+  color: #8c939d;
   text-align: center;
+}
+
+.swiper {
+  display: block;
 }
 </style>

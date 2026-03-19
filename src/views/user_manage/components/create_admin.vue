@@ -13,8 +13,8 @@
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-select v-model="formData.sex" placeholder="请选择性别">
-            <el-option label="男 value=" 男 />
-            <el-option label="女 value=" 女 />
+            <el-option label="男" value="男" />
+            <el-option label="女" value="女" />
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -29,7 +29,7 @@
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="addAdmin"> 确定 </el-button>
+        <el-button type="primary" @click="addAdmin">确认</el-button>
       </span>
     </template>
   </el-dialog>
@@ -37,19 +37,11 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import { createAdmin } from '@/api/userinfor.js'
-import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
+import { createAdmin } from '@/api/userinfor'
+import { getDepartment } from '@/api/setting'
 
-const title = ref('')
-const dialogFormVisible = ref(false)
-const emit = defineEmits(['success'])
-
-const identityMap: Record<number, { title: string; identity: string }> = {
-  1: { title: '新建产品管理员', identity: '产品管理员' },
-  2: { title: '新建用户管理员', identity: '用户管理员' },
-  3: { title: '新建消息管理员', identity: '消息管理员' },
-}
+type Identity = '产品管理员' | '用户管理员' | '消息管理员'
 
 interface FormData {
   account: string
@@ -58,10 +50,15 @@ interface FormData {
   sex: string
   email: string
   department: string
-  identity: string
+  identity: Identity | ''
 }
 
-const formData: FormData = reactive({
+const title = ref('')
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+const departmentData = ref<string[]>([])
+
+const formData = reactive<FormData>({
   account: '',
   password: '',
   name: '',
@@ -71,21 +68,25 @@ const formData: FormData = reactive({
   identity: '',
 })
 
-const departmentData = ref<string[]>([])
-const returnDepartment = async () => {
-  const res = (await getDepartment()) as any
-  departmentData.value = Array.isArray(res) ? res : (res?.results ?? [])
+const identityMap: Record<number, { title: string; identity: Identity }> = {
+  1: { title: '新增用户管理员', identity: '用户管理员' },
+  2: { title: '新增产品管理员', identity: '产品管理员' },
+  3: { title: '新增消息管理员', identity: '消息管理员' },
 }
-returnDepartment()
 
 const rules = reactive({
-  account: [{ required: true, message: '请输入管理员的注册账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入管理员的注册密码', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入管理员的名字', trigger: 'blur' }],
-  sex: [{ required: true, message: '请输入管理员的性别', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入管理员的邮箱', trigger: 'blur' }],
-  department: [{ required: true, message: '请输入管理员的部门', trigger: 'blur' }],
+  account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  sex: [{ required: true, message: '请选择性别', trigger: 'blur' }],
+  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+  department: [{ required: true, message: '请选择部门', trigger: 'blur' }],
 })
+
+const loadDepartment = async () => {
+  const res = await getDepartment()
+  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+}
 
 const open = (id: number) => {
   Object.assign(formData, {
@@ -97,28 +98,29 @@ const open = (id: number) => {
     department: '',
     identity: '',
   })
+
   const config = identityMap[id]
   if (config) {
     title.value = config.title
     formData.identity = config.identity
   }
+
   dialogFormVisible.value = true
 }
 
 const addAdmin = async () => {
   const res = await createAdmin(formData)
   if (res.status == 0) {
-    ElMessage({
-      message: '创建管理员成功',
-      type: 'success',
-    })
+    ElMessage.success('管理员创建成功')
     emit('success', 'create')
     dialogFormVisible.value = false
   } else {
-    ElMessage.error('创建管理员失败')
+    ElMessage.error('管理员创建失败')
     dialogFormVisible.value = false
   }
 }
+
+loadDepartment()
 
 defineExpose({
   open,

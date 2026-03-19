@@ -1,15 +1,15 @@
 <template>
-  <breadCrumb ref="breadcrumb" :item="item"></breadCrumb>
+  <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
     <div class="table-top">
       <div class="table-content">
-        <el-table :data="tableData" style="width: 100%" border>
+        <el-table :data="tableData" border style="width: 100%">
           <el-table-column type="index" width="50" />
-          <el-table-column label="消息主题" prop="message_title" />
-          <el-table-column label="消息类别" prop="message_category" />
+          <el-table-column label="消息标题" prop="message_title" />
+          <el-table-column label="消息分类" prop="message_category" />
           <el-table-column label="发布部门" prop="message_publish_department" />
           <el-table-column label="接收对象" prop="message_receipt_object" />
-          <el-table-column label="删除日期" prop="message_delete_time">
+          <el-table-column label="删除时间" prop="message_delete_time">
             <template #default="{ row }">
               <div>{{ row.message_delete_time?.slice(0, 10) }}</div>
             </template>
@@ -17,7 +17,7 @@
           <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <div>
-                <el-button type="success" @click="renew(row)">杩樺師</el-button>
+                <el-button type="success" @click="renew(row)">恢复</el-button>
                 <el-button type="danger" @click="realDelete(row.id)">删除</el-button>
               </div>
             </template>
@@ -32,66 +32,71 @@
         :pager-count="7"
         :total="paginationData.recycleTotal"
         :page-count="paginationData.recyclePageCount"
-        @current-change="recycleCurrentChange"
         layout="prev, pager, next"
+        @current-change="recycleCurrentChange"
       />
     </div>
   </div>
-  <renewAndDelete ref="rad" @success="getRecycleFirstPageList"></renewAndDelete>
+  <renewAndDelete ref="rad" @success="getRecycleFirstPageList" />
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getRecycleMessageLength, returnRecycleListData } from '@/api/message'
 import renewAndDelete from '../components/delete.vue'
-// 面包屑
+
+interface RecycleRow {
+  id: number
+  message_title?: string
+  message_category?: string
+  message_publish_department?: string
+  message_receipt_object?: string
+  message_delete_time?: string
+}
+
 const breadcrumb = ref()
-// 面包屑参数
 const item = ref({
   first: '消息管理',
   second: '回收站',
 })
 
-const tableData = ref<object[]>([])
+const tableData = ref<RecycleRow[]>([])
+const rad = ref()
 
-// 分页数据
 const paginationData = reactive({
-  // 回收站总数
-  recycleTotal: 1,
-  // 回收站列表总页数
-  recyclePageCount: 1,
-  // 回收站列表当前所处页数
+  recycleTotal: 0,
+  recyclePageCount: 0,
   recycleCurrentPage: 1,
 })
-// 获取回收站列表的页数
-const getRecycleListLength = async () => {
-  const res = (await getRecycleMessageLength()) as any
-  paginationData.recycleTotal = res.length
-  paginationData.recyclePageCount = Math.ceil(res.length / 10)
-}
-getRecycleListLength()
-// 默认获取回收站列表第一页的数据
-const getRecycleFirstPageList = async () => {
-  tableData.value = (await returnRecycleListData(1)) as any
-}
-getRecycleFirstPageList()
 
-// 回收站列表监听换页
+const loadRecycleLength = async () => {
+  const res = await getRecycleMessageLength()
+  const total = Array.isArray(res) ? res.length : 0
+  paginationData.recycleTotal = total
+  paginationData.recyclePageCount = Math.max(1, Math.ceil(total / 10))
+}
+
+const getRecycleFirstPageList = async () => {
+  tableData.value = (await returnRecycleListData(1)) as RecycleRow[]
+}
+
 const recycleCurrentChange = async (value: number) => {
   paginationData.recycleCurrentPage = value
-  tableData.value = (await returnRecycleListData(paginationData.recycleCurrentPage)) as any
+  tableData.value = (await returnRecycleListData(value)) as RecycleRow[]
 }
 
-// 恢复跟删除组件
-const rad = ref()
-const renew = (row: any) => {
+const renew = (row: RecycleRow) => {
   rad.value.openRecover(row)
 }
 
 const realDelete = (id: number) => {
   rad.value.openRealDelete(id)
 }
+
+onMounted(async () => {
+  await Promise.all([loadRecycleLength(), getRecycleFirstPageList()])
+})
 </script>
 
 <style lang="scss" scoped>

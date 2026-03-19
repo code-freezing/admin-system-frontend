@@ -1,25 +1,20 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-// 导入element plus
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-// 导入路由
 import router from './router'
-// svg图标
 import 'virtual:svg-icons-register'
-// 导入pinia
 import pinia from './stores'
 import { useMenu } from './stores/menu'
-// 引入全局样式
 import '@/assets/css/common.scss'
-// 引入全局前置守卫
 import './router/guard'
 
 const app = createApp(App)
 
+// 先装载状态管理，后续 store 和页面都依赖它。
 app.use(pinia)
 
-// 刷新页面时回放持久化的菜单路由，避免动态子路由丢失
+// 刷新后如果本地还有 token，就把菜单路由重新注入回来。
 const menuStore = useMenu(pinia)
 if (localStorage.getItem('token')) {
   menuStore.addRouter()

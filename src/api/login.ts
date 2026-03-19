@@ -1,63 +1,32 @@
-import instance from '@/http/index'
+import { post } from './request'
 
-// 注册
-export const register = (data: any) => {
-  const { account, password } = data
-  return instance({
-    url: '/api/register',
-    method: 'POST',
-    data: {
-      account,
-      password,
-    },
-  })
+type AuthPayload = {
+  account: string | number | null
+  password: string | null
 }
 
-// 登录
-export const login = (data: any) => {
-  const { account, password } = data
-  return instance({
-    url: '/api/login',
-    method: 'POST',
-    data: {
-      account,
-      password,
-    },
-  })
+type VerifyPayload = {
+  account: string | number | null
+  email: string | null
 }
 
-// 获取菜单列表
+// 登录相关接口保持薄封装，调用方负责传递表单数据。
+export const register = ({ account, password }: AuthPayload) => {
+  return post('/api/register', { account, password })
+}
+
+export const login = ({ account, password }: AuthPayload) => {
+  return post('/api/login', { account, password })
+}
+
 export const returnMenuList = (id: number) => {
-  return instance({
-    url: '/api/returnMenuList',
-    method: 'POST',
-    data: {
-      id,
-    },
-  })
+  return post('/api/returnMenuList', { id })
 }
 
-// 忘记密码验证
-export const verify = (data: any) => {
-  const { account, email } = data
-  return instance({
-    url: '/user/verifyAccountAndEmail',
-    method: 'POST',
-    data: {
-      account,
-      email,
-    },
-  })
+export const verify = ({ account, email }: VerifyPayload) => {
+  return post('/user/verifyAccountAndEmail', { account, email })
 }
 
-// 密码重置
 export const reset = (id: number, newPassword: string) => {
-  return instance({
-    url: '/user/changePasswordInLogin',
-    method: 'POST',
-    data: {
-      id,
-      newPassword,
-    },
-  })
+  return post('/user/changePasswordInLogin', { id, newPassword })
 }

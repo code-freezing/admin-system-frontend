@@ -1,40 +1,39 @@
-import axios from 'axios'
+import axios, { type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios'
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3007/'
+
+// 这个实例只负责通用请求配置，业务层统一通过它发请求。
 const instance = axios.create({
-  baseURL: 'http://127.0.0.1:3007/',
+  baseURL,
   timeout: 6000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+  },
 })
 
-// 添加请求拦截器
+const getToken = () => {
+  const token = localStorage.getItem('token')
+  return token ? (token.startsWith('Bearer ') ? token : `Bearer ${token}`) : ''
+}
+
+// 请求前统一补上 token，避免每个接口文件重复处理认证头。
 instance.interceptors.request.use(
-  function (config) {
-    // 在发送请求之前做些什么
-    const token = localStorage.getItem('token')
+  (config: InternalAxiosRequestConfig) => {
+    const token = getToken()
     if (token) {
-      config.headers = config.headers ?? {}
-      config.headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`
+      config.headers.Authorization = token
     }
     return config
   },
-  function (error) {
-    // 对请求错误做些什么
-    return Promise.reject(error)
-  },
+  (error) => Promise.reject(error),
 )
 
-// 添加响应拦截器
+// 响应拦截器只做最小处理，业务代码拿到的就是后端返回体。
 instance.interceptors.response.use(
-  function (response) {
-    // 2xx 范围内的状态码都会触发该函数。
-    // 对响应数据做点什么
-    return response.data
-  },
-  function (error) {
-    // 超出 2xx 范围的状态码都会触发该函数。
-    // 对响应错误做点什么
-    return Promise.reject(error)
-  },
+  (response) => response.data,
+  (error) => Promise.reject(error),
 )
+
+export type HttpRequestConfig = AxiosRequestConfig
 
 export default instance

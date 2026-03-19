@@ -1,29 +1,44 @@
 <template>
-  <el-dialog v-model="dialogFormVisible" title="审核产品" width="30%" center>
-    <div class="describe">确定审核此产品的出库吗？</div>
+  <el-dialog v-model="dialogFormVisible" title="审核出库申请" width="30%" center>
+    <div class="describe">确认审核结果后再提交。</div>
     <el-radio-group v-model="formData.product_out_status" class="ml-4">
-      <el-radio label="同意" size="large">同意</el-radio>
-      <el-radio label="否决" size="large">否决</el-radio>
+      <el-radio label="待出库" size="large">待出库</el-radio>
+      <el-radio label="已驳回" size="large">已驳回</el-radio>
     </el-radio-group>
     <el-input v-model="formData.audit_memo" type="textarea" placeholder="请输入审核备注" />
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="audit"> 确定 </el-button>
+        <el-button type="primary" @click="audit">确认</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
-import { auditProduct } from '@/api/product'
+import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { auditProduct } from '@/api/product'
 import { tracking } from '@/utils/operation'
+
+interface AuditForm {
+  id: number
+  product_name: string
+  product_out_id: number
+  product_out_status: string
+  audit_memo: string
+  product_out_price: number
+  product_out_audit_person: string | null
+  product_out_apply_person: string
+  product_in_warehouse_number: number
+  product_single_price: number
+  product_out_number: string
+  product_apply_time: string
+}
 
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 
-const formData = reactive({
+const formData = reactive<AuditForm>({
   id: 0,
   product_name: '',
   product_out_id: 0,
@@ -55,17 +70,16 @@ const open = (row: any) => {
 
 const audit = async () => {
   const res = await auditProduct(formData)
-  console.log(res)
   if (res.status == 0) {
-    ElMessage({ message: '审核产品成功', type: 'success' })
-    emit('success')
     const userInfoStr = localStorage.getItem('userinfo')
     const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
     const operatorName = userInfo?.name ?? ''
-    await tracking('产品', operatorName, formData.product_name, '高级', formData.product_out_status)
+    await tracking('产品审核', operatorName, formData.product_name, '高级', formData.product_out_status)
+    ElMessage.success('审核成功')
+    emit('success')
     dialogFormVisible.value = false
   } else {
-    ElMessage.error('审核产品失败')
+    ElMessage.error('审核失败')
     dialogFormVisible.value = false
   }
 }

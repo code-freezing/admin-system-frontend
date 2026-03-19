@@ -1,11 +1,5 @@
 <template>
-  <el-dialog
-    v-model="dialogFormVisible"
-    title="编辑管理员信息"
-    width="600px"
-    align-center
-    draggable
-  >
+  <el-dialog v-model="dialogFormVisible" title="编辑管理员" width="600px" align-center draggable>
     <div class="dialog-content">
       <el-form ref="ruleFormRef" :model="formDataInfo" :rules="rules" label-width="100px">
         <el-form-item label="账号" prop="account">
@@ -32,7 +26,7 @@
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="edit"> 确定 </el-button>
+        <el-button type="primary" @click="edit">确认</el-button>
       </span>
     </template>
   </el-dialog>
@@ -40,12 +34,9 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import { getUserInfo, editAdmin } from '@/api/userinfor'
-import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
-
-const dialogFormVisible = ref(false)
-const emit = defineEmits(['success'])
+import { editAdmin, getUserInfo } from '@/api/userinfor'
+import { getDepartment } from '@/api/setting'
 
 interface FormData {
   id: number | null
@@ -56,7 +47,11 @@ interface FormData {
   department: string
 }
 
-const formDataInfo: FormData = reactive({
+const dialogFormVisible = ref(false)
+const emit = defineEmits(['success'])
+const departmentData = ref<string[]>([])
+
+const formDataInfo = reactive<FormData>({
   id: null,
   account: null,
   name: '',
@@ -65,22 +60,20 @@ const formDataInfo: FormData = reactive({
   department: '',
 })
 
-const departmentData = ref([])
-const getDepartmentData = async () => {
-  departmentData.value = (await getDepartment()) as any
-}
-getDepartmentData()
-
 const rules = reactive({
-  account: [{ required: true, message: '请输入管理员的注册账号', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入管理员的名字', trigger: 'blur' }],
-  sex: [{ required: true, message: '请输入管理员的性别', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入管理员的邮箱', trigger: 'blur' }],
-  department: [{ required: true, message: '请输入管理员的部门', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  sex: [{ required: true, message: '请选择性别', trigger: 'blur' }],
+  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+  department: [{ required: true, message: '请选择部门', trigger: 'blur' }],
 })
 
+const loadDepartment = async () => {
+  const res = await getDepartment()
+  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+}
+
 const open = async (id: number) => {
-  const res = (await getUserInfo(id)) as any
+  const res = await getUserInfo(id)
   formDataInfo.id = res.id
   formDataInfo.account = res.account
   formDataInfo.name = res.name
@@ -92,19 +85,17 @@ const open = async (id: number) => {
 
 const edit = async () => {
   const res = await editAdmin(formDataInfo)
-  console.log(res)
   if (res.status == 0) {
-    ElMessage({
-      message: '编辑管理员信息成功',
-      type: 'success',
-    })
+    ElMessage.success('管理员信息已更新')
     emit('success', 'edit')
     dialogFormVisible.value = false
   } else {
-    ElMessage.error('编辑管理员信息失败')
+    ElMessage.error('管理员信息更新失败')
     dialogFormVisible.value = false
   }
 }
+
+loadDepartment()
 
 defineExpose({
   open,

@@ -1,33 +1,18 @@
-import instance from '@/http/index'
+import { post } from './request'
 
-// 获取产品类别和总价
+// 概览页只做统计查询。
 export const getCategoryAndNumber = () => {
-  return instance({
-    url: '/ov/getCategoryAndNumber',
-    method: 'POST',
-  })
+  return post('/ov/getCategoryAndNumber')
 }
 
-// 获取不同角色与数量
 export const getAdminAndNumber = () => {
-  return instance({
-    url: '/ov/getAdminAndNumber',
-    method: 'POST',
-  })
+  return post('/ov/getAdminAndNumber')
 }
 
-// 获取不同消息等级与数量
 export const getLevelAndNumber = () => {
-  return instance({
-    url: '/ov/getLevelAndNumber',
-    method: 'POST',
-  })
+  return post('/ov/getLevelAndNumber')
 }
 
-// 返回每天登录人数
 export const getDayAndNumber = () => {
-  return instance({
-    url: '/ov/getDayAndNumber',
-    method: 'POST',
-  })
+  return post('/ov/getDayAndNumber')
 }

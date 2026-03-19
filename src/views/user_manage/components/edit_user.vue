@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogFormVisible" title="编辑用户信息" width="600px" align-center draggable>
+  <el-dialog v-model="dialogFormVisible" title="编辑用户" width="600px" align-center draggable>
     <div class="dialog-content">
       <el-form ref="ruleFormRef" :model="formData" :rules="rules" label-width="100px">
         <el-form-item label="账号" prop="account">
@@ -10,8 +10,8 @@
         </el-form-item>
         <el-form-item label="性别" prop="sex">
           <el-select v-model="formData.sex" placeholder="请选择性别">
-            <el-option label="男 value=" 男 />
-            <el-option label="女 value=" 女 />
+            <el-option label="男" value="男" />
+            <el-option label="女" value="女" />
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -26,7 +26,7 @@
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="editUser"> 确定 </el-button>
+        <el-button type="primary" @click="editUser">确认</el-button>
       </span>
     </template>
   </el-dialog>
@@ -34,14 +34,11 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import { getUserInfo, editAdmin } from '@/api/userinfor.js'
-import { getDepartment } from '@/api/setting'
 import { ElMessage } from 'element-plus'
+import { editAdmin, getUserInfo } from '@/api/userinfor'
+import { getDepartment } from '@/api/setting'
 
-const emit = defineEmits(['success'])
-const dialogFormVisible = ref(false)
-
-interface formData {
+interface FormData {
   id?: number
   account: number
   name: string
@@ -50,54 +47,55 @@ interface formData {
   department: string
 }
 
-const formData: formData = reactive({
+const emit = defineEmits(['success'])
+const dialogFormVisible = ref(false)
+const departmentData = ref<string[]>([])
+
+const formData = reactive<FormData>({
   id: 0,
   account: 0,
   name: '',
   sex: '',
   email: '',
   department: '',
-  identity: '用户',
-} as any)
-
-const departmentData = ref([])
-const returnDepartment = async () => {
-  departmentData.value = (await getDepartment()) as any
-}
-returnDepartment()
+})
 
 const rules = reactive({
-  name: [{ required: true, message: '请输入要修改的名字', trigger: 'blur' }],
-  sex: [{ required: true, message: '请输入要修改的性别', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入要修改的邮箱', trigger: 'blur' }],
-  department: [{ required: true, message: '请输入要修改的部门', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  sex: [{ required: true, message: '请选择性别', trigger: 'blur' }],
+  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+  department: [{ required: true, message: '请选择部门', trigger: 'blur' }],
 })
+
+const loadDepartment = async () => {
+  const res = await getDepartment()
+  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+}
 
 const open = async (id: number) => {
   const res = await getUserInfo(id)
-  formData.id = (res as any).id
-  formData.account = (res as any).account
-  formData.name = (res as any).name
-  formData.sex = (res as any).sex
-  formData.email = (res as any).email
-  formData.department = (res as any).department
+  formData.id = res.id
+  formData.account = res.account
+  formData.name = res.name
+  formData.sex = res.sex
+  formData.email = res.email
+  formData.department = res.department
   dialogFormVisible.value = true
 }
 
 const editUser = async () => {
   const res = await editAdmin(formData)
   if (res.status == 0) {
-    ElMessage({
-      message: '编辑用户信息成功',
-      type: 'success',
-    })
+    ElMessage.success('用户信息已更新')
     emit('success')
     dialogFormVisible.value = false
   } else {
-    ElMessage.error('编辑用户信息失败')
+    ElMessage.error('用户信息更新失败')
     dialogFormVisible.value = false
   }
 }
+
+loadDepartment()
 
 defineExpose({
   open,

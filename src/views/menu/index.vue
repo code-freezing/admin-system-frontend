@@ -1,32 +1,23 @@
 <template>
   <div class="common-layout">
     <el-container>
-      <el-aside width="200px">
+      <el-aside width="210px">
         <el-menu class="el-menu-vertical-demo" router>
           <div class="title">通用后台管理系统</div>
           <el-menu-item index="/home">
-            <el-icon>
-              <House />
-            </el-icon>
+            <el-icon><House /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="/overview" v-if="userStore.identity === '超级管理员'">
-            <el-icon>
-              <Document />
-            </el-icon>
+          <el-menu-item index="/overview" v-if="isSuperAdmin">
+            <el-icon><Document /></el-icon>
             <span>系统概览</span>
           </el-menu-item>
-          <el-sub-menu
-            index="3"
-            v-if="userStore.identity === '超级管理员' || userStore.identity === '用户管理员'"
-          >
+          <el-sub-menu index="3" v-if="canManageUsers">
             <template #title>
-              <el-icon>
-                <User />
-              </el-icon>
+              <el-icon><User /></el-icon>
               <span>用户管理</span>
             </template>
-            <el-menu-item-group title="管理员管理" v-if="userStore.identity === '超级管理员'">
+            <el-menu-item-group title="管理员管理" v-if="isSuperAdmin">
               <el-menu-item index="/product_manage">产品管理员</el-menu-item>
               <el-menu-item index="/users_manage">用户管理员</el-menu-item>
               <el-menu-item index="/message_manage">消息管理员</el-menu-item>
@@ -35,18 +26,9 @@
               <el-menu-item index="/user_list">用户列表</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-sub-menu
-            index="4"
-            v-if="
-              userStore.identity === '超级管理员' ||
-              userStore.identity === '产品管理员' ||
-              userStore.identity === '用户'
-            "
-          >
+          <el-sub-menu index="4" v-if="canManageProducts">
             <template #title>
-              <el-icon>
-                <TakeawayBox />
-              </el-icon>
+              <el-icon><TakeawayBox /></el-icon>
               <span>产品管理</span>
             </template>
             <el-menu-item-group title="入库管理">
@@ -56,14 +38,9 @@
               <el-menu-item index="/out_product_manage_list">出库列表</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-sub-menu
-            index="5"
-            v-if="userStore.identity === '消息管理员' || userStore.identity === '超级管理员'"
-          >
+          <el-sub-menu index="5" v-if="canManageMessages">
             <template #title>
-              <el-icon>
-                <ChatSquare />
-              </el-icon>
+              <el-icon><ChatSquare /></el-icon>
               <span>消息管理</span>
             </template>
             <el-menu-item-group title="消息管理">
@@ -73,22 +50,20 @@
               <el-menu-item index="/recycle">回收站</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-menu-item index="/file" v-if="userStore.identity === '超级管理员'">
+          <el-menu-item index="/file" v-if="isSuperAdmin">
             <el-icon><icon-menu /></el-icon>
             <span>合同管理</span>
           </el-menu-item>
-          <el-menu-item index="/operation_log" v-if="userStore.identity === '超级管理员'">
+          <el-menu-item index="/operation_log" v-if="isSuperAdmin">
             <el-icon><icon-menu /></el-icon>
             <span>操作日志</span>
           </el-menu-item>
-          <el-menu-item index="/login_log" v-if="userStore.identity === '超级管理员'">
+          <el-menu-item index="/login_log" v-if="isSuperAdmin">
             <el-icon><icon-menu /></el-icon>
             <span>登录日志</span>
           </el-menu-item>
           <el-menu-item index="/set">
-            <el-icon>
-              <Tools />
-            </el-icon>
+            <el-icon><Tools /></el-icon>
             <span>系统设置</span>
           </el-menu-item>
         </el-menu>
@@ -97,11 +72,7 @@
         <el-header>
           <span class="header-left-content">尊敬的 {{ name }} 欢迎您登录本系统</span>
           <div class="header-right-content">
-            <el-badge
-              :is-dot="msgStore.read_list.length > 0"
-              class="item"
-              @click="openDepartmentMessage"
-            >
+            <el-badge :is-dot="msgStore.read_list.length > 0" class="item" @click="openDepartmentMessage">
               <el-icon :size="20" class="message">
                 <Message />
               </el-icon>
@@ -120,29 +91,28 @@
           </div>
         </el-header>
         <el-main>
-          <router-view></router-view>
+          <router-view />
         </el-main>
       </el-container>
     </el-container>
   </div>
-  <departmentMsg ref="department_msg"></departmentMsg>
+  <departmentMsg ref="departmentMsgRef" />
 </template>
 
 <script lang="ts" setup>
+import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   ChatSquare,
   Document,
   House,
   Menu as IconMenu,
+  Message,
   TakeawayBox,
   Tools,
   User,
-  Message,
 } from '@element-plus/icons-vue'
-
-import { ref } from 'vue'
 import departmentMsg from '@/components/department_message.vue'
-import { useRouter } from 'vue-router'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMsg } from '@/stores/message'
 import { useMenu } from '@/stores/menu'
@@ -151,17 +121,37 @@ const msgStore = useMsg()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 const router = useRouter()
-const name = localStorage.getItem('name')
+const name = localStorage.getItem('name') ?? ''
+
+const isSuperAdmin = computed(() => userStore.identity === '超级管理员')
+const canManageUsers = computed(
+  () => userStore.identity === '超级管理员' || userStore.identity === '用户管理员',
+)
+const canManageProducts = computed(
+  () =>
+    userStore.identity === '超级管理员' ||
+    userStore.identity === '产品管理员' ||
+    userStore.identity === '用户',
+)
+const canManageMessages = computed(
+  () => userStore.identity === '消息管理员' || userStore.identity === '超级管理员',
+)
+
+onMounted(() => {
+  if (userStore.id) {
+    msgStore.returnReadList(userStore.id)
+  }
+})
 
 const goLogin = () => {
   menuStore.clearRouter()
-  router.push('/login')
   localStorage.clear()
+  router.push('/login')
 }
 
-const department_msg = ref()
+const departmentMsgRef = ref<InstanceType<typeof departmentMsg> | null>(null)
 const openDepartmentMessage = () => {
-  department_msg.value.open()
+  departmentMsgRef.value?.open()
 }
 </script>
 

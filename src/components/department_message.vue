@@ -16,27 +16,27 @@
                   <div :class="idInList(row.id) ? 'readed' : 'noread'"></div>
                 </template>
               </el-table-column>
-              <el-table-column label="主题" prop="message_title">
+              <el-table-column label="消息标题" prop="message_title">
                 <template #default="{ row }">
                   <div class="title-wrapped">
                     <div class="title">{{ row.message_title }}</div>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="等级" prop="message_level">
+              <el-table-column label="级别" prop="message_level">
                 <template #default="{ row }">
-                  <el-tag class="mx-1" round v-if="row.message_level == '一般'">{{
-                    row.message_level
-                  }}</el-tag>
-                  <el-tag type="warning" class="mx-1" round v-if="row.message_level == '重要'">{{
-                    row.message_level
-                  }}</el-tag>
-                  <el-tag type="danger" class="mx-1" round v-if="row.message_level == '必要'">{{
-                    row.message_level
-                  }}</el-tag>
+                  <el-tag class="mx-1" round v-if="row.message_level === '一般'">
+                    {{ row.message_level }}
+                  </el-tag>
+                  <el-tag type="warning" class="mx-1" round v-if="row.message_level === '重要'">
+                    {{ row.message_level }}
+                  </el-tag>
+                  <el-tag type="danger" class="mx-1" round v-if="row.message_level === '紧急'">
+                    {{ row.message_level }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="发布日期" prop="message_publish_time">
+              <el-table-column label="发布时间" prop="message_publish_time">
                 <template #default="{ row }">
                   <div>{{ row.message_publish_time?.slice(0, 10) }}</div>
                 </template>
@@ -50,7 +50,7 @@
           <div>{{ messageInfo.message_title }}</div>
           <div v-html="messageInfo.message_content"></div>
         </div>
-        <div class="detail-wrapped" v-else>请点击列表中的消息进行查看</div>
+        <div class="detail-wrapped" v-else>请选择左侧消息查看详情。</div>
       </el-main>
     </el-container>
   </el-dialog>
@@ -58,16 +58,21 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import {
-  getDepartmentMsg,
-  getDepartmentMsgList,
-  getReadListAndStatus,
-  clickDelete,
-} from '@/api/dep_msg'
+import { clickDelete, getDepartmentMsg, getDepartmentMsgList, getReadListAndStatus } from '@/api/dep_msg'
 import { updateClick } from '@/api/message'
 import { useMsg } from '@/stores/message'
+
+interface DepartmentMessageRow {
+  id: number
+  message_title: string
+  message_content: string
+  message_level?: string
+  message_publish_time?: string
+  message_click_number: number
+}
+
 const msgStore = useMsg()
-const tableData = ref([])
+const tableData = ref<DepartmentMessageRow[]>([])
 const userInfoStr = localStorage.getItem('userinfo')
 const localUserInfo = userInfoStr ? JSON.parse(userInfoStr) : null
 const currentUserId = localUserInfo?.id || localStorage.getItem('id')
@@ -77,8 +82,10 @@ const messageInfo = reactive({
   message_title: '',
   message_content: '',
 })
-// 当前未读消息
+
+// 已读列表用于控制左侧圆点状态。
 const readList = ref<number[]>([])
+const dialog = ref(false)
 
 const getUserDepartmentMessage = async () => {
   const id = currentUserId
@@ -90,49 +97,54 @@ const getUserDepartmentMessage = async () => {
     return
   }
 
-  if (department !== '') {
-    const res = (await getReadListAndStatus(id)) as any
+  if (department === '') {
+    readList.value = []
+    tableData.value = []
+    return
+  }
 
-    if (!Array.isArray(res) || !res[0]) {
-      readList.value = []
-      tableData.value = []
-      return
-    }
+  const res = (await getReadListAndStatus(id)) as any
 
-    tableData.value = (await getDepartmentMsgList(department)) as any
-    if (res[0].read_status == 0) {
-      const { read_list } = (await getDepartmentMsg(id, department)) as any
-      readList.value = read_list
-    } else {
-      readList.value = JSON.parse(res[0].read_list)
-    }
+  if (!Array.isArray(res) || !res[0]) {
+    readList.value = []
+    tableData.value = []
+    return
+  }
+
+  tableData.value = (await getDepartmentMsgList(department)) as DepartmentMessageRow[]
+
+  if (res[0].read_status === 0) {
+    const { read_list } = (await getDepartmentMsg(id, department)) as any
+    readList.value = read_list
+  } else {
+    readList.value = JSON.parse(res[0].read_list)
   }
 }
+
 getUserDepartmentMessage()
 
-const getDetail = async (row: any) => {
+// 点击列表项后先更新阅读状态，再刷新列表并展示详情。
+const getDetail = async (row: DepartmentMessageRow) => {
   await updateClick(row.message_click_number, row.id)
+
   if (currentUserId) {
     await clickDelete(row.id, currentUserId as unknown as number)
   }
+
   messageInfo.message_title = row.message_title
   messageInfo.message_content = row.message_content
   await getUserDepartmentMessage()
 }
 
 const idInList = (id: number) => {
-  if (readList.value.indexOf(id) !== -1) {
-    return 0
-  } else {
-    return 1
-  }
+  return readList.value.indexOf(id) !== -1 ? 0 : 1
 }
-// 弹窗默认为false
-const dialog = ref(false)
-// 暴露open
+
+// 父组件通过 ref 调用 open()，这里仅负责把弹窗打开。
 const open = () => {
   dialog.value = true
 }
+
 defineExpose({
   open,
 })
