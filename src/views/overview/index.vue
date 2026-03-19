@@ -113,7 +113,7 @@ const localUserInfo = userInfoStr ? JSON.parse(userInfoStr) : null
 const currentUserId = localUserInfo?.id || localStorage.getItem('id')
 
 const routerTo = (x: string) => {
-  router.push(`\/${x}`)
+  router.push(`/${x}`)
 }
 // // 获取用户信息
 const returnUserInfo = async () => {

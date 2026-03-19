@@ -110,8 +110,14 @@ const Login = async () => {
     const { id, account, name, email, department } = res.results
     const token = res.token
     const routerList = (await returnMenuList(id)) as any
+
+    if (!token) {
+      ElMessage.error('登录态无效，请重新登录')
+      return
+    }
+
     ElMessage.success('登录成功')
-    menuStore.setRouter(routerList)
+    menuStore.setRouter(Array.isArray(routerList) ? routerList : [])
     localStorage.setItem('token', token)
     localStorage.setItem('id', String(id))
     localStorage.setItem('name', name)

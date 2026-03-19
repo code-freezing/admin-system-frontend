@@ -25,9 +25,11 @@ import { changePassword } from '@/api/userinfor.js'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserInfo } from '@/stores/userinfor'
+import { useMenu } from '@/stores/menu'
 
 const router = useRouter()
 const userStore = useUserInfo()
+const menuStore = useMenu()
 
 // 表单对齐方式
 const labelPosition = ref('top')
@@ -70,6 +72,7 @@ const changeUserPassword = async () => {
         type: 'success',
       })
       state.changePasswordDialog = false
+      menuStore.clearRouter()
       router.push('/login')
     } else {
       ElMessage.error('修改密码失败，请重新输入！')

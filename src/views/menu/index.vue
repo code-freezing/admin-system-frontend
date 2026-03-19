@@ -4,13 +4,13 @@
       <el-aside width="200px">
         <el-menu class="el-menu-vertical-demo" router>
           <div class="title">通用后台管理系统</div>
-          <el-menu-item index="home">
+          <el-menu-item index="/home">
             <el-icon>
               <House />
             </el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="overview" v-if="userStore.identity == '超级管理员'">
+          <el-menu-item index="/overview" v-if="userStore.identity === '超级管理员'">
             <el-icon>
               <Document />
             </el-icon>
@@ -18,7 +18,7 @@
           </el-menu-item>
           <el-sub-menu
             index="3"
-            v-if="userStore.identity == '超级管理员' || userStore.identity == '用户管理员'"
+            v-if="userStore.identity === '超级管理员' || userStore.identity === '用户管理员'"
           >
             <template #title>
               <el-icon>
@@ -26,21 +26,21 @@
               </el-icon>
               <span>用户管理</span>
             </template>
-            <el-menu-item-group title="管理员管理" v-if="userStore.identity == '超级管理员'">
-              <el-menu-item index="product_manage">产品管理员</el-menu-item>
-              <el-menu-item index="users_manage">用户管理员</el-menu-item>
-              <el-menu-item index="message_manage">消息管理员</el-menu-item>
+            <el-menu-item-group title="管理员管理" v-if="userStore.identity === '超级管理员'">
+              <el-menu-item index="/product_manage">产品管理员</el-menu-item>
+              <el-menu-item index="/users_manage">用户管理员</el-menu-item>
+              <el-menu-item index="/message_manage">消息管理员</el-menu-item>
             </el-menu-item-group>
             <el-menu-item-group title="员工管理">
-              <el-menu-item index="user_list">用户列表</el-menu-item>
+              <el-menu-item index="/user_list">用户列表</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
           <el-sub-menu
             index="4"
             v-if="
-              userStore.identity == '超级管理员' ||
-              userStore.identity == '产品管理员' ||
-              userStore.identity == '用户'
+              userStore.identity === '超级管理员' ||
+              userStore.identity === '产品管理员' ||
+              userStore.identity === '用户'
             "
           >
             <template #title>
@@ -50,15 +50,15 @@
               <span>产品管理</span>
             </template>
             <el-menu-item-group title="入库管理">
-              <el-menu-item index="product_manage_list">产品列表</el-menu-item>
+              <el-menu-item index="/product_manage_list">产品列表</el-menu-item>
             </el-menu-item-group>
             <el-menu-item-group title="出库管理">
-              <el-menu-item index="out_product_manage_list">出库列表</el-menu-item>
+              <el-menu-item index="/out_product_manage_list">出库列表</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
           <el-sub-menu
             index="5"
-            v-if="userStore.identity == '消息管理员' || userStore.identity == '超级管理员'"
+            v-if="userStore.identity === '消息管理员' || userStore.identity === '超级管理员'"
           >
             <template #title>
               <el-icon>
@@ -67,25 +67,25 @@
               <span>消息管理</span>
             </template>
             <el-menu-item-group title="消息管理">
-              <el-menu-item index="message_list">消息列表</el-menu-item>
+              <el-menu-item index="/message_list">消息列表</el-menu-item>
             </el-menu-item-group>
             <el-menu-item-group title="回收站">
-              <el-menu-item index="recycle">回收站</el-menu-item>
+              <el-menu-item index="/recycle">回收站</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
-          <el-menu-item index="file" v-if="userStore.identity == '超级管理员'">
+          <el-menu-item index="/file" v-if="userStore.identity === '超级管理员'">
             <el-icon><icon-menu /></el-icon>
             <span>合同管理</span>
           </el-menu-item>
-          <el-menu-item index="operation_log" v-if="userStore.identity == '超级管理员'">
+          <el-menu-item index="/operation_log" v-if="userStore.identity === '超级管理员'">
             <el-icon><icon-menu /></el-icon>
             <span>操作日志</span>
           </el-menu-item>
-          <el-menu-item index="login_log" v-if="userStore.identity == '超级管理员'">
+          <el-menu-item index="/login_log" v-if="userStore.identity === '超级管理员'">
             <el-icon><icon-menu /></el-icon>
             <span>登录日志</span>
           </el-menu-item>
-          <el-menu-item index="set">
+          <el-menu-item index="/set">
             <el-icon>
               <Tools />
             </el-icon>
@@ -112,7 +112,7 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item>设置账号</el-dropdown-item>
-                  <el-dropdown-item>更改头像</el-dropdown-item>
+                  <el-dropdown-item>更换头像</el-dropdown-item>
                   <el-dropdown-item @click="goLogin">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -145,11 +145,16 @@ import departmentMsg from '@/components/department_message.vue'
 import { useRouter } from 'vue-router'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMsg } from '@/stores/message'
+import { useMenu } from '@/stores/menu'
+
 const msgStore = useMsg()
 const userStore = useUserInfo()
+const menuStore = useMenu()
 const router = useRouter()
 const name = localStorage.getItem('name')
+
 const goLogin = () => {
+  menuStore.clearRouter()
   router.push('/login')
   localStorage.clear()
 }
@@ -161,15 +166,12 @@ const openDepartmentMessage = () => {
 </script>
 
 <style lang="scss" scoped>
-// 侧边栏
 .el-aside {
   height: 100vh;
   background: #2b303b;
   width: 210px;
-  // 隐藏滚动条
   overflow-x: hidden;
 
-  // 菜单
   .el-menu {
     background: #2b303b;
     width: 210px;
@@ -177,7 +179,6 @@ const openDepartmentMessage = () => {
     border-right: 0;
   }
 
-  // 标题
   .title {
     padding: 20px;
     display: flex;
@@ -189,10 +190,6 @@ const openDepartmentMessage = () => {
   .el-menu-item {
     color: #fff;
   }
-
-  // .el-sub-menu__title {
-  // 	color: #fff;
-  // }
 }
 
 .el-header {
@@ -203,7 +200,6 @@ const openDepartmentMessage = () => {
   align-items: center;
   justify-content: space-between;
 
-  // 欢迎语
   .header-left-content {
     font-size: 14px;
   }
@@ -216,7 +212,6 @@ const openDepartmentMessage = () => {
   }
 }
 
-// 徽章
 .item {
   cursor: pointer;
 }
@@ -226,12 +221,10 @@ const openDepartmentMessage = () => {
   background-color: #f3f4fa;
 }
 
-// 无子菜单的
 .el-menu-item:hover {
   background: #006eff;
 }
 
-// 有子菜单的
 :deep(.el-sub-menu__title:hover) {
   background: #006eff;
 }

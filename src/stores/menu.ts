@@ -2,49 +2,69 @@ import { defineStore } from 'pinia'
 import router from '@/router'
 import { ref } from 'vue'
 
-// 使用了setup写法
 export const useMenu = defineStore(
   'menuInfo',
   () => {
     const menuData = ref<any[]>([])
-    // 函数相当于传统写法的action
-    const setRouter = (arr: any) => {
-      function compilerMenu(arr: any) {
-        if (!arr) {
+    const addedRouteNames = ref<string[]>([])
+
+    const loadComponent = (url: string) => {
+      const modules = import.meta.glob('@/views/**/*.vue')
+      return modules[`/src/views/${url}.vue`]
+    }
+
+    const clearRouter = () => {
+      addedRouteNames.value.forEach((name) => {
+        if (router.hasRoute(name)) {
+          router.removeRoute(name)
+        }
+      })
+      addedRouteNames.value = []
+    }
+
+    const compilerMenu = (arr: any[]) => {
+      if (!Array.isArray(arr) || arr.length === 0) {
+        return
+      }
+
+      arr.forEach((item: any) => {
+        if (item.children && item.children.length) {
+          compilerMenu(item.children)
           return
         }
-        menuData.value = arr
-        arr.forEach((item: any) => {
-          const rts = {
-            name: item.name,
-            path: item.path,
-            meta: item.meta,
-            component: item.component,
-          }
-          if (item.children && item.children.length) {
-            compilerMenu(item.children)
-          }
-          if (!item.children) {
-            const path = loadComponent(item.component)
-            rts.component = path
-            router.addRoute('menu', rts)
-          }
 
-          function loadComponent(url: string) {
-            const Module = import.meta.glob('@/views/**/*.vue')
-            return Module[`/src/views/${url}.vue`]
-          }
+        if (router.hasRoute(item.name)) {
+          return
+        }
+
+        const component = loadComponent(item.component)
+        if (!component) {
+          return
+        }
+
+        router.addRoute('menu', {
+          name: item.name,
+          path: item.path,
+          meta: item.meta,
+          component,
         })
-      }
-      compilerMenu(arr as any)
+        addedRouteNames.value.push(item.name)
+      })
+    }
+
+    const setRouter = (arr: any[]) => {
+      clearRouter()
+      menuData.value = Array.isArray(arr) ? arr : []
+      compilerMenu(menuData.value)
     }
 
     const addRouter = () => {
-      setRouter(menuData.value)
+      compilerMenu(menuData.value)
     }
 
     return {
       addRouter,
+      clearRouter,
       menuData,
       setRouter,
     }

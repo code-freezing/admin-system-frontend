@@ -13,6 +13,7 @@ const routes: any = [
   {
     name: 'menu',
     path: '/menu',
+    redirect: '/home',
     component: () => import('@/views/menu/index.vue'),
   },
   {
