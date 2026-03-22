@@ -17,11 +17,7 @@
                     <el-input v-model="loginData.account" placeholder="请输入账号" />
                   </el-form-item>
                   <el-form-item label="密码">
-                    <el-input
-                      v-model="loginData.password"
-                      placeholder="请输入密码"
-                      show-password
-                    />
+                    <el-input v-model="loginData.password" placeholder="请输入密码" show-password />
                   </el-form-item>
                   <div class="footer-wrapped">
                     <div class="forget-password">
@@ -42,10 +38,7 @@
                     <el-input v-model="registerData.account" placeholder="账号长度6-12位" />
                   </el-form-item>
                   <el-form-item label="密码">
-                    <el-input
-                      v-model="registerData.password"
-                      placeholder="密码需长度6-12位含字母数字"
-                    />
+                    <el-input v-model="registerData.password" placeholder="密码需长度6-12位含字母数字" />
                   </el-form-item>
                   <el-form-item label="确认密码">
                     <el-input v-model="registerData.rePassword" placeholder="请再次输入密码" />
@@ -62,8 +55,8 @@
       <el-footer class="footer-wrapped">
         <div class="footer-content">
           <div class="title">
-            <span>网络工程师</span> | <span>全栈工程师</span> | <span>阿里云社区博客专家</span> |
-            <span>CSDN百万访问博主</span> | <span>清华大学出版社签约作家</span>
+            <span>网络工程师</span> | <span>全栈工程师</span> | <span>阿里云社区博主专家</span> |
+            <span>CSDN百万访问博主</span> | <span>清华大学出版社签约作者</span>
           </div>
         </div>
       </el-footer>
@@ -81,6 +74,7 @@ import { login, register, returnMenuList } from '@/api/login'
 import { loginLog } from '@/api/log'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMenu } from '@/stores/menu'
+import { setAuthTokens } from '@/utils/auth'
 
 interface AuthForm {
   account: number | null
@@ -117,17 +111,17 @@ const loginAction = async () => {
   }
 
   const { id, account, name, email, department } = res.results
-  const token = res.token
+  const accessToken = res.accessToken || res.token
   const routerList = (await returnMenuList(id)) as any
 
-  if (!token) {
+  if (!accessToken) {
     ElMessage.error('登录态无效，请重新登录')
     return
   }
 
   ElMessage.success('登录成功')
   menuStore.setRouter(Array.isArray(routerList) ? routerList : [])
-  localStorage.setItem('token', token)
+  setAuthTokens(accessToken)
   localStorage.setItem('id', String(id))
   localStorage.setItem('name', name)
   localStorage.setItem('department', department ?? '')

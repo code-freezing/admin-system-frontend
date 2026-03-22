@@ -51,15 +51,15 @@
             </el-menu-item-group>
           </el-sub-menu>
           <el-menu-item index="/file" v-if="isSuperAdmin">
-            <el-icon><icon-menu /></el-icon>
+            <el-icon><IconMenu /></el-icon>
             <span>合同管理</span>
           </el-menu-item>
           <el-menu-item index="/operation_log" v-if="isSuperAdmin">
-            <el-icon><icon-menu /></el-icon>
+            <el-icon><IconMenu /></el-icon>
             <span>操作日志</span>
           </el-menu-item>
           <el-menu-item index="/login_log" v-if="isSuperAdmin">
-            <el-icon><icon-menu /></el-icon>
+            <el-icon><IconMenu /></el-icon>
             <span>登录日志</span>
           </el-menu-item>
           <el-menu-item index="/set">
@@ -100,7 +100,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ChatSquare,
@@ -113,9 +113,11 @@ import {
   User,
 } from '@element-plus/icons-vue'
 import departmentMsg from '@/components/department_message.vue'
+import { logout } from '@/api/login'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMsg } from '@/stores/message'
 import { useMenu } from '@/stores/menu'
+import { clearLoginState } from '@/utils/auth'
 
 const msgStore = useMsg()
 const userStore = useUserInfo()
@@ -124,18 +126,11 @@ const router = useRouter()
 const name = localStorage.getItem('name') ?? ''
 
 const isSuperAdmin = computed(() => userStore.identity === '超级管理员')
-const canManageUsers = computed(
-  () => userStore.identity === '超级管理员' || userStore.identity === '用户管理员',
-)
+const canManageUsers = computed(() => userStore.identity === '超级管理员' || userStore.identity === '用户管理员')
 const canManageProducts = computed(
-  () =>
-    userStore.identity === '超级管理员' ||
-    userStore.identity === '产品管理员' ||
-    userStore.identity === '用户',
+  () => userStore.identity === '超级管理员' || userStore.identity === '产品管理员' || userStore.identity === '用户',
 )
-const canManageMessages = computed(
-  () => userStore.identity === '消息管理员' || userStore.identity === '超级管理员',
-)
+const canManageMessages = computed(() => userStore.identity === '消息管理员' || userStore.identity === '超级管理员')
 
 onMounted(() => {
   if (userStore.id) {
@@ -143,9 +138,15 @@ onMounted(() => {
   }
 })
 
-const goLogin = () => {
+const goLogin = async () => {
+  try {
+    await logout()
+  } catch {
+    // 忽略退出接口失败，仍然清空本地登录态。
+  }
+
   menuStore.clearRouter()
-  localStorage.clear()
+  clearLoginState()
   router.push('/login')
 }
 

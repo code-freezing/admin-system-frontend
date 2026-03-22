@@ -81,6 +81,7 @@ import bulletin from '@/components/common_msg.vue'
 import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
 import { companyMessageList, systemMessageList } from '@/api/message'
 import { useUserInfo } from '@/stores/userinfor'
+import { hasAuthSession } from '@/utils/auth'
 
 interface CompanyIntroduceItem {
   id: number
@@ -145,7 +146,7 @@ onMounted(() => {
   loadMessages()
 })
 
-if (!userStore.id && localStorage.getItem('token')) {
+if (!userStore.id && hasAuthSession()) {
   const id = Number(localStorage.getItem('id') || 0)
   if (id > 0) {
     userStore.userInfo(id)
