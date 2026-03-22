@@ -89,6 +89,7 @@ import { editMessage as editMessageApi, publishMessage } from '@/api/message'
 import { getDepartment } from '@/api/setting'
 import { useMsg } from '@/stores/message'
 
+// 公司消息和系统消息共用同一个富文本弹窗，通过 title 判断当前处于哪种模式。
 interface SelectOption {
   value: string
 }
@@ -116,6 +117,7 @@ const editorRef = shallowRef()
 const mode = ref('default')
 const valueHtml = ref('')
 
+// 表单字段刻意保持完整，避免在创建/编辑/不同消息类型之间频繁切换结构。
 const formData = reactive<FormData>({
   id: null,
   message_title: '',
@@ -131,6 +133,7 @@ const needsDepartmentFields = computed(() => {
   return title.value === '发布公司消息' || title.value === '编辑公司消息'
 })
 
+// 富文本工具栏刻意裁掉复杂功能，让后台公告编辑保持轻量。
 const rules = reactive({
   message_title: [{ required: true, message: '请输入消息标题', trigger: 'blur' }],
   message_publish_department: [{ required: true, message: '请选择发布部门', trigger: 'blur' }],
@@ -166,6 +169,7 @@ const editorConfig = {
   MENU_CONF: {},
 }
 
+// 部门选项来自系统设置，“全体员工”是在前端额外补上的特殊接收对象。
 const loadDepartmentList = async () => {
   const res = await getDepartment()
   const list = Array.isArray(res) ? (res as string[]) : []
@@ -220,6 +224,7 @@ const handleCreated = (editor: any) => {
   editorRef.value = editor
 }
 
+// 保存逻辑按标题分支，是因为公司消息和系统消息在字段要求、后续联动上不完全一样。
 const yes = async () => {
   formData.message_content = valueHtml.value
 

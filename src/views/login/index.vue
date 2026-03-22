@@ -102,6 +102,10 @@ const openForget = () => {
   forgetP.value?.open()
 }
 
+// 登录链路会串起三件事：
+// 1. 调登录接口拿 access token
+// 2. 拉菜单并动态注入路由
+// 3. 拉用户信息并记录登录日志
 const loginAction = async () => {
   const res = (await login(loginData)) as any
 

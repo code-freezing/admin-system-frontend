@@ -12,10 +12,10 @@ import { hasAuthSession } from './utils/auth'
 
 const app = createApp(App)
 
-// 先装载状态管理，后续 store 和页面都依赖它。
+// 先安装 Pinia，后续路由恢复和页面里的 store 都依赖它。
 app.use(pinia)
 
-// 刷新后如果本地还有登录态，就把菜单路由重新注入回来。
+// 刷新页面后，持久化的菜单数据还在，这里把动态路由重新挂回 router。
 const menuStore = useMenu(pinia)
 if (hasAuthSession()) {
   menuStore.addRouter()

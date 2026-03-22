@@ -222,6 +222,9 @@ import audit from '../components/audit.vue'
 import withdraw from '../components/withdraw.vue'
 import again from '../components/again_apply.vue'
 
+// 产品列表页分成两个标签页：
+// 1. 入库管理负责当前库存维护
+// 2. 出库管理负责待审核申请和撤回/重提
 interface ProductRow {
   id: number
   product_out_status?: string
@@ -245,6 +248,7 @@ const productOutId = ref<number>()
 const tableData = ref<ProductRow[]>([])
 const applyTableData = ref<ProductRow[]>([])
 
+// 两套分页状态分别服务于库存列表和出库申请列表。
 const paginationData = reactive({
   productTotal: 0,
   productPageCount: 0,
@@ -258,6 +262,7 @@ const toArray = <T,>(data: unknown): T[] => {
   return Array.isArray(data) ? (data as T[]) : []
 }
 
+// 后端分页接口固定每页 10 条，这里只负责同步总数和页码。
 const loadProductLength = async () => {
   const res = await getProductLength()
   const total = Array.isArray(res) ? res.length : 0
@@ -284,6 +289,7 @@ const changeTwoPageList = async () => {
   await Promise.all([getProductFirstPageList(), getApplyProductFirstPageList()])
 }
 
+// 标签切换时只刷新当前视图对应的数据，避免每次切页都全量请求。
 const handleClick = (tab: TabsPaneContext) => {
   if (tab.props.label === '入库管理') {
     getProductFirstPageList()
@@ -313,6 +319,7 @@ const searchApplyProduct = async () => {
   )
 }
 
+// 这些 ref 对应各个弹窗组件，页面本身只负责打开弹窗和在成功后刷新列表。
 const in_warehouse = ref()
 const productInWarehouse = () => {
   in_warehouse.value.open()

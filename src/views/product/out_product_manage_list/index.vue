@@ -61,6 +61,7 @@ import { Search } from '@element-plus/icons-vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getOutProductLength, returnOutProductListData, searchProductForOutId } from '@/api/product'
 
+// 这个页面只展示已经完成审核的出库记录，数据来源是 outproduct 表。
 interface OutProductRow {
   product_apply_time?: string
   product_audit_time?: string
@@ -77,6 +78,7 @@ const productOutId = ref<number>()
 const tableData = ref<OutProductRow[]>([])
 const outProductTotal = ref(0)
 
+// 出库记录列表结构简单，所以只维护一套分页状态。
 const paginationData = reactive({
   pageCount: 0,
   currentPage: 1,
@@ -93,6 +95,7 @@ const getFirstPageList = async () => {
   tableData.value = (await returnOutProductListData(1)) as OutProductRow[]
 }
 
+// 搜索按出库编号精确查询，清空输入框后恢复第一页默认数据。
 const currentChange = async (value: number) => {
   paginationData.currentPage = value
   tableData.value = (await returnOutProductListData(value)) as OutProductRow[]

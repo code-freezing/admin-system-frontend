@@ -14,6 +14,7 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deleteProduct } from '@/api/product'
 
+// 删除商品弹窗只做确认，不承载额外业务逻辑。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 const productId = ref<number | null>(null)
@@ -23,6 +24,7 @@ const open = (id: number) => {
   dialogFormVisible.value = true
 }
 
+// 删除成功后由父页面负责重新拉取当前页数据。
 const remove = async () => {
   const res = await deleteProduct(productId.value as number)
   if (res.status == 0) {

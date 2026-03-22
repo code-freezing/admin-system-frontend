@@ -45,6 +45,7 @@ import type { FormProps } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { applyOutProduct } from '@/api/product'
 
+// 出库申请弹窗从列表行带入当前库存和单价，用户只补充申请编号、数量和备注。
 interface FormData {
   id: number | null
   product_name: string
@@ -77,6 +78,7 @@ const rules = reactive({
   product_out_apply_person: [{ required: true, message: '申请人不能为空', trigger: 'blur' }],
 })
 
+// 申请数量不能大于当前库存，这个判断放在前端先做一层快速限制。
 const canSubmitOutApply = computed(() => {
   const warehouseNumber = formDataInfo.product_in_warehouse_number
   const outNumber = formDataInfo.product_out_number
@@ -95,6 +97,7 @@ const open = (row: any) => {
   dialogFormVisible.value = true
 }
 
+// 提交成功后通过 success 事件通知父页面刷新库存和申请列表。
 const addProduct = async () => {
   const res = await applyOutProduct(formDataInfo)
   if (res.status == 0) {

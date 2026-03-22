@@ -151,6 +151,7 @@ import {
 import createEdit from '../components/create_edit.vue'
 import deleteM from '../components/delete.vue'
 
+// 消息列表页分为公司消息和系统消息两个标签页，但都复用同一套弹窗组件。
 interface MessageRow {
   id: number
   message_title?: string
@@ -177,6 +178,7 @@ const departmentData = ref<string[]>([])
 const companyTableData = ref<MessageRow[]>([])
 const systemTableData = ref<MessageRow[]>([])
 
+// 两套分页状态分别维护公司消息和系统消息，避免切换标签时互相覆盖。
 const paginationData = reactive({
   companyTotal: 0,
   companyPageCount: 0,
@@ -213,6 +215,7 @@ const getSystemFirstPageList = async () => {
   systemTableData.value = (await returnSystemListData(1)) as MessageRow[]
 }
 
+// 公司消息支持按部门和等级筛选；系统消息列表保持简单展示。
 const getListByDepartment = async () => {
   if (!department.value) {
     await getCompanyFirstPageList()
@@ -245,6 +248,7 @@ const systemCurrentChange = async (value: number) => {
   systemTableData.value = (await returnSystemListData(value)) as MessageRow[]
 }
 
+// createEdit 和 deleteM 都是弹窗组件，列表页只负责传入当前行数据。
 const cre = ref()
 const createMessage = (id: number) => {
   cre.value.openCreate(id)

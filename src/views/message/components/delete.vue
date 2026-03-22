@@ -14,6 +14,7 @@ import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deleteMessage, firstDelete, recover } from '@/api/message'
 
+// 删除弹窗同时服务三种动作：放入回收站、从回收站恢复、永久删除。
 const emit = defineEmits(['success'])
 const dialogFormVisible = ref(false)
 const mode = ref<'delete' | 'recover' | 'real-delete'>('delete')
@@ -32,6 +33,7 @@ const tips = computed(() => {
   return '确认后会先把消息放入回收站。'
 })
 
+// 列表页通过不同的 open 方法切换模式，组件内部再决定调用哪个接口。
 const openDelete = (row: any) => {
   mode.value = 'delete'
   messageId.value = row.id
@@ -53,6 +55,7 @@ const openRealDelete = (id: number) => {
   dialogFormVisible.value = true
 }
 
+// 三种模式最终都复用同一个确认按钮，避免页面层重复写删除逻辑。
 const operationMessage = async () => {
   let res: any
 

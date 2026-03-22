@@ -141,11 +141,13 @@ const loadMessages = async () => {
 }
 
 onMounted(() => {
+  // 首页展示的数据比较分散，这里在挂载时并行触发几类内容加载。
   loadSwiper()
   loadCompanyIntroduce()
   loadMessages()
 })
 
+// 页面刷新时，Pinia 里可能还没来得及恢复 userStore，这里做一次兜底回填。
 if (!userStore.id && hasAuthSession()) {
   const id = Number(localStorage.getItem('id') || 0)
   if (id > 0) {

@@ -21,6 +21,7 @@ type UserProfileResponse =
   | null
   | undefined
 
+// 后端不同接口返回结构不完全统一，这里先做一次格式归一化。
 const resolveProfile = (value: UserProfileResponse): UserProfilePayload => {
   if (!value) {
     return {}
@@ -49,6 +50,7 @@ export const useUserInfo = defineStore(
     const department = ref<string>('')
     const email = ref<string>('')
 
+    // 拉取用户详情后，把页面常用字段拆到独立 ref，避免页面每次都手动解构。
     const userInfo = async (userId: number) => {
       const res = (await getUserInfo(userId)) as UserProfileResponse
       const data = resolveProfile(res)

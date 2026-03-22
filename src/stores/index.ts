@@ -3,7 +3,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 const pinia = createPinia()
 
-// 持久化插件负责把指定 store 状态写入本地存储。
+// 这个插件会把声明了 persist 的 store 自动同步到本地存储。
 pinia.use(piniaPluginPersistedstate)
 
 export default pinia

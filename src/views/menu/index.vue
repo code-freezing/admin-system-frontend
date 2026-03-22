@@ -125,6 +125,7 @@ const menuStore = useMenu()
 const router = useRouter()
 const name = localStorage.getItem('name') ?? ''
 
+// 菜单页本身是整个后台的壳子，左侧菜单显示哪些项完全由用户身份决定。
 const isSuperAdmin = computed(() => userStore.identity === '超级管理员')
 const canManageUsers = computed(() => userStore.identity === '超级管理员' || userStore.identity === '用户管理员')
 const canManageProducts = computed(
@@ -142,7 +143,7 @@ const goLogin = async () => {
   try {
     await logout()
   } catch {
-    // 忽略退出接口失败，仍然清空本地登录态。
+    // 即使后端退出接口失败，前端也必须清掉本地状态，避免卡在半登录状态。
   }
 
   menuStore.clearRouter()

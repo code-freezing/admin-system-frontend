@@ -12,13 +12,14 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
 const instance = axios.create({
   baseURL,
   timeout: 6000,
+  // refresh token 在 HttpOnly Cookie 中，这里必须允许浏览器自动带 Cookie。
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// 这个实例只负责通用请求配置，业务层统一通过它发请求。
+// 这个单例 Promise 用来保证多个 401 同时出现时只发一个刷新请求。
 let refreshRequest: Promise<string> | null = null
 
 const redirectToLogin = async () => {
@@ -31,10 +32,10 @@ const redirectToLogin = async () => {
 
 const refreshAccessToken = async () => {
   if (!refreshRequest) {
-    // 多个请求同时 401 时复用同一个刷新请求，避免并发刷新互相覆盖。
     refreshRequest = instance.request({
       url: '/api/refresh',
       method: 'POST',
+      // 刷新请求自己不需要 access token，也不能再次触发刷新逻辑。
       _skipAuthRefresh: true,
     } as RetryableRequestConfig)
       .then((res: any) => {
@@ -56,7 +57,6 @@ const refreshAccessToken = async () => {
 instance.interceptors.request.use(
   (config: RetryableRequestConfig) => {
     if (!config._skipAuthRefresh) {
-      // 业务请求统一自动带上 access token。
       const token = getAccessToken()
       if (token) {
         config.headers.Authorization = token
@@ -68,7 +68,7 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
-// 响应拦截器只做最小处理，业务代码拿到的就是后端返回体。
+// 大多数业务代码都希望直接拿到后端返回体，所以这里统一返回 response.data。
 instance.interceptors.response.use(
   (response) => response.data,
   async (error: AxiosError) => {
@@ -77,7 +77,7 @@ instance.interceptors.response.use(
 
     if (status === 401 && originalRequest && !originalRequest._retry && !originalRequest._skipAuthRefresh) {
       try {
-        // access token 失效后，先刷新，再重放原请求。
+        // access token 过期时，先刷新，再把刚才失败的请求重放一次。
         originalRequest._retry = true
         const nextAccessToken = await refreshAccessToken()
         originalRequest.headers.Authorization = nextAccessToken

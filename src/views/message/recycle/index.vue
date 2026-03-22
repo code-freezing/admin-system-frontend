@@ -46,6 +46,7 @@ import breadCrumb from '@/components/bread_crumb.vue'
 import { getRecycleMessageLength, returnRecycleListData } from '@/api/message'
 import renewAndDelete from '../components/delete.vue'
 
+// 回收站页只关心软删除消息，恢复和永久删除都复用 delete 弹窗里的动作。
 interface RecycleRow {
   id: number
   message_title?: string
@@ -81,6 +82,7 @@ const getRecycleFirstPageList = async () => {
   tableData.value = (await returnRecycleListData(1)) as RecycleRow[]
 }
 
+// 恢复和永久删除都由子组件处理确认逻辑，页面只负责刷新列表。
 const recycleCurrentChange = async (value: number) => {
   paginationData.recycleCurrentPage = value
   tableData.value = (await returnRecycleListData(value)) as RecycleRow[]

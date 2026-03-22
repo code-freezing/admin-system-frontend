@@ -1,5 +1,6 @@
 import { post } from './request'
 
+// 这一组接口全部属于“用户信息与管理员管理”模块。
 export const getUserInfo = (id: number) => {
   return post('/user/getUserInfo', { id })
 }
@@ -70,6 +71,7 @@ export const deleteUser = (id: number, account: number) => {
   return post('/user/deleteUser', { id, account })
 }
 
+// 列表长度和分页数据拆成两个接口，是为了配合当前表格分页逻辑。
 export const getAdminListLength = (identity: string) => {
   return post('/user/getAdminListLength', { identity })
 }

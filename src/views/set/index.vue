@@ -187,12 +187,7 @@
                 @keyup.enter="handleInputProductConfirm"
                 @blur="handleInputProductConfirm"
               />
-              <el-button
-                v-else
-                class="button-new-tag ml-1"
-                size="small"
-                @click="showProductInput"
-              >
+              <el-button v-else class="button-new-tag ml-1" size="small" @click="showProductInput">
                 + 添加分类
               </el-button>
             </div>
@@ -206,7 +201,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, reactive, ref, toRaw } from 'vue'
+import { nextTick, onMounted, ref, toRaw } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElInput, ElMessage } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
@@ -224,6 +219,7 @@ import { useUserInfo } from '@/stores/userinfor'
 import change from './components/change_password.vue'
 import editor from './components/editor.vue'
 
+// 设置页把账号资料、公司配置、首页轮播图和字典维护合并在同一个标签页容器中。
 const userStore = useUserInfo()
 const breadcrumb = ref()
 const item = ref({
@@ -231,13 +227,18 @@ const item = ref({
 })
 
 const activeName = ref('first')
-const avatarUrl = ref(`${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/user/uploadAvatar`)
-const swiperUrl = ref(`${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/set/uploadSwiper`)
+const avatarUrl = ref(
+  `${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/user/uploadAvatar`,
+)
+const swiperUrl = ref(
+  `${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/set/uploadSwiper`,
+)
 const companyName = ref('')
 const changeP = ref()
 const editorP = ref()
 const imageUrl = ref<string[]>([])
 
+// 轮播图配置在后端按 swiper1~swiper6 存储，这里用固定数组驱动上传区域。
 const swiperData = [
   { name: 'swiper1' },
   { name: 'swiper2' },
@@ -256,6 +257,7 @@ const inputProductValue = ref('')
 const inputProductVisible = ref(false)
 const InputProductRef = ref<InstanceType<typeof ElInput>>()
 
+// 基础设置在页面初始化时一次性加载，避免切标签后重复请求。
 const loadCompanyName = async () => {
   companyName.value = (await getCompanyName()) as string
 }
@@ -272,6 +274,7 @@ const loadProductList = async () => {
   dynamicProductTags.value = (await getProduct()) as string[]
 }
 
+// 头像上传成功后，还要调用 bind 接口把临时上传记录和当前账号真正绑定起来。
 const handleAvatarSuccess = async (response: any) => {
   if (response.status !== 0) {
     ElMessage.error('头像上传失败')
@@ -316,6 +319,7 @@ const handleSwiperSuccess = () => {
   loadSwiperList()
 }
 
+// 账号资料保存拆成独立按钮，减少一次改多项时的联动风险。
 const openChangePassword = () => {
   changeP.value.open()
 }
@@ -360,6 +364,7 @@ const openEditor = async (id: number) => {
   editorP.value.open(id)
 }
 
+// 字典维护直接操作本地 tag 数组，再整体提交给后端覆盖保存。
 const handleClose = async (tag: string) => {
   dynamicTags.value = dynamicTags.value.filter((item) => item !== tag)
   const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))

@@ -16,6 +16,8 @@ type RouteLoader = (() => Promise<{ default: Component }>) | undefined
 export const useMenu = defineStore(
   'menuInfo',
   () => {
+    // menuData 负责保留后端返回的菜单原始结构。
+    // addedRouteNames 只记录动态注入过的最终路由名，方便退出时回收。
     const menuData = ref<MenuNode[]>([])
     const addedRouteNames = ref<string[]>([])
 
@@ -33,6 +35,7 @@ export const useMenu = defineStore(
       addedRouteNames.value = []
     }
 
+    // 递归扫描菜单，把后端给出的组件路径映射成真正的前端路由组件。
     const compilerMenu = (arr: MenuNode[]) => {
       if (!Array.isArray(arr) || arr.length === 0) {
         return
@@ -69,6 +72,7 @@ export const useMenu = defineStore(
       compilerMenu(menuData.value)
     }
 
+    // addRouter 主要用于页面刷新后，依据持久化的 menuData 重新注入动态路由。
     const addRouter = () => {
       compilerMenu(menuData.value)
     }

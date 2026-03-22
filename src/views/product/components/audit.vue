@@ -20,6 +20,7 @@ import { ElMessage } from 'element-plus'
 import { auditProduct } from '@/api/product'
 import { tracking } from '@/utils/operation'
 
+// 审核弹窗直接消费申请行数据，审批结果只有“同意/否决”两种。
 interface AuditForm {
   id: number
   product_name: string
@@ -53,6 +54,7 @@ const formData = reactive<AuditForm>({
   product_apply_time: '',
 })
 
+// 打开弹窗时把当前申请快照拷进表单，确保提交时后端有完整审核上下文。
 const open = (row: any) => {
   formData.id = row.id
   formData.product_out_id = row.product_out_id
@@ -68,6 +70,7 @@ const open = (row: any) => {
   dialogFormVisible.value = true
 }
 
+// 审核成功后除了刷新列表，还会记录一条操作日志，便于后台追溯。
 const audit = async () => {
   const res = await auditProduct(formData)
   if (res.status == 0) {

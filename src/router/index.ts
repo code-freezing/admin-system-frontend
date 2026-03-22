@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 
-// 这里先只放登录、布局壳和兜底页，业务路由登录后由菜单动态注入。
+// 这里只保留公共路由和主布局。
+// 业务页路由在登录成功后由菜单数据动态注入到 menu 子路由下。
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
