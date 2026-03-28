@@ -94,7 +94,12 @@ import { useRouter } from 'vue-router'
 import breadCrumb from '@/components/bread_crumb.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { useUserInfo } from '@/stores/userinfor'
-import { getAdminAndNumber, getCategoryAndNumber, getDayAndNumber, getLevelAndNumber } from '@/api/overview'
+import {
+  getAdminAndNumber,
+  getCategoryAndNumber,
+  getDayAndNumber,
+  getLevelAndNumber,
+} from '@/api/overview'
 import { getUserInfo } from '@/api/userinfor'
 import type { EChartsType } from 'echarts/core'
 
@@ -123,7 +128,6 @@ const userProfile = reactive<UserProfile>({
 })
 const chartsLoading = ref(true)
 
-const currentUserId = Number(localStorage.getItem('id') || userStore.id || 0)
 const charts: EChartsType[] = []
 let chartObserver: IntersectionObserver | null = null
 let resizeHandler: (() => void) | null = null
@@ -134,12 +138,12 @@ const routerTo = (path: string) => {
 }
 
 const loadUserProfile = async () => {
+  const currentUserId = userStore.id
   if (!currentUserId) {
     return
   }
 
-  const res = (await getUserInfo(currentUserId)) as any
-  const data = res?.results ?? res?.data ?? res ?? {}
+  const { data } = await getUserInfo(currentUserId)
   userProfile.name = data.name ?? ''
   userProfile.sex = data.sex ?? ''
   userProfile.identity = data.identity ?? ''
@@ -200,7 +204,7 @@ const renderCharts = async () => {
         {
           type: 'pie',
           radius: '65%',
-          data: (adminData as any).data,
+          data: adminData.data.data,
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
@@ -223,14 +227,14 @@ const renderCharts = async () => {
       tooltip: { trigger: 'axis' },
       xAxis: {
         type: 'category',
-        data: (categoryData as any).category,
+        data: categoryData.data.category,
       },
       yAxis: {
         type: 'value',
       },
       series: [
         {
-          data: (categoryData as any).price,
+          data: categoryData.data.price,
           type: 'bar',
           barWidth: 40,
           colorBy: 'data',
@@ -275,7 +279,7 @@ const renderCharts = async () => {
           labelLine: {
             show: false,
           },
-          data: (levelData as any).data,
+          data: levelData.data.data,
         },
       ],
     })
@@ -291,14 +295,14 @@ const renderCharts = async () => {
       tooltip: { trigger: 'item' },
       xAxis: {
         type: 'category',
-        data: (dayData as any).week,
+        data: dayData.data.week,
       },
       yAxis: {
         type: 'value',
       },
       series: [
         {
-          data: (dayData as any).number,
+          data: dayData.data.number,
           type: 'line',
         },
       ],

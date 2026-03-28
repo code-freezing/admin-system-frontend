@@ -20,6 +20,7 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { changeIdentityToUser, deleteUser } from '@/api/userinfor'
+import { useUserInfo } from '@/stores/userinfor'
 import { tracking } from '@/utils/operation'
 
 type DeleteTarget =
@@ -28,6 +29,7 @@ type DeleteTarget =
 
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
+const userStore = useUserInfo()
 const adminId = ref<number | null>(null)
 const userId = ref<number | null>(null)
 const account = ref('')
@@ -66,10 +68,7 @@ const deleteAdmin = async () => {
   if (userId.value) {
     const res = await deleteUser(userId.value, account.value)
     if (res.status == 0) {
-      const userInfoStr = localStorage.getItem('userinfo')
-      const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-      const operatorName = userInfo?.name ?? ''
-      await tracking('删除用户', operatorName, name.value, '高级')
+      await tracking('删除用户', userStore.name, name.value, '高级')
       ElMessage.success('用户已删除')
       emit('success', 'delete')
     } else {

@@ -10,12 +10,7 @@
       <el-aside width="416px">
         <div class="message-list-wrapped">
           <div class="list-table-content">
-            <el-table
-              :data="msgStore.msg_list.length > 0 ? msgStore.msg_list : tableData"
-              style="width: 100%"
-              highlight-current-row
-              @row-click="getDetail"
-            >
+            <el-table :data="msgStore.msg_list" style="width: 100%" highlight-current-row @row-click="getDetail">
               <el-table-column type="index" width="50" />
               <el-table-column width="5">
                 <template #default="{ row }">
@@ -64,9 +59,10 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import { clickDelete, getDepartmentMsg, getDepartmentMsgList, getReadListAndStatus } from '@/api/dep_msg'
+import { clickDelete } from '@/api/dep_msg'
 import { updateClick } from '@/api/message'
 import { useMsg } from '@/stores/message'
+import { useUserInfo } from '@/stores/userinfor'
 
 interface DepartmentMessageRow {
   id: number
@@ -78,11 +74,7 @@ interface DepartmentMessageRow {
 }
 
 const msgStore = useMsg()
-const tableData = ref<DepartmentMessageRow[]>([])
-const userInfoStr = localStorage.getItem('userinfo')
-const localUserInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-const currentUserId = localUserInfo?.id || localStorage.getItem('id')
-const currentDepartment = localUserInfo?.department || localStorage.getItem('department')
+const userStore = useUserInfo()
 
 const messageInfo = reactive({
   message_title: '',
@@ -94,37 +86,23 @@ const readList = ref<number[]>([])
 const dialog = ref(false)
 
 const getUserDepartmentMessage = async () => {
-  const id = currentUserId
-  const department = currentDepartment
+  const id = userStore.id
+  const department = userStore.department
 
   if (!id || !department) {
+    msgStore.reset()
     readList.value = []
-    tableData.value = []
     return
   }
 
   if (department === '') {
+    msgStore.reset()
     readList.value = []
-    tableData.value = []
     return
   }
 
-  const res = (await getReadListAndStatus(id)) as any
-
-  if (!Array.isArray(res) || !res[0]) {
-    readList.value = []
-    tableData.value = []
-    return
-  }
-
-  tableData.value = (await getDepartmentMsgList(department)) as DepartmentMessageRow[]
-
-  if (res[0].read_status === 0) {
-    const { read_list } = (await getDepartmentMsg(id, department)) as any
-    readList.value = read_list
-  } else {
-    readList.value = JSON.parse(res[0].read_list)
-  }
+  await msgStore.returnReadList(id)
+  readList.value = [...msgStore.read_list]
 }
 
 getUserDepartmentMessage()
@@ -133,8 +111,8 @@ getUserDepartmentMessage()
 const getDetail = async (row: DepartmentMessageRow) => {
   await updateClick(row.message_click_number, row.id)
 
-  if (currentUserId) {
-    await clickDelete(row.id, currentUserId as unknown as number)
+  if (userStore.id) {
+    await clickDelete(row.id, userStore.id)
   }
 
   messageInfo.message_title = row.message_title
@@ -148,6 +126,7 @@ const idInList = (id: number) => {
 
 // 父组件通过 ref 调用 open()，这里仅负责把弹窗打开。
 const open = () => {
+  void getUserDepartmentMessage()
   dialog.value = true
 }
 

@@ -222,6 +222,7 @@ import {
   setProduct,
 } from '@/api/setting'
 import { useUserInfo } from '@/stores/userinfor'
+import { buildApiUrl } from '@/utils/runtime_url'
 import change from './components/change_password.vue'
 import editor from './components/editor.vue'
 
@@ -233,12 +234,8 @@ const item = ref({
 })
 
 const activeName = ref('first')
-const avatarUrl = ref(
-  `${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/user/uploadAvatar`,
-)
-const swiperUrl = ref(
-  `${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/set/uploadSwiper`,
-)
+const avatarUrl = ref(buildApiUrl('/user/uploadAvatar'))
+const swiperUrl = ref(buildApiUrl('/set/uploadSwiper'))
 // 上传地址在前端动态拼接，是为了兼容本地和未来可能的不同 API 域名配置。
 const companyName = ref('')
 const changeP = ref()
@@ -266,20 +263,20 @@ const InputProductRef = ref<InstanceType<typeof ElInput>>()
 
 // 基础设置在页面初始化时一次性加载，避免切标签后重复请求。
 const loadCompanyName = async () => {
-  companyName.value = (await getCompanyName()) as string
+  companyName.value = (await getCompanyName()).data
 }
 
 const loadSwiperList = async () => {
   // 轮播图数组顺序必须和 swiperData 对应，模板里通过下标一一渲染上传区域。
-  imageUrl.value = (await getAllSwiper()) as string[]
+  imageUrl.value = (await getAllSwiper()).data
 }
 
 const loadDepartmentList = async () => {
-  dynamicTags.value = (await getDepartment()) as string[]
+  dynamicTags.value = (await getDepartment()).data
 }
 
 const loadProductList = async () => {
-  dynamicProductTags.value = (await getProduct()) as string[]
+  dynamicProductTags.value = (await getProduct()).data
 }
 
 // 头像上传成功后，还要调用 bind 接口把临时上传记录和当前账号真正绑定起来。
@@ -301,11 +298,11 @@ const handleAvatarSuccess = async (response: any) => {
   }
 
   const res = await bind(account, response.onlyId, response.url)
-  if (res?.status === 0) {
+  if (res.status === 0) {
     ElMessage.success('头像更新成功')
   } else {
     // 上传成功但绑定失败时，说明文件已进上传目录，但还没真正绑定到用户资料。
-    ElMessage.error((res as any)?.message || '头像绑定失败')
+    ElMessage.error(res.message || '头像绑定失败')
   }
 }
 

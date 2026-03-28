@@ -6,20 +6,66 @@
  */
 
 import { post } from './request'
+import { toApiResult, type ApiResult, isRecord } from '@/http/response'
+
+export interface PieStatsItem {
+  name: string
+  value: number
+}
+
+export interface CategoryAndNumberData {
+  category: string[]
+  price: number[]
+}
+
+export interface AdminAndNumberData {
+  data: PieStatsItem[]
+}
+
+export interface LevelAndNumberData {
+  data: PieStatsItem[]
+}
+
+export interface DayAndNumberData {
+  week: string[]
+  number: number[]
+}
 
 // 概览页只做统计查询。
 export const getCategoryAndNumber = () => {
-  return post('/ov/getCategoryAndNumber')
+  return post<ApiResult<CategoryAndNumberData>>('/ov/getCategoryAndNumber').then((raw) => {
+    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
+    return toApiResult(raw, {
+      category: Array.isArray(record['category']) ? (record['category'] as string[]) : [],
+      price: Array.isArray(record['price']) ? (record['price'] as number[]) : [],
+    })
+  })
 }
 
 export const getAdminAndNumber = () => {
-  return post('/ov/getAdminAndNumber')
+  return post<ApiResult<AdminAndNumberData>>('/ov/getAdminAndNumber').then((raw) => {
+    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
+    return toApiResult(raw, {
+      data: Array.isArray(record['data']) ? (record['data'] as PieStatsItem[]) : [],
+    })
+  })
 }
 
 export const getLevelAndNumber = () => {
-  return post('/ov/getLevelAndNumber')
+  return post<ApiResult<LevelAndNumberData>>('/ov/getLevelAndNumber').then((raw) => {
+    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
+    return toApiResult(raw, {
+      data: Array.isArray(record['data']) ? (record['data'] as PieStatsItem[]) : [],
+    })
+  })
 }
 
 export const getDayAndNumber = () => {
-  return post('/ov/getDayAndNumber')
+  return post<ApiResult<DayAndNumberData>>('/ov/getDayAndNumber').then((raw) => {
+    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
+    return toApiResult(raw, {
+      week: Array.isArray(record['week']) ? (record['week'] as string[]) : [],
+      number: Array.isArray(record['number']) ? (record['number'] as number[]) : [],
+    })
+  })
 }

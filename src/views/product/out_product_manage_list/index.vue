@@ -92,14 +92,14 @@ const paginationData = reactive({
 
 const loadOutProductLength = async () => {
   const res = await getOutProductLength()
-  const total = typeof (res as { length?: number })?.length === 'number' ? (res as { length: number }).length : 0
+  const total = res.data.length
   outProductTotal.value = total
   paginationData.pageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getFirstPageList = async () => {
   paginationData.currentPage = 1
-  tableData.value = (await returnOutProductListData(1)) as OutProductRow[]
+  tableData.value = (await returnOutProductListData(1)).data as OutProductRow[]
 }
 
 const reloadList = async () => {
@@ -109,7 +109,7 @@ const reloadList = async () => {
 // 搜索按出库编号精确查询，清空输入框后恢复第一页默认数据。
 const currentChange = async (value: number) => {
   paginationData.currentPage = value
-  tableData.value = (await returnOutProductListData(value)) as OutProductRow[]
+  tableData.value = (await returnOutProductListData(value)).data as OutProductRow[]
 }
 
 const searchProductOutId = async () => {
@@ -118,7 +118,7 @@ const searchProductOutId = async () => {
     return
   }
 
-  tableData.value = (await searchProductForOutId(productOutId.value as number)) as OutProductRow[]
+  tableData.value = (await searchProductForOutId(productOutId.value as number)).data as OutProductRow[]
   paginationData.currentPage = 1
   outProductTotal.value = tableData.value.length
   paginationData.pageCount = 1

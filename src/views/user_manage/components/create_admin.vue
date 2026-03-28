@@ -91,7 +91,7 @@ const rules = reactive({
 
 const loadDepartment = async () => {
   const res = await getDepartment()
-  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+  departmentData.value = res.data
 }
 
 const open = (id: number) => {

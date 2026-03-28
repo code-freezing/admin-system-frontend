@@ -116,10 +116,10 @@
             <div class="table-footer">
               <el-pagination
                 :page-size="10"
-                :current-page="paginationData.productCurrentPage"
+                :current-page="productPagination.currentPage"
                 :pager-count="7"
-                :total="paginationData.productTotal"
-                :page-count="paginationData.productPageCount"
+                :total="productTotal"
+                :page-count="productPagination.pageCount"
                 layout="prev, pager, next"
                 @current-change="productCurrentChange"
               />
@@ -199,10 +199,10 @@
             <div class="table-footer">
               <el-pagination
                 :page-size="10"
-                :current-page="paginationData.applyProductCurrentPage"
+                :current-page="applyProductPagination.currentPage"
                 :pager-count="7"
-                :total="paginationData.applyProductTotal"
-                :page-count="paginationData.applyProductCount"
+                :total="applyProductTotal"
+                :page-count="applyProductPagination.pageCount"
                 layout="prev, pager, next"
                 @current-change="applyProductCurrentChange"
               />
@@ -222,10 +222,11 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import type { TabsPaneContext } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
+import { usePagedTable } from '@/hooks/usePagedTable'
 import {
   getApplyProductLength,
   getProductLength,
@@ -267,60 +268,31 @@ const activeName = ref('first')
 const { hasPermission } = usePermission()
 const productId = ref<number | string>()
 const productOutId = ref<number | string>()
-const tableData = ref<ProductRow[]>([])
-const applyTableData = ref<ProductRow[]>([])
-
-// 两套分页状态分别服务于库存列表和出库申请列表。
-// 之所以不复用同一套 currentPage，是因为两个标签页都会独立记住翻页位置。
-const paginationData = reactive({
-  productTotal: 0,
-  productPageCount: 0,
-  productCurrentPage: 1,
-  applyProductTotal: 0,
-  applyProductCount: 0,
-  applyProductCurrentPage: 1,
+const {
+  tableData,
+  total: productTotal,
+  pagination: productPagination,
+  loadFirstPage: getProductFirstPageList,
+  reload: reloadProductList,
+  loadPage: productCurrentChange,
+  replaceWithList: replaceProductList,
+} = usePagedTable<ProductRow>({
+  loadList: async (page) => (await returnProductListData(page)).data as ProductRow[],
+  loadTotal: async () => (await getProductLength()).data.length,
 })
 
-const toArray = <T,>(data: unknown): T[] => {
-  return Array.isArray(data) ? (data as T[]) : []
-}
-
-// 后端分页接口固定每页 10 条，这里只负责同步总数和页码。
-// 注意：项目里总数字段返回格式并不统一，所以这里统一做一次兜底转换。
-const loadProductLength = async () => {
-  const res = await getProductLength()
-  const total = typeof (res as { length?: number })?.length === 'number' ? (res as { length: number }).length : 0
-  paginationData.productTotal = total
-  paginationData.productPageCount = Math.max(1, Math.ceil(total / 10))
-}
-
-const loadApplyProductLength = async () => {
-  const res = await getApplyProductLength()
-  const total = typeof (res as { length?: number })?.length === 'number'
-    ? (res as { length: number }).length
-    : 0
-  paginationData.applyProductTotal = total
-  paginationData.applyProductCount = Math.max(1, Math.ceil(total / 10))
-}
-
-const getProductFirstPageList = async () => {
-  // “回到第一页”主要用于搜索清空、弹窗成功后刷新、首次进入页面等场景。
-  paginationData.productCurrentPage = 1
-  tableData.value = toArray<ProductRow>(await returnProductListData(1))
-}
-
-const getApplyProductFirstPageList = async () => {
-  paginationData.applyProductCurrentPage = 1
-  applyTableData.value = toArray<ProductRow>(await returnApplyProductListData(1))
-}
-
-const reloadProductList = async () => {
-  await Promise.all([loadProductLength(), getProductFirstPageList()])
-}
-
-const reloadApplyProductList = async () => {
-  await Promise.all([loadApplyProductLength(), getApplyProductFirstPageList()])
-}
+const {
+  tableData: applyTableData,
+  total: applyProductTotal,
+  pagination: applyProductPagination,
+  loadFirstPage: getApplyProductFirstPageList,
+  reload: reloadApplyProductList,
+  loadPage: applyProductCurrentChange,
+  replaceWithList: replaceApplyProductList,
+} = usePagedTable<ProductRow>({
+  loadList: async (page) => (await returnApplyProductListData(page)).data as ProductRow[],
+  loadTotal: async () => (await getApplyProductLength()).data.length,
+})
 
 const reloadTwoPageList = async () => {
   // 出库申请、审核、撤回等动作会同时影响两个标签页，
@@ -338,16 +310,6 @@ const handleClick = (tab: TabsPaneContext) => {
   }
 }
 
-const productCurrentChange = async (value: number) => {
-  paginationData.productCurrentPage = value
-  tableData.value = toArray<ProductRow>(await returnProductListData(value))
-}
-
-const applyProductCurrentChange = async (value: number) => {
-  paginationData.applyProductCurrentPage = value
-  applyTableData.value = toArray<ProductRow>(await returnApplyProductListData(value))
-}
-
 const searchProduct = async () => {
   // 搜索接口直接返回精确匹配结果，因此会临时覆盖表格数据。
   // 用户清空输入框后，再通过 @clear 恢复分页列表。
@@ -356,10 +318,7 @@ const searchProduct = async () => {
     return
   }
 
-  tableData.value = toArray<ProductRow>(await searchProductForId(productId.value as number))
-  paginationData.productCurrentPage = 1
-  paginationData.productTotal = tableData.value.length
-  paginationData.productPageCount = 1
+  replaceProductList((await searchProductForId(productId.value as number)).data as ProductRow[])
 }
 
 const searchApplyProduct = async () => {
@@ -368,12 +327,9 @@ const searchApplyProduct = async () => {
     return
   }
 
-  applyTableData.value = toArray<ProductRow>(
-    await searchProductForApplyId(productOutId.value as number),
+  replaceApplyProductList(
+    (await searchProductForApplyId(productOutId.value as number)).data as ProductRow[],
   )
-  paginationData.applyProductCurrentPage = 1
-  paginationData.applyProductTotal = applyTableData.value.length
-  paginationData.applyProductCount = 1
 }
 
 // 这些 ref 对应各个弹窗组件，页面本身只负责打开弹窗和在成功后刷新列表。

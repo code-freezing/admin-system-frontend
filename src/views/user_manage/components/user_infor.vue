@@ -37,6 +37,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { usePermission } from '@/hooks/usePermission'
+import { toAbsoluteResourceUrl } from '@/utils/runtime_url'
 import promote from '../components/promote.vue'
 import edit from '../components/edit_user.vue'
 import remove from '../components/delete_admin.vue'
@@ -58,8 +59,7 @@ const userData = reactive({
 
 const avatarSrc = computed(() => {
   if (!userData.imageUrl) return undefined
-  if (/^https?:\/\//.test(userData.imageUrl)) return userData.imageUrl
-  return `http://127.0.0.1:3007${userData.imageUrl}`
+  return toAbsoluteResourceUrl(userData.imageUrl)
 })
 
 const open = (row: any) => {

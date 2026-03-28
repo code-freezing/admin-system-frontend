@@ -107,7 +107,7 @@ const rules: FormRules<ProductFormModel> = {
 
 // 分类选项来自系统设置，和入库弹窗共享同一份字典数据。
 const loadCategoryData = async () => {
-  categoryData.value = (await getProduct()) as string[]
+  categoryData.value = (await getProduct()).data
 }
 
 loadCategoryData()
@@ -138,7 +138,7 @@ const handleEdit = async () => {
   }
 
   const res = await editProduct(formData)
-  if ((res as { status?: number }).status === 0) {
+  if (res.status === 0) {
     ElMessage.success('商品信息修改成功')
     dialogVisible.value = false
     emit('success')

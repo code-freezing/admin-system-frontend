@@ -90,7 +90,7 @@ const permissionStore = usePermissionStore()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 const router = useRouter()
-const welcomeName = computed(() => userStore.name || localStorage.getItem('name') || '')
+const welcomeName = computed(() => userStore.name || '')
 
 const iconMap = {
   House,

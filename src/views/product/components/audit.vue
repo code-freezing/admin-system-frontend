@@ -25,6 +25,7 @@ import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { auditProduct } from '@/api/product'
 import { tracking } from '@/utils/operation'
+import { useUserInfo } from '@/stores/userinfor'
 
 // 审核弹窗直接消费申请行数据，审批结果只有“同意/否决”两种。
 interface AuditForm {
@@ -44,6 +45,7 @@ interface AuditForm {
 
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
+const userStore = useUserInfo()
 
 const formData = reactive<AuditForm>({
   id: 0,
@@ -52,7 +54,7 @@ const formData = reactive<AuditForm>({
   product_out_status: '',
   audit_memo: '',
   product_out_price: 0,
-  product_out_audit_person: localStorage.getItem('name'),
+  product_out_audit_person: userStore.name,
   product_out_apply_person: '',
   product_in_warehouse_number: 0,
   product_single_price: 0,
@@ -75,6 +77,7 @@ const open = (row: any) => {
   formData.product_single_price = row.product_single_price
   formData.product_out_number = row.product_out_number
   formData.product_apply_time = row.product_apply_time
+  formData.product_out_audit_person = userStore.name
   dialogFormVisible.value = true
 }
 
@@ -84,10 +87,7 @@ const audit = async () => {
   if (res.status == 0) {
     // 操作日志记录的是“谁对哪个产品做了什么审核”，
     // 这样之后在操作日志页里可以直接回溯审批行为。
-    const userInfoStr = localStorage.getItem('userinfo')
-    const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-    const operatorName = userInfo?.name ?? ''
-    await tracking('产品审核', operatorName, formData.product_name, '高级', formData.product_out_status)
+    await tracking('产品审核', userStore.name, formData.product_name, '高级', formData.product_out_status)
     ElMessage.success('审核成功')
     emit('success')
     dialogFormVisible.value = false

@@ -17,8 +17,10 @@
                   <el-select
                     v-model="department"
                     placeholder="按发布部门筛选"
+                    clearable
                     style="width: 160px"
-                    @change="getListByDepartment"
+                    @change="applyCompanyFilters"
+                    @clear="applyCompanyFilters"
                   >
                     <el-option
                       v-for="item in departmentData"
@@ -31,7 +33,7 @@
                     v-model="radio2"
                     class="ml-4"
                     style="flex-wrap: nowrap"
-                    @change="getMessageListByLevel"
+                    @change="applyCompanyFilters"
                   >
                     <el-radio label="一般">一般</el-radio>
                     <el-radio label="重要">重要</el-radio>
@@ -39,7 +41,7 @@
                   </el-radio-group>
                 </div>
                 <div class="button-wrapped">
-                  <el-button type="primary" plain @click="getCompanyFirstPageList">
+                  <el-button type="primary" plain @click="resetCompanyFilters">
                     刷新公司消息
                   </el-button>
                   <el-button type="primary" @click="createMessage(1)">发布公司消息</el-button>
@@ -79,10 +81,10 @@
             <div class="table-footer">
               <el-pagination
                 :page-size="10"
-                :current-page="paginationData.companyCurrentPage"
+                :current-page="companyPagination.currentPage"
                 :pager-count="7"
-                :total="paginationData.companyTotal"
-                :page-count="paginationData.companyPageCount"
+                :total="companyTotal"
+                :page-count="companyPagination.pageCount"
                 layout="prev, pager, next"
                 @current-change="companyCurrentChange"
               />
@@ -125,10 +127,10 @@
             <div class="table-footer">
               <el-pagination
                 :page-size="10"
-                :current-page="paginationData.systemCurrentPage"
+                :current-page="systemPagination.currentPage"
                 :pager-count="7"
-                :total="paginationData.systemTotal"
-                :page-count="paginationData.systemCount"
+                :total="systemTotal"
+                :page-count="systemPagination.pageCount"
                 layout="prev, pager, next"
                 @current-change="systemCurrentChange"
               />
@@ -143,12 +145,12 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getDepartment } from '@/api/setting'
+import { usePagedTable } from '@/hooks/usePagedTable'
 import {
-  searchMessageBydepartment,
-  searchMessageByLevel,
+  companyMessageList,
   getCompanyMessageLength,
   getSystemMessageLength,
   returnCompanyListData,
@@ -181,74 +183,67 @@ const activeName = ref('first')
 const department = ref<string>()
 const radio2 = ref<string>()
 const departmentData = ref<string[]>([])
-const companyTableData = ref<MessageRow[]>([])
-const systemTableData = ref<MessageRow[]>([])
+const companyFilterSource = ref<MessageRow[]>([])
+const {
+  tableData: companyTableData,
+  total: companyTotal,
+  pagination: companyPagination,
+  reload: reloadCompanyTab,
+  loadPage: companyCurrentChange,
+  replaceWithList: replaceCompanyList,
+} = usePagedTable<MessageRow>({
+  loadList: async (page) => (await returnCompanyListData(page)).data as MessageRow[],
+  loadTotal: async () => (await getCompanyMessageLength()).data.length,
+})
 
-// 两套分页状态分别维护公司消息和系统消息，避免切换标签时互相覆盖。
-// 这和产品页的思路一致：每个标签页都有自己的分页上下文。
-const paginationData = reactive({
-  companyTotal: 0,
-  companyPageCount: 0,
-  companyCurrentPage: 1,
-  systemTotal: 0,
-  systemCount: 0,
-  systemCurrentPage: 1,
+const {
+  tableData: systemTableData,
+  total: systemTotal,
+  pagination: systemPagination,
+  reload: reloadSystemTab,
+  loadPage: systemCurrentChange,
+} = usePagedTable<MessageRow>({
+  loadList: async (page) => (await returnSystemListData(page)).data as MessageRow[],
+  loadTotal: async () => (await getSystemMessageLength()).data.length,
 })
 
 const loadDepartmentList = async () => {
   // 发布部门来自系统设置中的“字典维护”，不是在页面里写死的枚举。
   const res = await getDepartment()
-  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+  departmentData.value = res.data
 }
 
-const loadCompanyLength = async () => {
-  const res = await getCompanyMessageLength()
-  const total = typeof res?.length === 'number' ? res.length : 0
-  paginationData.companyTotal = total
-  paginationData.companyPageCount = Math.max(1, Math.ceil(total / 10))
+const loadCompanyFilterSource = async () => {
+  companyFilterSource.value = (await companyMessageList()).data as MessageRow[]
 }
 
-const loadSystemLength = async () => {
-  const res = await getSystemMessageLength()
-  const total = typeof res?.length === 'number' ? res.length : 0
-  paginationData.systemTotal = total
-  paginationData.systemCount = Math.max(1, Math.ceil(total / 10))
-}
-
-const getCompanyFirstPageList = async () => {
-  // 公司消息承担更多筛选能力，所以“刷新公司消息”按钮只恢复这一组列表。
-  paginationData.companyCurrentPage = 1
-  companyTableData.value = (await returnCompanyListData(1)) as MessageRow[]
-}
-
-const getSystemFirstPageList = async () => {
-  paginationData.systemCurrentPage = 1
-  systemTableData.value = (await returnSystemListData(1)) as MessageRow[]
-}
-
-// 公司消息支持按部门和等级筛选；系统消息列表保持简单展示。
-const getListByDepartment = async () => {
-  if (!department.value) {
+// 公司消息支持按部门和等级组合筛选。
+// 为了避免多次切换筛选条件时互相覆盖，这里基于完整公司消息列表做前端组合过滤。
+const applyCompanyFilters = async () => {
+  if (!department.value && !radio2.value) {
     await reloadCompanyTab()
     return
   }
-  companyTableData.value = (await searchMessageBydepartment(department.value)) as MessageRow[]
-  paginationData.companyCurrentPage = 1
-  paginationData.companyTotal = companyTableData.value.length
-  paginationData.companyPageCount = 1
+
+  if (companyFilterSource.value.length === 0) {
+    await loadCompanyFilterSource()
+  }
+
+  const filteredList = companyFilterSource.value.filter((message) => {
+    const departmentMatched =
+      !department.value || message.message_publish_department === department.value
+    const levelMatched = !radio2.value || message.message_level === radio2.value
+
+    return departmentMatched && levelMatched
+  })
+
+  replaceCompanyList(filteredList)
 }
 
-const getMessageListByLevel = async () => {
-  // 等级筛选和部门筛选都是直接替换公司消息列表。
-  // 当前实现里它们不是组合查询，而是谁最后触发就以谁的结果为准。
-  if (!radio2.value) {
-    await reloadCompanyTab()
-    return
-  }
-  companyTableData.value = (await searchMessageByLevel(radio2.value)) as MessageRow[]
-  paginationData.companyCurrentPage = 1
-  paginationData.companyTotal = companyTableData.value.length
-  paginationData.companyPageCount = 1
+const resetCompanyFilters = async () => {
+  department.value = undefined
+  radio2.value = undefined
+  await reloadCompanyTab()
 }
 
 const changeTwoPageList = async () => {
@@ -256,25 +251,7 @@ const changeTwoPageList = async () => {
   // 否则用户可能仍停留在旧筛选结果中，看不到刚刚提交的改动。
   department.value = undefined
   radio2.value = undefined
-  await Promise.all([reloadCompanyTab(), reloadSystemTab()])
-}
-
-const reloadCompanyTab = async () => {
-  await Promise.all([loadCompanyLength(), getCompanyFirstPageList()])
-}
-
-const reloadSystemTab = async () => {
-  await Promise.all([loadSystemLength(), getSystemFirstPageList()])
-}
-
-const companyCurrentChange = async (value: number) => {
-  paginationData.companyCurrentPage = value
-  companyTableData.value = (await returnCompanyListData(value)) as MessageRow[]
-}
-
-const systemCurrentChange = async (value: number) => {
-  paginationData.systemCurrentPage = value
-  systemTableData.value = (await returnSystemListData(value)) as MessageRow[]
+  await Promise.all([loadCompanyFilterSource(), reloadCompanyTab(), reloadSystemTab()])
 }
 
 // createEdit 和 deleteM 都是弹窗组件，列表页只负责传入当前行数据。
@@ -302,6 +279,7 @@ const deleteSystemMessage = (id: number) => {
 onMounted(async () => {
   await Promise.all([
     loadDepartmentList(),
+    loadCompanyFilterSource(),
     reloadCompanyTab(),
     reloadSystemTab(),
   ])

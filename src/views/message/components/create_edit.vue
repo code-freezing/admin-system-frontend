@@ -94,6 +94,7 @@ import { changeUserReadList } from '@/api/dep_msg'
 import { editMessage as editMessageApi, publishMessage } from '@/api/message'
 import { getDepartment } from '@/api/setting'
 import { useMsg } from '@/stores/message'
+import { useUserInfo } from '@/stores/userinfor'
 
 // 公司消息和系统消息共用同一个富文本弹窗，通过 title 判断当前处于哪种模式。
 interface SelectOption {
@@ -112,6 +113,7 @@ interface FormData {
 }
 
 const msgStore = useMsg()
+const userStore = useUserInfo()
 const title = ref('')
 const labelPosition = ref<FormProps['labelPosition']>('left')
 const dialogFormVisible = ref(false)
@@ -128,7 +130,7 @@ const formData = reactive<FormData>({
   id: null,
   message_title: '',
   message_publish_department: '',
-  message_publish_name: localStorage.getItem('name'),
+  message_publish_name: userStore.name,
   message_category: '',
   message_receipt_object: '',
   message_level: '',
@@ -178,7 +180,7 @@ const editorConfig = {
 // 部门选项来自系统设置，“全体员工”是在前端额外补上的特殊接收对象。
 const loadDepartmentList = async () => {
   const res = await getDepartment()
-  const list = Array.isArray(res) ? (res as string[]) : []
+  const list = res.data
   options.value = list.map((value) => ({ value }))
   // 系统里历史数据同时出现过“全体员工”和“全体成员”两种叫法，
   // 当前前端创建入口沿用“全体员工”，后端消息编辑联动逻辑里仍会处理“全体成员”的旧值。
@@ -192,7 +194,7 @@ const resetForm = () => {
     id: null,
     message_title: '',
     message_publish_department: '',
-    message_publish_name: localStorage.getItem('name'),
+    message_publish_name: userStore.name,
     message_category: '',
     message_receipt_object: '',
     message_level: '',
@@ -247,8 +249,8 @@ const yes = async () => {
     if (res.status == 0) {
       // 公司消息发布后，要把消息 id 写入部门成员的未读列表，
       // 并刷新当前用户顶部消息 store，保证铃铛提示能立刻变化。
-      await changeUserReadList(res.id, formData.message_receipt_object)
-      await msgStore.returnReadList(Number(localStorage.getItem('id')))
+      await changeUserReadList(res.data.id, formData.message_receipt_object)
+      await msgStore.returnReadList()
       ElMessage.success('公司消息发布成功')
       emit('success')
     } else {
@@ -262,7 +264,7 @@ const yes = async () => {
     const res = await editMessageApi(formData)
     // 编辑公司消息也要刷新当前用户的部门消息状态，
     // 因为接收部门、接收范围或内容可能已经发生变化。
-    await msgStore.returnReadList(Number(localStorage.getItem('id')))
+    await msgStore.returnReadList()
     if (res.status == 0) {
       ElMessage.success('公司消息编辑成功')
       emit('success')

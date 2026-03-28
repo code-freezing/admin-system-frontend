@@ -19,7 +19,7 @@
               :prefix-icon="Search"
               clearable
               @change="searchUserByAccount()"
-              @clear="reloadUserList()"
+              @clear="showAllUsers()"
             />
           </div>
           <div class="select-wrapped">
@@ -36,7 +36,7 @@
         </div>
         <div class="button-wrapped">
           <el-button plain type="primary" @click="banUserList">查看冻结用户</el-button>
-          <el-button plain type="primary" @click="getFirstPageList">查看全部用户</el-button>
+          <el-button plain type="primary" @click="showAllUsers">查看全部用户</el-button>
         </div>
       </div>
       <div class="table-content">
@@ -104,10 +104,11 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
+import { usePagedTable } from '@/hooks/usePagedTable'
 import { usePermission } from '@/hooks/usePermission'
 import { getDepartment } from '@/api/setting'
 import {
@@ -129,6 +130,8 @@ interface UserRow {
   [key: string]: unknown
 }
 
+type UserListViewMode = 'all' | 'account' | 'department' | 'banned'
+
 const breadcrumb = ref()
 const { hasAnyPermission, hasPermission } = usePermission()
 const item = ref({
@@ -137,84 +140,97 @@ const item = ref({
 })
 
 const adminAccount = ref<string>()
-const tableData = ref<UserRow[]>([])
 const departmentData = ref<string[]>([])
 const department = ref<string>()
-const adminTotal = ref(0)
 const user_info = ref()
-
-const paginationData = reactive({
-  pageCount: 1,
-  currentPage: 1,
+const userListViewMode = ref<UserListViewMode>('all')
+const {
+  tableData,
+  total: adminTotal,
+  pagination: paginationData,
+  loadPage: loadUserPage,
+  reload: reloadUserList,
+  replaceWithList,
+} = usePagedTable<UserRow>({
+  loadList: async (page) => (await returnListData(page, '用户')).data as UserRow[],
+  loadTotal: async () => (await getAdminListLength('用户')).data.length,
 })
 
 const loadDepartment = async () => {
   const res = await getDepartment()
-  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+  departmentData.value = res.data
 }
 
-const loadUserLength = async () => {
-  const res = await getAdminListLength('用户')
-  adminTotal.value = typeof (res as { length?: number })?.length === 'number' ? (res as { length: number }).length : 0
-  paginationData.pageCount = Math.max(1, Math.ceil(adminTotal.value / 10))
+const showAllUsers = async () => {
+  userListViewMode.value = 'all'
+  await reloadUserList()
 }
 
-const getListByPage = async (page = paginationData.currentPage) => {
-  const res = await returnListData(page, '用户')
-  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
+const applyAccountFilter = async () => {
+  const account = adminAccount.value?.trim()
+  if (!account) {
+    await showAllUsers()
+    return
+  }
+
+  userListViewMode.value = 'account'
+  const res = await searchUser(account, '用户')
+  replaceWithList(res.data as UserRow[])
 }
 
-const getFirstPageList = async () => {
-  paginationData.currentPage = 1
-  await getListByPage(1)
+const applyDepartmentFilter = async (value?: string) => {
+  if (!value) {
+    await showAllUsers()
+    return
+  }
+
+  userListViewMode.value = 'department'
+  const res = await searchDepartment(value)
+  replaceWithList(res.data as UserRow[])
 }
 
-const reloadUserList = async () => {
-  await Promise.all([loadUserLength(), getFirstPageList()])
+const currentChange = async (value: number) => {
+  await loadUserPage(value)
+}
+
+const banUserList = async () => {
+  userListViewMode.value = 'banned'
+  const res = await getBanList()
+  replaceWithList(res.data as UserRow[])
+}
+
+const refreshUserListByCurrentView = async () => {
+  if (userListViewMode.value === 'banned') {
+    await banUserList()
+    return
+  }
+
+  if (userListViewMode.value === 'department') {
+    await applyDepartmentFilter(department.value)
+    return
+  }
+
+  if (userListViewMode.value === 'account') {
+    await applyAccountFilter()
+    return
+  }
+
+  await showAllUsers()
 }
 
 const searchUserByAccount = async () => {
-  const account = adminAccount.value?.trim()
-  if (!account) {
-    await reloadUserList()
-    return
-  }
-
-  const res = await searchUser(account, '用户')
-  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
-  adminTotal.value = tableData.value.length
-  paginationData.currentPage = 1
-  paginationData.pageCount = 1
+  department.value = undefined
+  await applyAccountFilter()
 }
 
 const searchForDepartment = async (value?: string) => {
-  if (!value) {
-    await reloadUserList()
-    return
-  }
-  const res = await searchDepartment(value)
-  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
-  adminTotal.value = tableData.value.length
-  paginationData.currentPage = 1
-  paginationData.pageCount = 1
+  adminAccount.value = ''
+  await applyDepartmentFilter(value)
 }
 
 const clearOperation = async () => {
   department.value = undefined
-  await reloadUserList()
-}
-
-const currentChange = async (value: number) => {
-  paginationData.currentPage = value
-  await getListByPage(value)
-}
-
-const banUserList = async () => {
-  const res = await getBanList()
-  tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
-  adminTotal.value = tableData.value.length
-  paginationData.currentPage = 1
-  paginationData.pageCount = 1
+  await showAllUsers()
 }
 
 const banUserById = async (id: number) => {
@@ -223,7 +239,7 @@ const banUserById = async (id: number) => {
   const res = await banUser(id)
   if (res.status == 0) {
     ElMessage.success('用户已冻结')
-    await reloadUserList()
+    await refreshUserListByCurrentView()
   } else {
     ElMessage.error('冻结失败')
   }
@@ -235,14 +251,14 @@ const hotUserById = async (id: number) => {
   const res = await hotUser(id)
   if (res.status == 0) {
     ElMessage.success('用户已解冻')
-    await reloadUserList()
+    await refreshUserListByCurrentView()
   } else {
     ElMessage.error('解冻失败')
   }
 }
 
 const refreshAfterUserAction = async () => {
-  await reloadUserList()
+  await refreshUserListByCurrentView()
 }
 
 const openUser = (row: UserRow) => {
@@ -254,7 +270,7 @@ const openUser = (row: UserRow) => {
 }
 
 onMounted(async () => {
-  await Promise.all([loadDepartment(), reloadUserList()])
+  await Promise.all([loadDepartment(), showAllUsers()])
 })
 </script>
 

@@ -6,28 +6,65 @@
  */
 
 import { post } from './request'
+import { toApiResult, toArray, type ApiResult } from '@/http/response'
+
+export interface DepartmentMessageItem {
+  id: number
+  message_title: string
+  message_content: string
+  message_level?: string
+  message_publish_time?: string
+  message_click_number?: number
+  [key: string]: unknown
+}
+
+export interface ReadStatusItem {
+  read_list?: string
+  read_status?: number
+}
 
 // 部门消息接口。
 export const getDepartmentMsg = (id: number, department: string) => {
-  return post('/dm/getDepartmentMsg', { id, department })
+  return post<ApiResult<{ id: number; read_list: number[] }>>('/dm/getDepartmentMsg', {
+    id,
+    department,
+  }).then((raw) => {
+    const record =
+      typeof raw === 'object' && raw !== null ? (raw as unknown as Record<string, unknown>) : {}
+
+    return toApiResult(raw, {
+      id: typeof record.id === 'number' ? record.id : 0,
+      read_list: Array.isArray(record.read_list) ? (record.read_list as number[]) : [],
+    })
+  })
 }
 
 export const getDepartmentMsgList = (department: string) => {
-  return post('/dm/getDepartmentMsgList', { department })
+  return post<ApiResult<DepartmentMessageItem[]>>('/dm/getDepartmentMsgList', { department }).then((raw) => {
+    return toApiResult(raw, toArray<DepartmentMessageItem>(raw))
+  })
 }
 
 export const getReadListAndStatus = (id: number) => {
-  return post('/dm/getReadListAndStatus', { id })
+  return post<ApiResult<ReadStatusItem[]>>('/dm/getReadListAndStatus', { id }).then((raw) => {
+    return toApiResult(raw, toArray<ReadStatusItem>(raw))
+  })
 }
 
 export const clickDelete = (readId: number, id: number) => {
-  return post('/dm/clickDelete', { readId, id })
+  return post<ApiResult<null>>('/dm/clickDelete', { readId, id }).then((raw) => {
+    return toApiResult(raw, null)
+  })
 }
 
 export const changeUserReadList = (newId: number, department: string) => {
-  return post('/dm/changeUserReadList', { newId, department })
+  return post<ApiResult<null>>('/dm/changeUserReadList', { newId, department }).then((raw) => {
+    return toApiResult(raw, null)
+  })
 }
 
 export const changeUserReadListButDelete = (deleteId: number, department: string) => {
-  return post('/dm/changeUserReadListButDelete', { deleteId, department })
+  return post<ApiResult<null>>('/dm/changeUserReadListButDelete', { deleteId, department }).then((raw) => {
+    return toApiResult(raw, null)
+  })
 }

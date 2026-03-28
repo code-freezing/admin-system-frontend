@@ -75,17 +75,18 @@ const rules = reactive({
 
 const loadDepartment = async () => {
   const res = await getDepartment()
-  departmentData.value = Array.isArray(res) ? (res as string[]) : []
+  departmentData.value = res.data
 }
 
 const open = async (id: number) => {
   const res = await getUserInfo(id)
-  formData.id = res.id
-  formData.account = res.account
-  formData.name = res.name
-  formData.sex = res.sex
-  formData.email = res.email
-  formData.department = res.department
+  formData.id = typeof res.data.id === 'number' ? res.data.id : 0
+  formData.account =
+    typeof res.data.account === 'number' ? res.data.account : Number(res.data.account ?? 0)
+  formData.name = res.data.name ?? ''
+  formData.sex = res.data.sex ?? ''
+  formData.email = res.data.email ?? ''
+  formData.department = res.data.department ?? ''
   dialogFormVisible.value = true
 }
 

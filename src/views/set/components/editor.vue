@@ -36,6 +36,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { onBeforeUnmount, reactive, ref, shallowRef } from 'vue'
 import { ElMessage } from 'element-plus'
 import { changeCompanyIntroduce, getCompanyIntroduce } from '@/api/setting'
+import { buildApiUrl, toAbsoluteResourceUrl } from '@/utils/runtime_url'
 
 // 公司介绍类配置共用一个富文本弹窗，靠传入 id 决定编辑哪一块内容。
 const title = ref('')
@@ -72,12 +73,14 @@ const editorConfig = {
   placeholder: '请输入内容',
   MENU_CONF: {
     uploadImage: {
-      server: `${import.meta.env.VITE_API_BASEURL}/set/uploadCompanyPicture`,
+      server: buildApiUrl('/set/uploadCompanyPicture'),
       fieldName: 'file',
       methods: 'post',
       metaWithUrl: true,
-      customInsert(res: any, insertFn: any) {
-        insertFn(res.url)
+      customInsert(res: { url?: string }, insertFn: (url: string) => void) {
+        if (res.url) {
+          insertFn(toAbsoluteResourceUrl(res.url))
+        }
       },
     },
   },
@@ -95,8 +98,8 @@ const open = async (id: number) => {
   const config = mapping[id] ?? { title: '编辑内容', key: '' }
   title.value = config.title
   currentKey.value = config.key
-  const res = (await getCompanyIntroduce(config.key)) as any
-  valueHtml.value = res?.results ?? res ?? ''
+  const res = await getCompanyIntroduce(config.key)
+  valueHtml.value = res.data
   state.dialogFormVisible = true
 }
 

@@ -34,10 +34,10 @@
     <div class="table-footer">
       <el-pagination
         :page-size="10"
-        :current-page="paginationData.recycleCurrentPage"
+        :current-page="recyclePagination.currentPage"
         :pager-count="7"
-        :total="paginationData.recycleTotal"
-        :page-count="paginationData.recyclePageCount"
+        :total="recycleTotal"
+        :page-count="recyclePagination.pageCount"
         layout="prev, pager, next"
         @current-change="recycleCurrentChange"
       />
@@ -47,9 +47,10 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getRecycleMessageLength, returnRecycleListData } from '@/api/message'
+import { usePagedTable } from '@/hooks/usePagedTable'
 import renewAndDelete from '../components/delete.vue'
 
 // 回收站页只关心软删除消息，恢复和永久删除都复用 delete 弹窗里的动作。
@@ -68,43 +69,25 @@ const item = ref({
   second: '回收站',
 })
 
-const tableData = ref<RecycleRow[]>([])
 const rad = ref()
-
-const paginationData = reactive({
-  recycleTotal: 0,
-  recyclePageCount: 0,
-  recycleCurrentPage: 1,
+const {
+  tableData,
+  total: recycleTotal,
+  pagination: recyclePagination,
+  loadPage: recycleCurrentChange,
+  reload: reloadRecycleList,
+} = usePagedTable<RecycleRow>({
+  loadList: async (page) => (await returnRecycleListData(page)).data as RecycleRow[],
+  loadTotal: async () => (await getRecycleMessageLength()).data.length,
 })
 
-const loadRecycleLength = async () => {
-  const res = await getRecycleMessageLength()
-  const total = typeof res?.length === 'number' ? res.length : 0
-  paginationData.recycleTotal = total
-  paginationData.recyclePageCount = Math.max(1, Math.ceil(total / 10))
-}
-
-const getRecycleFirstPageList = async () => {
-  paginationData.recycleCurrentPage = 1
-  tableData.value = (await returnRecycleListData(1)) as RecycleRow[]
-}
-
 // 恢复和永久删除都由子组件处理确认逻辑，页面只负责刷新列表。
-const recycleCurrentChange = async (value: number) => {
-  paginationData.recycleCurrentPage = value
-  tableData.value = (await returnRecycleListData(value)) as RecycleRow[]
-}
-
 const renew = (row: RecycleRow) => {
   rad.value.openRecover(row)
 }
 
 const realDelete = (id: number) => {
   rad.value.openRealDelete(id)
-}
-
-const reloadRecycleList = async () => {
-  await Promise.all([loadRecycleLength(), getRecycleFirstPageList()])
 }
 
 onMounted(async () => {

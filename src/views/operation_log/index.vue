@@ -40,7 +40,7 @@
           <el-table-column prop="operation_content" label="操作内容" />
           <el-table-column prop="operation_level" label="操作级别">
             <template #default="{ row }">
-              <el-tag class="ml-2" :type="levelTagType(row.operation_level) as any">
+              <el-tag class="ml-2" :type="levelTagType(row.operation_level)">
                 {{ row.operation_level }}
               </el-tag>
             </template>
@@ -100,23 +100,23 @@ const paginationData = reactive({
 
 const loadOperationLength = async () => {
   const res = await operationLogListLength()
-  const total = typeof res?.length === 'number' ? res.length : 0
+  const total = res.data.length
   paginationData.operationTotal = total
   paginationData.operationPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getOperationFirstPageList = async () => {
   paginationData.operationCurrentPage = 1
-  tableData.value = (await returnOperationListData(1)) as OperationRow[]
+  tableData.value = (await returnOperationListData(1)).data as OperationRow[]
 }
 
 const operationCurrentChange = async (value: number) => {
   paginationData.operationCurrentPage = value
-  tableData.value = (await returnOperationListData(value)) as OperationRow[]
+  tableData.value = (await returnOperationListData(value)).data as OperationRow[]
 }
 
 const searchOperationPerson = async () => {
-  tableData.value = (await searchOperationLogList(name.value.trim())) as OperationRow[]
+  tableData.value = (await searchOperationLogList(name.value.trim())).data as OperationRow[]
 }
 
 const levelClass = (value?: string) => {
@@ -126,9 +126,9 @@ const levelClass = (value?: string) => {
 }
 
 const levelTagType = (value?: string) => {
-  if (value == '高级' || value == '错误') return 'danger'
-  if (value == '中级' || value == '警告') return 'warning'
-  return 'info'
+  if (value == '高级' || value == '错误') return 'danger' as const
+  if (value == '中级' || value == '警告') return 'warning' as const
+  return 'info' as const
 }
 
 const clearList = () => {

@@ -109,9 +109,9 @@ const handleVerify = async () => {
     return
   }
 
-  const res = (await verify(verifyForm)) as { status?: number; id?: number }
-  if (res.status === 0 && typeof res.id === 'number') {
-    resetUserId.value = res.id
+  const res = await verify(verifyForm)
+  if (res.status === 0 && typeof res.data.id === 'number') {
+    resetUserId.value = res.data.id
     forgetVisible.value = false
     resetVisible.value = true
     ElMessage.success('验证成功，请继续修改密码')
@@ -138,7 +138,7 @@ const handleReset = async () => {
   }
 
   const res = await reset(resetUserId.value, resetForm.nextPassword)
-  if ((res as { status?: number }).status === 0) {
+  if (res.status === 0) {
     ElMessage.success('密码修改成功')
     resetVisible.value = false
     clearResetForm()

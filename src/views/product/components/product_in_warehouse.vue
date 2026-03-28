@@ -101,7 +101,7 @@ const rules = reactive({
 // 产品分类来自系统设置，保持和字典维护中的产品分类一致。
 const loadCategoryList = async () => {
   const res = await getProduct()
-  categoryData.value = Array.isArray(res) ? (res as string[]) : []
+  categoryData.value = res.data
 }
 
 const open = () => {

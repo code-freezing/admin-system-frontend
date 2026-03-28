@@ -115,17 +115,8 @@ import {
   initMultipartUpload,
   returnFilesListData,
   uploadChunk,
+  type FileRow,
 } from '@/api/file'
-
-interface FileRow {
-  id: number
-  file_name: string
-  file_size?: string | number
-  upload_person?: string
-  download_number: number
-  upload_time?: string
-  file_url?: string
-}
 
 type UploadTaskStatus =
   | 'hashing'
@@ -172,19 +163,19 @@ const paginationData = reactive({
 
 const loadFileLength = async () => {
   const res = await fileListLength()
-  const total = typeof res?.length === 'number' ? res.length : 0
+  const total = res.data.length
   paginationData.fileTotal = total
   paginationData.filePageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getFileFirstPageList = async () => {
   paginationData.fileCurrentPage = 1
-  tableData.value = (await returnFilesListData(1)) as FileRow[]
+  tableData.value = (await returnFilesListData(1)).data
 }
 
 const fileCurrentChange = async (value: number) => {
   paginationData.fileCurrentPage = value
-  tableData.value = (await returnFilesListData(value)) as FileRow[]
+  tableData.value = (await returnFilesListData(value)).data
 }
 
 const deleteFile = (row: FileRow) => {
@@ -411,7 +402,7 @@ const runUpload = async (rawFile: UploadRawFile) => {
       throw new Error(initRes.message || '上传初始化失败')
     }
 
-    if (!initRes.shouldUpload) {
+    if (!initRes.data.shouldUpload) {
       task.status = 'instant'
       task.progress = 100
       task.message = '秒传成功'
@@ -419,11 +410,11 @@ const runUpload = async (rawFile: UploadRawFile) => {
       return
     }
 
-    task.uploadId = initRes.uploadId
-    setUploadId(task.uid, initRes.uploadId)
+    task.uploadId = initRes.data.uploadId
+    setUploadId(task.uid, initRes.data.uploadId)
     task.status = 'uploading'
 
-    const uploadedChunkSet = new Set<number>((initRes.uploadedChunks || []).map((item: number) => Number(item)))
+    const uploadedChunkSet = new Set<number>((initRes.data.uploadedChunks || []).map((item: number) => Number(item)))
     updateUploadProgress(task, uploadedChunkSet.size, chunkTotal)
     if (uploadedChunkSet.size > 0) {
       task.message = `已恢复 ${uploadedChunkSet.size}/${chunkTotal} 个分片`
@@ -516,12 +507,12 @@ const handleUploadRequest = (options: UploadRequestOptions) => {
 
 const handleDownload = async (row: FileRow) => {
   const res = await downloadFile(row.id)
-  if (res.status !== 0 || !res.url) {
+  if (res.status !== 0 || !res.data.url) {
     ElMessage.error(res.message || '文件下载失败')
     return
   }
 
-  window.open(res.url, '_blank')
+  window.open(res.data.url, '_blank')
   await fileCurrentChange(paginationData.fileCurrentPage)
 }
 

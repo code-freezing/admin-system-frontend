@@ -119,8 +119,6 @@ import introduce from './components/introduce.vue'
 import bulletin from '@/components/common_msg.vue'
 import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
 import { companyMessageList, systemMessageList } from '@/api/message'
-import { useUserInfo } from '@/stores/userinfor'
-import { hasAuthSession } from '@/utils/auth'
 import { getViewCache, setViewCache } from '@/utils/view_cache'
 
 interface CompanyIntroduceItem {
@@ -140,7 +138,6 @@ interface BulletinRow {
 }
 
 const router = useRouter()
-const userStore = useUserInfo()
 
 const breadcrumbItem = ref({
   first: '首页',
@@ -212,10 +209,10 @@ const loadHomeData = async () => {
     ])
 
     const payload = {
-      imageUrls: Array.isArray(swiperRes) ? (swiperRes as string[]) : [],
-      companyIntroduce: Array.isArray(companyRes) ? (companyRes as CompanyIntroduceItem[]) : [],
-      companyMessages: Array.isArray(companyMessageRes) ? (companyMessageRes as BulletinRow[]) : [],
-      systemMessages: Array.isArray(systemMessageRes) ? (systemMessageRes as BulletinRow[]) : [],
+      imageUrls: swiperRes.data,
+      companyIntroduce: companyRes.data,
+      companyMessages: companyMessageRes.data as BulletinRow[],
+      systemMessages: systemMessageRes.data as BulletinRow[],
     }
 
     applyHomePayload(payload)
@@ -236,14 +233,6 @@ onMounted(() => {
   // 首页展示的数据比较分散，这里统一做并发加载，并允许短时缓存复用。
   void loadHomeData()
 })
-
-// 页面刷新时，Pinia 里可能还没来得及恢复 userStore，这里做一次兜底回填。
-if (!userStore.id && hasAuthSession()) {
-  const id = Number(localStorage.getItem('id') || 0)
-  if (id > 0) {
-    userStore.userInfo(id)
-  }
-}
 
 void router
 </script>

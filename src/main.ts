@@ -40,9 +40,9 @@ const bootstrapSession = async () => {
   const currentPath = router.currentRoute.value.fullPath
 
   try {
-    const profile = (await authProfile()) as any
-    permissionStore.setAccessProfile(profile)
-    userStore.applyProfile(profile?.user ?? {})
+    const profile = await authProfile()
+    permissionStore.setAccessProfile(profile.data)
+    userStore.applyProfile(profile.data.user ?? {})
     menuStore.setRouter(permissionStore.menuTree)
 
     const targetRoute = router.resolve(currentPath)

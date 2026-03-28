@@ -82,6 +82,7 @@ import { usePermission } from '@/stores/permission'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMenu } from '@/stores/menu'
 import { setAuthTokens } from '@/utils/auth'
+import { useMsg } from '@/stores/message'
 
 interface AuthForm {
   account: number | null
@@ -93,6 +94,7 @@ const router = useRouter()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 const permissionStore = usePermission()
+const msgStore = useMsg()
 
 const activeName = ref('first')
 const loginData = reactive<AuthForm>({
@@ -110,27 +112,20 @@ const openForget = () => {
   forgetP.value?.open()
 }
 
-const persistUserContext = (user: Record<string, any>) => {
-  localStorage.setItem('id', String(user.id ?? ''))
-  localStorage.setItem('name', user.name ?? '')
-  localStorage.setItem('department', user.department ?? '')
-  localStorage.setItem('userinfo', JSON.stringify(user ?? {}))
-}
-
 // 登录链路会串起三件事：
 // 1. 调登录接口拿 access token
 // 2. 拉菜单并动态注入路由
 // 3. 拉用户信息并记录登录日志
 const loginAction = async () => {
-  const res = (await login(loginData)) as any
+  const res = await login(loginData)
 
-  if (res?.status !== 0) {
+  if (res.status !== 0) {
     ElMessage.error('登录失败，请检查账号和密码是否正确')
     return
   }
 
-  const { account, name, email } = res.results
-  const accessToken = res.accessToken || res.token
+  const { account = '', name = '', email = '' } = res.data.user
+  const accessToken = res.data.accessToken || res.data.token
 
   if (!accessToken) {
     ElMessage.error('登录态无效，请重新登录')
@@ -138,11 +133,11 @@ const loginAction = async () => {
   }
 
   setAuthTokens(accessToken)
-  const profile = (await authProfile()) as any
-  permissionStore.setAccessProfile(profile)
+  const profile = await authProfile()
+  permissionStore.setAccessProfile(profile.data)
   menuStore.setRouter(permissionStore.menuTree)
-  userStore.applyProfile(profile?.user ?? {})
-  persistUserContext(profile?.user ?? res.results)
+  userStore.applyProfile(profile.data.user ?? {})
+  msgStore.reset()
 
   ElMessage.success('登录成功')
   await loginLog(account, name, email)
@@ -155,8 +150,8 @@ const registerAction = async () => {
     return
   }
 
-  const res = (await register(registerData)) as any
-  if (res?.status === 0) {
+  const res = await register(registerData)
+  if (res.status === 0) {
     ElMessage.success('注册成功，请登录')
     activeName.value = 'first'
     return

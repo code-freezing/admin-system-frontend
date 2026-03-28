@@ -13,8 +13,10 @@ import { useMsg } from '@/stores/message'
 import { usePermission } from '@/stores/permission'
 import { useUserInfo } from '@/stores/userinfor'
 import { clearLoginState, getAccessToken, setAuthTokens } from '@/utils/auth'
+import { getApiBaseUrl } from '@/utils/runtime_url'
+import { getStatus, toAccessProfileData } from './response'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3007/'
+const baseURL = getApiBaseUrl()
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean
@@ -50,19 +52,20 @@ const redirectToLogin = async () => {
 }
 
 const syncAccessProfile = async () => {
-  const res = (await instance.request({
+  const res = await instance.request({
     url: '/api/authProfile',
     method: 'POST',
     _skipAuthRefresh: true,
     _skipAccessSync: true,
-  } as RetryableRequestConfig)) as any
+  } as RetryableRequestConfig)
+  const profile = toAccessProfileData(res)
 
   const permissionStore = usePermission(pinia)
   const menuStore = useMenu(pinia)
   const userStore = useUserInfo(pinia)
 
-  permissionStore.setAccessProfile(res)
-  userStore.applyProfile(res?.user ?? {})
+  permissionStore.setAccessProfile(profile)
+  userStore.applyProfile(profile.user ?? {})
   menuStore.setRouter(permissionStore.menuTree)
 }
 
@@ -74,15 +77,19 @@ const refreshAccessToken = async () => {
       // 刷新请求自己不需要 access token，也不能再次触发刷新逻辑。
       _skipAuthRefresh: true,
     } as RetryableRequestConfig)
-      .then((res: any) => {
-        if (res?.status !== 0 || !res?.accessToken) {
-          throw new Error(res?.message || '刷新 Token 失败')
+      .then((res: unknown) => {
+        const record = typeof res === 'object' && res !== null ? (res as Record<string, unknown>) : {}
+        const accessToken = typeof record.accessToken === 'string' ? record.accessToken : ''
+        const message = typeof record.message === 'string' ? record.message : '刷新 Token 失败'
+
+        if (getStatus(res) !== 0 || !accessToken) {
+          throw new Error(message)
         }
 
         // 刷新成功后立即覆盖本地 access token。
         // 后续排队等待的请求会直接复用这次刷新拿到的新 token。
-        setAuthTokens(res.accessToken)
-        return res.accessToken as string
+        setAuthTokens(accessToken)
+        return accessToken
       })
       .finally(() => {
         // 无论成功还是失败，都要释放锁，避免后续 401 永远卡住。
@@ -113,7 +120,7 @@ instance.interceptors.response.use(
   (response) => response.data,
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined
-    const status = error.response?.status ?? (error.response?.data as any)?.status
+    const status = error.response?.status ?? getStatus(error.response?.data)
 
     if (status === 401 && originalRequest && !originalRequest._retry && !originalRequest._skipAuthRefresh) {
       try {

@@ -47,14 +47,8 @@ const loadContent = async (sectionId: SectionId) => {
     const sectionTitle = sectionMap[sectionId]
     title.value = sectionTitle
 
-    const res = (await getCompanyIntroduce(sectionTitle)) as
-      | { results?: string }
-      | string
-      | null
-      | undefined
-
-    valueHtml.value =
-      typeof res === 'string' ? res : res?.results ?? ''
+    const res = await getCompanyIntroduce(sectionTitle)
+    valueHtml.value = res.data
   } finally {
     state.loading = false
   }

@@ -20,32 +20,6 @@ interface UserProfilePayload {
   email?: string
 }
 
-type UserProfileResponse =
-  | {
-      results?: UserProfilePayload
-      data?: UserProfilePayload
-    }
-  | UserProfilePayload
-  | null
-  | undefined
-
-// 后端不同接口返回结构不完全统一，这里先做一次格式归一化。
-const resolveProfile = (value: UserProfileResponse): UserProfilePayload => {
-  if (!value) {
-    return {}
-  }
-
-  if ('results' in value && value.results) {
-    return value.results
-  }
-
-  if ('data' in value && value.data) {
-    return value.data
-  }
-
-  return value as UserProfilePayload
-}
-
 export const useUserInfo = defineStore(
   'userinfo',
   () => {
@@ -60,13 +34,13 @@ export const useUserInfo = defineStore(
 
     // 拉取用户详情后，把页面常用字段拆到独立 ref，避免页面每次都手动解构。
     const userInfo = async (userId: number) => {
-      const res = (await getUserInfo(userId)) as UserProfileResponse
-      const data = resolveProfile(res)
+      const res = await getUserInfo(userId)
+      const data = res.data
 
       id.value = data.id ?? userId
       imageUrl.value = data.image_url ?? ''
       identity.value = data.identity ?? ''
-      account.value = data.account ?? ''
+      account.value = typeof data.account === 'string' ? data.account : String(data.account ?? '')
       name.value = data.name ?? ''
       sex.value = data.sex ?? ''
       department.value = data.department ?? ''
@@ -77,7 +51,7 @@ export const useUserInfo = defineStore(
       id.value = profile.id ?? 0
       imageUrl.value = profile.image_url ?? ''
       identity.value = profile.identity ?? ''
-      account.value = profile.account ?? ''
+      account.value = typeof profile.account === 'string' ? profile.account : String(profile.account ?? '')
       name.value = profile.name ?? ''
       sex.value = profile.sex ?? ''
       department.value = profile.department ?? ''

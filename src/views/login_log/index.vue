@@ -87,23 +87,23 @@ const paginationData = reactive({
 
 const loadLoginLength = async () => {
   const res = await loginLogListLength()
-  const total = typeof res?.length === 'number' ? res.length : 0
+  const total = res.data.length
   paginationData.loginTotal = total
   paginationData.loginPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getLoginFirstPageList = async () => {
   paginationData.loginCurrentPage = 1
-  tableData.value = (await returnLoginListData(1)) as LoginLogRow[]
+  tableData.value = (await returnLoginListData(1)).data as LoginLogRow[]
 }
 
 const loginCurrentChange = async (value: number) => {
   paginationData.loginCurrentPage = value
-  tableData.value = (await returnLoginListData(value)) as LoginLogRow[]
+  tableData.value = (await returnLoginListData(value)).data as LoginLogRow[]
 }
 
 const searchLoginAccount = async () => {
-  tableData.value = (await searchLoginLogList(account.value.trim())) as LoginLogRow[]
+  tableData.value = (await searchLoginLogList(account.value.trim())).data as LoginLogRow[]
 }
 
 const clearList = () => {

@@ -50,6 +50,7 @@ import { computed, reactive, ref } from 'vue'
 import type { FormProps } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { applyOutProduct } from '@/api/product'
+import { useUserInfo } from '@/stores/userinfor'
 
 // 出库申请弹窗从列表行带入当前库存和单价，用户只补充申请编号、数量和备注。
 interface FormData {
@@ -66,6 +67,7 @@ interface FormData {
 const labelPosition = ref<FormProps['labelPosition']>('left')
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
+const userStore = useUserInfo()
 
 const formDataInfo = reactive<FormData>({
   id: null,
@@ -74,7 +76,7 @@ const formDataInfo = reactive<FormData>({
   product_in_warehouse_number: null,
   product_single_price: null,
   product_out_number: null,
-  product_out_apply_person: localStorage.getItem('name'),
+  product_out_apply_person: userStore.name,
   apply_memo: '',
 })
 
@@ -100,6 +102,7 @@ const open = (row: any) => {
   formDataInfo.product_single_price = row.product_single_price
   formDataInfo.product_out_number = null
   formDataInfo.product_out_id = null
+  formDataInfo.product_out_apply_person = userStore.name
   formDataInfo.apply_memo = ''
   dialogFormVisible.value = true
 }
