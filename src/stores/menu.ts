@@ -12,6 +12,7 @@ import { ref } from 'vue'
 import type { MenuNode } from './permission'
 
 type RouteLoader = (() => Promise<{ default: Component }>) | undefined
+const viewModules = import.meta.glob<{ default: Component }>('@/views/**/*.vue')
 
 export const useMenu = defineStore(
   'menuInfo',
@@ -25,8 +26,7 @@ export const useMenu = defineStore(
       // Vite 会在构建时把这里匹配到的页面组件做成一个映射表。
       // 后端只要返回类似 "product/product_manage_list/index" 这样的路径，
       // 前端就能在运行时按字符串把它还原成真正的页面组件。
-      const modules = import.meta.glob<{ default: Component }>('@/views/**/*.vue')
-      return modules[`/src/views/${url}.vue`]
+      return viewModules[`/src/views/${url}.vue`]
     }
 
     const clearRouter = () => {

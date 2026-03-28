@@ -23,16 +23,14 @@ import { deleteFile } from '@/api/file'
 const emit = defineEmits(['success'])
 const dialogFormVisible = ref(false)
 const fileId = ref<number>()
-const fileName = ref<string>()
 
 const open = (row: any) => {
   fileId.value = row.id
-  fileName.value = row.file_name
   dialogFormVisible.value = true
 }
 
 const operationFiles = async () => {
-  const res = await deleteFile(fileId.value as number, fileName.value as string)
+  const res = await deleteFile(fileId.value as number)
   if (res.status == 0) {
     ElMessage.success('文件删除成功')
     emit('success')

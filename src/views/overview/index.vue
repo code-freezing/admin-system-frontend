@@ -25,11 +25,15 @@
           <p>权限：最高权限</p>
         </div>
       </div>
-      <div class="manage-user pie"></div>
+      <div ref="pieRef" class="manage-user pie">
+        <div v-if="chartsLoading" class="chart-placeholder">统计图表加载中...</div>
+      </div>
     </div>
 
-    <div class="mid-content-wrapped">
-      <div class="product-category-bar mid-content-left"></div>
+    <div ref="chartAreaRef" class="mid-content-wrapped">
+      <div ref="categoryBarRef" class="product-category-bar mid-content-left">
+        <div v-if="chartsLoading" class="chart-placeholder">正在准备产品统计...</div>
+      </div>
       <div class="mid-content-right">
         <div class="title">常用管理</div>
         <el-row :gutter="20">
@@ -74,21 +78,25 @@
     </div>
 
     <div class="footer-content-wrapped">
-      <div class="massage-level footer-content-left"></div>
-      <div class="login-week footer-content-right"></div>
+      <div ref="levelPieRef" class="massage-level footer-content-left">
+        <div v-if="chartsLoading" class="chart-placeholder">正在准备公告统计...</div>
+      </div>
+      <div ref="dayLineRef" class="login-week footer-content-right">
+        <div v-if="chartsLoading" class="chart-placeholder">正在准备登录趋势...</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
 import breadCrumb from '@/components/bread_crumb.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { useUserInfo } from '@/stores/userinfor'
 import { getAdminAndNumber, getCategoryAndNumber, getDayAndNumber, getLevelAndNumber } from '@/api/overview'
 import { getUserInfo } from '@/api/userinfor'
+import type { EChartsType } from 'echarts/core'
 
 interface UserProfile {
   name: string
@@ -102,14 +110,24 @@ const userStore = useUserInfo()
 const breadcrumbItem = ref({
   first: '系统概览',
 })
+const chartAreaRef = ref<HTMLElement | null>(null)
+const pieRef = ref<HTMLElement | null>(null)
+const categoryBarRef = ref<HTMLElement | null>(null)
+const levelPieRef = ref<HTMLElement | null>(null)
+const dayLineRef = ref<HTMLElement | null>(null)
 const userProfile = reactive<UserProfile>({
   name: '',
   sex: '',
   identity: '',
   department: '',
 })
+const chartsLoading = ref(true)
 
 const currentUserId = Number(localStorage.getItem('id') || userStore.id || 0)
+const charts: EChartsType[] = []
+let chartObserver: IntersectionObserver | null = null
+let resizeHandler: (() => void) | null = null
+let hasStartedChartLoad = false
 
 const routerTo = (path: string) => {
   router.push(`/${path}`)
@@ -128,175 +146,207 @@ const loadUserProfile = async () => {
   userProfile.department = data.department ?? ''
 }
 
-const renderPie = async () => {
-  const chart = echarts.init(document.querySelector('.manage-user') as HTMLElement)
-  chart.showLoading()
-  const data = (await getAdminAndNumber()) as any
-  chart.hideLoading()
+const mountChart = (chart: EChartsType, option: Record<string, unknown>) => {
+  chart.setOption(option)
+  charts.push(chart)
+}
 
-  chart.setOption({
-    title: {
-      text: '管理与用户对比图',
-      left: 'center',
-    },
-    tooltip: { trigger: 'item' },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      padding: [20, 20, 20, 20],
-    },
-    series: [
-      {
-        type: 'pie',
-        radius: '65%',
-        data: data.data,
-        emphasis: {
+const bindResize = () => {
+  if (resizeHandler) {
+    return
+  }
+
+  resizeHandler = () => {
+    charts.forEach((chart) => chart.resize())
+  }
+  window.addEventListener('resize', resizeHandler)
+}
+
+const renderCharts = async () => {
+  if (hasStartedChartLoad) {
+    return
+  }
+
+  hasStartedChartLoad = true
+  chartsLoading.value = true
+
+  try {
+    const [{ createOverviewChart }, adminData, categoryData, levelData, dayData] = await Promise.all([
+      import('./chart_runtime'),
+      getAdminAndNumber(),
+      getCategoryAndNumber(),
+      getLevelAndNumber(),
+      getDayAndNumber(),
+    ])
+
+    await nextTick()
+
+    if (!pieRef.value || !categoryBarRef.value || !levelPieRef.value || !dayLineRef.value) {
+      return
+    }
+
+    mountChart(createOverviewChart(pieRef.value), {
+      title: {
+        text: '管理与用户对比图',
+        left: 'center',
+      },
+      tooltip: { trigger: 'item' },
+      legend: {
+        orient: 'vertical',
+        left: 'left',
+        padding: [20, 20, 20, 20],
+      },
+      series: [
+        {
+          type: 'pie',
+          radius: '65%',
+          data: (adminData as any).data,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)',
+            },
+          },
+        },
+      ],
+    })
+
+    mountChart(createOverviewChart(categoryBarRef.value), {
+      title: {
+        text: '产品类别库存总价图',
+        top: '3%',
+        textStyle: {
+          fontSize: 16,
+        },
+      },
+      tooltip: { trigger: 'axis' },
+      xAxis: {
+        type: 'category',
+        data: (categoryData as any).category,
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: [
+        {
+          data: (categoryData as any).price,
+          type: 'bar',
+          barWidth: 40,
+          colorBy: 'data',
+        },
+      ],
+    })
+
+    mountChart(createOverviewChart(levelPieRef.value), {
+      title: {
+        text: '公告等级分布图',
+        top: '3%',
+        textStyle: {
+          fontSize: 16,
+        },
+      },
+      tooltip: { trigger: 'item' },
+      legend: {
+        top: '5%',
+        left: 'center',
+      },
+      series: [
+        {
+          type: 'pie',
+          radius: ['35%', '65%'],
+          avoidLabelOverlap: false,
           itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2,
           },
-        },
-      },
-    ],
-  })
-
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
-}
-
-const renderCategoryBar = async () => {
-  const chart = echarts.init(document.querySelector('.product-category-bar') as HTMLElement)
-  chart.showLoading()
-  const data = (await getCategoryAndNumber()) as any
-  chart.hideLoading()
-
-  chart.setOption({
-    title: {
-      text: '产品类别库存总价图',
-      top: '3%',
-      textStyle: {
-        fontSize: 16,
-      },
-    },
-    tooltip: { trigger: 'axis' },
-    xAxis: {
-      type: 'category',
-      data: data.category,
-    },
-    yAxis: {
-      type: 'value',
-    },
-    series: [
-      {
-        data: data.price,
-        type: 'bar',
-        barWidth: 40,
-        colorBy: 'data',
-      },
-    ],
-  })
-
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
-}
-
-const renderLevelPie = async () => {
-  const chart = echarts.init(document.querySelector('.massage-level') as HTMLElement)
-  chart.showLoading()
-  const data = (await getLevelAndNumber()) as any
-  chart.hideLoading()
-
-  chart.setOption({
-    title: {
-      text: '公告等级分布图',
-      top: '3%',
-      textStyle: {
-        fontSize: 16,
-      },
-    },
-    tooltip: { trigger: 'item' },
-    legend: {
-      top: '5%',
-      left: 'center',
-    },
-    series: [
-      {
-        type: 'pie',
-        radius: ['35%', '65%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2,
-        },
-        label: {
-          show: false,
-          position: 'center',
-        },
-        emphasis: {
           label: {
-            show: true,
-            fontSize: 40,
-            fontWeight: 'bold',
+            show: false,
+            position: 'center',
           },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 40,
+              fontWeight: 'bold',
+            },
+          },
+          labelLine: {
+            show: false,
+          },
+          data: (levelData as any).data,
         },
-        labelLine: {
-          show: false,
-        },
-        data: data.data,
-      },
-    ],
-  })
+      ],
+    })
 
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
+    mountChart(createOverviewChart(dayLineRef.value), {
+      title: {
+        text: '每日登录人数图',
+        top: '3%',
+        textStyle: {
+          fontSize: 16,
+        },
+      },
+      tooltip: { trigger: 'item' },
+      xAxis: {
+        type: 'category',
+        data: (dayData as any).week,
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: [
+        {
+          data: (dayData as any).number,
+          type: 'line',
+        },
+      ],
+    })
+    bindResize()
+  } finally {
+    chartsLoading.value = false
+  }
 }
 
-const renderDayLine = async () => {
-  const chart = echarts.init(document.querySelector('.login-week') as HTMLElement)
-  chart.showLoading()
-  const data = (await getDayAndNumber()) as any
-  chart.hideLoading()
+const observeChartSection = () => {
+  if (!chartAreaRef.value || typeof window === 'undefined') {
+    void renderCharts()
+    return
+  }
 
-  chart.setOption({
-    title: {
-      text: '每日登录人数图',
-      top: '3%',
-      textStyle: {
-        fontSize: 16,
-      },
-    },
-    tooltip: { trigger: 'item' },
-    xAxis: {
-      type: 'category',
-      data: data.week,
-    },
-    yAxis: {
-      type: 'value',
-    },
-    series: [
-      {
-        data: data.number,
-        type: 'line',
-      },
-    ],
-  })
+  if (!('IntersectionObserver' in window)) {
+    void renderCharts()
+    return
+  }
 
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
+  chartObserver = new window.IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        chartObserver?.disconnect()
+        chartObserver = null
+        void renderCharts()
+      }
+    },
+    {
+      rootMargin: '120px',
+    },
+  )
+
+  chartObserver.observe(chartAreaRef.value)
 }
 
 onMounted(async () => {
   await loadUserProfile()
-  await renderPie()
-  await renderCategoryBar()
-  await renderLevelPie()
-  await renderDayLine()
+  observeChartSection()
+})
+
+onBeforeUnmount(() => {
+  chartObserver?.disconnect()
+  charts.forEach((chart) => chart.dispose())
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+  }
 })
 
 void userStore
@@ -427,6 +477,24 @@ void userStore
       width: calc(70%);
       background: #fff;
     }
+  }
+
+  .pie,
+  .mid-content-left,
+  .footer-content-left,
+  .footer-content-right {
+    position: relative;
+  }
+
+  .chart-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #909399;
+    font-size: 14px;
+    background: linear-gradient(90deg, #f8fafc, #eef3fb, #f8fafc);
   }
 }
 </style>

@@ -63,7 +63,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ChatSquare,
@@ -112,10 +112,54 @@ const resolveIcon = (iconName?: string) => {
   return iconMap[iconName as keyof typeof iconMap] || Document
 }
 
-onMounted(() => {
-  if (userStore.id) {
-    msgStore.returnReadList(userStore.id)
+type IdleWindow = Window &
+  typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number
+    cancelIdleCallback?: (handle: number) => void
   }
+
+let unreadTaskHandle: number | null = null
+
+const scheduleUnreadLoad = () => {
+  if (!userStore.id) {
+    return
+  }
+
+  const task = () => {
+    void msgStore.returnReadList(userStore.id)
+  }
+  const idleWindow = window as IdleWindow
+
+  if (typeof idleWindow.requestIdleCallback === 'function') {
+    unreadTaskHandle = idleWindow.requestIdleCallback(() => task(), { timeout: 1000 })
+    return
+  }
+
+  unreadTaskHandle = window.setTimeout(task, 300)
+}
+
+const cancelUnreadLoad = () => {
+  if (unreadTaskHandle === null || typeof window === 'undefined') {
+    return
+  }
+
+  const idleWindow = window as IdleWindow
+
+  if (typeof idleWindow.cancelIdleCallback === 'function') {
+    idleWindow.cancelIdleCallback(unreadTaskHandle)
+  } else {
+    window.clearTimeout(unreadTaskHandle)
+  }
+
+  unreadTaskHandle = null
+}
+
+onMounted(() => {
+  scheduleUnreadLoad()
+})
+
+onBeforeUnmount(() => {
+  cancelUnreadLoad()
 })
 
 const goLogin = async () => {
