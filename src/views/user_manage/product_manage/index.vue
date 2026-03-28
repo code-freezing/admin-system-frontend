@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 产品管理员列表页。
+  2. 面向超级管理员维护产品管理员账号。
+  3. 它和其他管理员列表页结构接近，但身份参数不同。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -19,7 +25,9 @@
           </el-input>
         </div>
         <div class="button-wrapped">
-          <el-button type="primary" @click="openCreate(2)">新增产品管理员</el-button>
+          <el-button v-permission="'button.user.admin.create'" type="primary" @click="openCreate(2)">
+            新增产品管理员
+          </el-button>
         </div>
       </div>
       <div class="table-content">
@@ -32,8 +40,12 @@
           <el-table-column label="操作">
             <template #default="{ row }">
               <div>
-                <el-button type="success" @click="openEdit(row.id)">编辑</el-button>
-                <el-button type="danger" @click="openDelete(row.id)">删除</el-button>
+                <el-button v-permission="'button.user.admin.edit'" type="success" @click="openEdit(row.id)">
+                  编辑
+                </el-button>
+                <el-button v-permission="'button.user.admin.delete'" type="danger" @click="openDelete(row.id)">
+                  删除
+                </el-button>
               </div>
             </template>
           </el-table-column>
@@ -42,7 +54,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.currentPage"
         :pager-count="7"
         :total="adminTotal"
@@ -61,11 +73,13 @@
 import { ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import breadCrumb from '@/components/bread_crumb.vue'
-import createA from '../components/create_admin.vue'
-import editA from '../components/edit_admin.vue'
-import deleteA from '../components/delete_admin.vue'
+import { usePermission } from '@/hooks/usePermission'
 import { useTable } from '@/hooks'
+import createA from '../components/create_admin.vue'
+import deleteA from '../components/delete_admin.vue'
+import editA from '../components/edit_admin.vue'
 
+const { hasPermission } = usePermission()
 const {
   adminAccount,
   paginationData,
@@ -85,16 +99,19 @@ const item = ref({
 
 const create_admin = ref()
 const openCreate = (id: number) => {
+  if (!hasPermission('button.user.admin.create')) return
   create_admin.value.open(id)
 }
 
 const edit_admin = ref()
 const openEdit = (id: number) => {
+  if (!hasPermission('button.user.admin.edit')) return
   edit_admin.value.open(id)
 }
 
 const delete_admin = ref()
 const openDelete = (id: number) => {
+  if (!hasPermission('button.user.admin.delete')) return
   delete_admin.value.open({ kind: 'admin', id })
 }
 </script>

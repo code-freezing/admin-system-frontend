@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 登录页找回密码弹窗。
+  2. 用户先校验账号与邮箱，再通过该组件完成密码重置。
+  3. 它复用后端的账号安全接口，但不依赖已登录状态。
+-->
 <template>
   <el-dialog v-model="forgetVisible" title="忘记密码" width="400px" destroy-on-close>
     <el-form

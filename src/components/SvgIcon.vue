@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. SVG 图标包装组件。
+  2. 统一处理 svg symbol 的引用方式，简化模板里的图标写法。
+  3. 适合和 svg sprite 注册能力配合使用。
+-->
 <template>
   <svg class="svg-icon" aria-hidden="true" :style="{ width: size + 'px', height: size + 'px' }">
     <use :xlink:href="symbolId" :fill="color" />

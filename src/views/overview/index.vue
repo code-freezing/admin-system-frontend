@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 系统概览页面。
+  2. 通过统计卡片、图表和排行板块展示系统运行情况。
+  3. 这是超级管理员快速理解全局状态的可视化入口。
+-->
 <template>
   <breadCrumb :item="breadcrumbItem" />
   <div class="overview-wrapped">
@@ -89,10 +95,6 @@ interface UserProfile {
   sex: string
   identity: string
   department: string
-}
-
-interface EchartsEntry {
-  [key: string]: any
 }
 
 const router = useRouter()

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 登录日志提示弹窗。
+  2. 承载日志页面中的辅助说明或单条日志详情展示。
+  3. 目的是让主表格只负责列表视图。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="清空登录日志" width="30%" center>
     <span>确认后会清空全部登录日志，无法恢复。</span>

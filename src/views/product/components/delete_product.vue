@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 产品删除确认弹窗。
+  2. 用于删除库存记录前的二次确认，避免误操作直接影响列表数据。
+  3. 危险操作与主表格拆开后，页面逻辑会更清晰。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="删除产品" width="30%" center>
     <span>确认后将删除该产品，无法恢复。</span>

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 出库申请弹窗。
+  2. 从库存列表发起出库申请，填写申请编号、数量、申请人和备注。
+  3. 提交后产品不会立即扣库，而是进入待审核状态。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="产品出库申请" width="600px" align-center draggable>
     <div class="product-name">产品名称：{{ formDataInfo.product_name }}</div>
@@ -87,6 +93,7 @@ const canSubmitOutApply = computed(() => {
 })
 
 const open = (row: any) => {
+  // 每次打开都重置“申请相关字段”，避免上一次弹窗留下的编号或备注串到下一条产品。
   formDataInfo.id = row.id
   formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
   formDataInfo.product_name = row.product_name
@@ -99,6 +106,8 @@ const open = (row: any) => {
 
 // 提交成功后通过 success 事件通知父页面刷新库存和申请列表。
 const addProduct = async () => {
+  // 后端会把这次申请写回当前 product 记录，而不是立刻生成出库历史。
+  // 真正的库存扣减要等审核弹窗提交“同意”后才发生。
   const res = await applyOutProduct(formDataInfo)
   if (res.status == 0) {
     ElMessage.success('出库申请已提交')

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 通用消息详情弹窗。
+  2. 用于首页公告、系统消息等场景，统一承载消息内容查看。
+  3. 把弹窗逻辑集中后，多个页面可以复用同一套展示能力。
+-->
 <template>
   <el-dialog v-model="dialog" :title="title" width="800px" center>
     <el-container>

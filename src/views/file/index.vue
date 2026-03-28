@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 合同/文件管理页面。
+  2. 负责展示文件列表、上传文件、搜索文件以及预览下载相关交互。
+  3. 超级管理员通过这里维护公共文件资源。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -52,7 +58,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.fileCurrentPage"
         :pager-count="7"
         :total="paginationData.fileTotal"
@@ -62,7 +68,7 @@
       />
     </div>
   </div>
-  <tips ref="tip" @success="getFileFirstPageList" />
+  <tips ref="tip" @success="reloadFileList" />
 </template>
 
 <script lang="ts" setup>
@@ -106,12 +112,13 @@ const userName = userInfo ? JSON.parse(userInfo)?.name ?? '' : ''
 
 const loadFileLength = async () => {
   const res = await fileListLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof res?.length === 'number' ? res.length : 0
   paginationData.fileTotal = total
   paginationData.filePageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getFileFirstPageList = async () => {
+  paginationData.fileCurrentPage = 1
   tableData.value = (await returnFilesListData(1)) as FileRow[]
 }
 
@@ -126,6 +133,10 @@ const changeClick = async (downloadNumber: number, id: number) => {
 
 const deleteFile = (row: FileRow) => {
   tip.value.open(row)
+}
+
+const reloadFileList = async () => {
+  await Promise.all([loadFileLength(), getFileFirstPageList()])
 }
 
 const handleExceed = () => {
@@ -143,11 +154,11 @@ const handleSuccess = async (response: any) => {
   }
 
   ElMessage.success('文件上传成功')
-  await Promise.all([loadFileLength(), getFileFirstPageList()])
+  await reloadFileList()
 }
 
 onMounted(async () => {
-  await Promise.all([loadFileLength(), getFileFirstPageList()])
+  await reloadFileList()
 })
 </script>
 

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 后台首页。
+  2. 组合轮播图、公司简介、公司公告和系统消息，作为登录后的默认落点。
+  3. 首页的数据来源较分散，因此这里承担了多个接口的聚合加载。
+-->
 <template>
   <breadCrumb :item="breadcrumbItem" />
   <div class="home-wrapped">

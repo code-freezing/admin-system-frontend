@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 产品出入库模块接口封装。
+ * 2. 负责产品入库、出库申请、审核、分页和查询等库存业务请求。
+ * 3. 产品列表页和审核弹窗都会复用这里的方法。
+ */
+
 import { post } from './request'
 
 // 产品接口覆盖入库、出库申请、审批和分页查询，保持和后端路由一一对应。
@@ -15,18 +22,9 @@ export const editProduct = (data: Record<string, unknown>) => {
   return post('/pro/editProduct', { id, ...rest })
 }
 
-// 列表查询和总数接口拆开，方便页面分别驱动表格与分页器。
-export const getProductList = () => {
-  return post('/pro/getProductList')
-}
-
 export const applyOutProduct = (data: Record<string, unknown>) => {
   const { id, ...rest } = data
   return post('/pro/applyOutProduct', { id, ...rest })
-}
-
-export const applyProductList = () => {
-  return post('/pro/applyProductList')
 }
 
 export const withdrawApplyProduct = (id: number) => {
@@ -40,15 +38,15 @@ export const auditProduct = (data: Record<string, unknown>) => {
 }
 
 // 搜索接口按不同业务编号拆分，避免页面拼接复杂条件。
-export const searchProductForId = (product_id: number) => {
+export const searchProductForId = (product_id: string | number) => {
   return post('/pro/searchProductForId', { product_id })
 }
 
-export const searchProductForApplyId = (product_out_id: number) => {
+export const searchProductForApplyId = (product_out_id: string | number) => {
   return post('/pro/searchProductForApplyId', { product_out_id })
 }
 
-export const searchProductForOutId = (product_out_id: number) => {
+export const searchProductForOutId = (product_out_id: string | number) => {
   return post('/pro/searchProductForOutId', { product_out_id })
 }
 
@@ -58,10 +56,6 @@ export const getProductLength = () => {
 
 export const getApplyProductLength = () => {
   return post('/pro/getApplyProductLength')
-}
-
-export const auditProductList = () => {
-  return post('/pro/auditProductList')
 }
 
 export const getOutProductLength = () => {

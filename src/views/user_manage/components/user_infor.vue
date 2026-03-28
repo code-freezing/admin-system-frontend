@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 用户详情弹窗。
+  2. 用于查看单个用户或管理员的详细信息。
+  3. 把详情展示拆开后，列表页不需要承担过多展示字段。
+-->
 <template>
   <el-dialog v-model="dialogUserVisible" title="用户详情" width="620px" center draggable>
     <div class="user-info-body">
@@ -18,9 +24,9 @@
       </div>
     </div>
     <div class="action-wrap">
-      <span @click="openEdit(userData.id)">编辑</span>
-      <span @click="openPromote(userData.id)">提升权限</span>
-      <span @click="openDelete(userData.id)">删除用户</span>
+      <span v-if="hasPermission('button.user.user.edit')" @click="openEdit(userData.id)">编辑</span>
+      <span v-if="hasPermission('button.user.user.promote')" @click="openPromote(userData.id)">提升权限</span>
+      <span v-if="hasPermission('button.user.user.delete')" @click="openDelete(userData.id)">删除用户</span>
     </div>
   </el-dialog>
   <promote ref="pro" @success="handleChildSuccess" />
@@ -30,12 +36,14 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import { usePermission } from '@/hooks/usePermission'
 import promote from '../components/promote.vue'
 import edit from '../components/edit_user.vue'
 import remove from '../components/delete_admin.vue'
 
 const emit = defineEmits(['success'])
 const dialogUserVisible = ref(false)
+const { hasPermission } = usePermission()
 
 const userData = reactive({
   id: 0,
@@ -71,12 +79,17 @@ const edit_user = ref()
 const delete_user = ref()
 
 const openPromote = (id: number) => {
+  if (!hasPermission('button.user.user.promote')) return
   pro.value.open(id)
 }
+
 const openEdit = (id: number) => {
+  if (!hasPermission('button.user.user.edit')) return
   edit_user.value.open(id)
 }
+
 const openDelete = (id: number) => {
+  if (!hasPermission('button.user.user.delete')) return
   delete_user.value.open({ kind: 'user', id, account: userData.account, name: userData.name })
 }
 

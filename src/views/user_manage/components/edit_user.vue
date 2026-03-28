@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 编辑普通用户信息弹窗。
+  2. 用于维护普通员工的基础资料，便于用户管理员执行日常信息修正。
+  3. 它与管理员编辑流程类似，但服务对象不同。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="编辑用户" width="600px" align-center draggable>
     <div class="dialog-content">

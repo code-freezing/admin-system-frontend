@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 修改密码弹窗。
+  2. 已登录用户通过这里校验旧密码并提交新密码。
+  3. 密码相关规则由后端 Joi 校验和 bcrypt 哈希共同保证。
+-->
 <template>
   <el-dialog v-model="state.changePasswordDialog" title="修改密码" width="400px">
     <el-form class="login-form" :label-position="labelPosition" :rules="rules">

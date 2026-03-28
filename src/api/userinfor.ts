@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 用户与权限模块接口封装。
+ * 2. 覆盖个人资料、账号安全、用户管理、管理员管理等能力。
+ * 3. 用户相关页面和通用分页 hook 都从这里拿数据。
+ */
+
 import { post } from './request'
 
 // 这一组接口全部属于“用户信息与管理员管理”模块。
@@ -30,10 +37,6 @@ export const createAdmin = (data: Record<string, unknown>) => {
   return post('/user/createAdmin', { account, ...rest })
 }
 
-export const getAdminList = (identity: string) => {
-  return post('/user/getAdminList', { identity })
-}
-
 export const editAdmin = (data: Record<string, unknown>) => {
   const { id, ...rest } = data
   return post('/user/editAdmin', { id, ...rest })
@@ -47,7 +50,7 @@ export const changeIdentityToAdmin = (id: number, identity: string) => {
   return post('/user/changeIdentityToAdmin', { id, identity })
 }
 
-export const searchUser = (account: number | undefined, identity: string) => {
+export const searchUser = (account: string | number | undefined, identity: string) => {
   return post('/user/searchUser', { account, identity })
 }
 
@@ -67,7 +70,7 @@ export const getBanList = () => {
   return post('/user/getBanList')
 }
 
-export const deleteUser = (id: number, account: number) => {
+export const deleteUser = (id: number, account: string) => {
   return post('/user/deleteUser', { id, account })
 }
 

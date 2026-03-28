@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 普通用户列表页。
+  2. 负责查看员工列表、部门筛选、冻结解冻、赋权和编辑资料。
+  3. 这是用户管理员最常使用的主工作台。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -11,7 +17,9 @@
               size="large"
               placeholder="按账号搜索"
               :prefix-icon="Search"
+              clearable
               @change="searchUserByAccount()"
+              @clear="reloadUserList()"
             />
           </div>
           <div class="select-wrapped">
@@ -58,10 +66,20 @@
           <el-table-column label="操作" width="200">
             <template #default="{ row }">
               <div>
-                <el-button type="primary" @click="banUserById(row.id)" :disabled="row.status == 1">
+                <el-button
+                  v-permission="'button.user.user.ban'"
+                  type="primary"
+                  @click="banUserById(row.id)"
+                  :disabled="row.status == 1"
+                >
                   冻结
                 </el-button>
-                <el-button type="success" @click="hotUserById(row.id)" :disabled="row.status == 0">
+                <el-button
+                  v-permission="'button.user.user.unban'"
+                  type="success"
+                  @click="hotUserById(row.id)"
+                  :disabled="row.status == 0"
+                >
                   解冻
                 </el-button>
               </div>
@@ -72,7 +90,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.currentPage"
         :pager-count="7"
         :total="adminTotal"
@@ -90,6 +108,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
+import { usePermission } from '@/hooks/usePermission'
 import { getDepartment } from '@/api/setting'
 import {
   banUser,
@@ -111,12 +130,13 @@ interface UserRow {
 }
 
 const breadcrumb = ref()
+const { hasAnyPermission, hasPermission } = usePermission()
 const item = ref({
   first: '用户管理',
   second: '用户列表',
 })
 
-const adminAccount = ref<number>()
+const adminAccount = ref<string>()
 const tableData = ref<UserRow[]>([])
 const departmentData = ref<string[]>([])
 const department = ref<string>()
@@ -135,7 +155,7 @@ const loadDepartment = async () => {
 
 const loadUserLength = async () => {
   const res = await getAdminListLength('用户')
-  adminTotal.value = Array.isArray(res) ? res.length : 0
+  adminTotal.value = typeof (res as { length?: number })?.length === 'number' ? (res as { length: number }).length : 0
   paginationData.pageCount = Math.max(1, Math.ceil(adminTotal.value / 10))
 }
 
@@ -149,23 +169,39 @@ const getFirstPageList = async () => {
   await getListByPage(1)
 }
 
+const reloadUserList = async () => {
+  await Promise.all([loadUserLength(), getFirstPageList()])
+}
+
 const searchUserByAccount = async () => {
-  const res = await searchUser(adminAccount.value, '用户')
+  const account = adminAccount.value?.trim()
+  if (!account) {
+    await reloadUserList()
+    return
+  }
+
+  const res = await searchUser(account, '用户')
   tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
+  adminTotal.value = tableData.value.length
+  paginationData.currentPage = 1
+  paginationData.pageCount = 1
 }
 
 const searchForDepartment = async (value?: string) => {
   if (!value) {
-    await getFirstPageList()
+    await reloadUserList()
     return
   }
   const res = await searchDepartment(value)
   tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
+  adminTotal.value = tableData.value.length
+  paginationData.currentPage = 1
+  paginationData.pageCount = 1
 }
 
 const clearOperation = async () => {
   department.value = undefined
-  await getFirstPageList()
+  await reloadUserList()
 }
 
 const currentChange = async (value: number) => {
@@ -176,38 +212,49 @@ const currentChange = async (value: number) => {
 const banUserList = async () => {
   const res = await getBanList()
   tableData.value = Array.isArray(res) ? (res as UserRow[]) : []
+  adminTotal.value = tableData.value.length
+  paginationData.currentPage = 1
+  paginationData.pageCount = 1
 }
 
 const banUserById = async (id: number) => {
+  if (!hasPermission('button.user.user.ban')) return
+
   const res = await banUser(id)
   if (res.status == 0) {
     ElMessage.success('用户已冻结')
-    await getListByPage()
+    await reloadUserList()
   } else {
     ElMessage.error('冻结失败')
   }
 }
 
 const hotUserById = async (id: number) => {
+  if (!hasPermission('button.user.user.unban')) return
+
   const res = await hotUser(id)
   if (res.status == 0) {
     ElMessage.success('用户已解冻')
-    await getListByPage()
+    await reloadUserList()
   } else {
     ElMessage.error('解冻失败')
   }
 }
 
 const refreshAfterUserAction = async () => {
-  await getListByPage()
+  await reloadUserList()
 }
 
 const openUser = (row: UserRow) => {
+  if (!hasAnyPermission(['button.user.user.edit', 'button.user.user.promote', 'button.user.user.delete'])) {
+    return
+  }
+
   user_info.value.open(row)
 }
 
 onMounted(async () => {
-  await Promise.all([loadDepartment(), loadUserLength(), getFirstPageList()])
+  await Promise.all([loadDepartment(), reloadUserList()])
 })
 </script>
 

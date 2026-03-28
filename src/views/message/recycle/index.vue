@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 消息回收站页面。
+  2. 展示已移入回收站的消息，并提供恢复或彻底删除能力。
+  3. 和消息列表页一起构成完整的消息生命周期管理。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -27,7 +33,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.recycleCurrentPage"
         :pager-count="7"
         :total="paginationData.recycleTotal"
@@ -37,7 +43,7 @@
       />
     </div>
   </div>
-  <renewAndDelete ref="rad" @success="getRecycleFirstPageList" />
+  <renewAndDelete ref="rad" @success="reloadRecycleList" />
 </template>
 
 <script lang="ts" setup>
@@ -73,12 +79,13 @@ const paginationData = reactive({
 
 const loadRecycleLength = async () => {
   const res = await getRecycleMessageLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof res?.length === 'number' ? res.length : 0
   paginationData.recycleTotal = total
   paginationData.recyclePageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getRecycleFirstPageList = async () => {
+  paginationData.recycleCurrentPage = 1
   tableData.value = (await returnRecycleListData(1)) as RecycleRow[]
 }
 
@@ -96,8 +103,12 @@ const realDelete = (id: number) => {
   rad.value.openRealDelete(id)
 }
 
-onMounted(async () => {
+const reloadRecycleList = async () => {
   await Promise.all([loadRecycleLength(), getRecycleFirstPageList()])
+}
+
+onMounted(async () => {
+  await reloadRecycleList()
 })
 </script>
 

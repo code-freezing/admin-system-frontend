@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 编辑管理员信息弹窗。
+  2. 负责修改管理员的姓名、性别、邮箱、部门等资料。
+  3. 若部门变更，后端还会顺带调整部门消息已读状态。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="编辑管理员" width="600px" align-center draggable>
     <div class="dialog-content">

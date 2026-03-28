@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 文件管理提示弹窗。
+  2. 用于展示文件相关的说明、预览提示或操作前确认信息。
+  3. 把提示型内容拆成子组件，能让主页面更聚焦在列表逻辑。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="删除文件" width="30%" center>
     <span>确认后将永久删除该文件，删除后无法恢复。</span>

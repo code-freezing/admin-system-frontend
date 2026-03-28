@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 部门消息弹窗组件。
+  2. 展示当前用户所在部门的消息列表、未读状态和详情查看。
+  3. 顶部铃铛点击后会打开这个组件。
+-->
 <template>
   <el-dialog v-model="dialog" title="部门消息" width="912px" center destroy-on-close>
     <el-container>

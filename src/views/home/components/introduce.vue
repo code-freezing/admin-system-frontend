@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 公司介绍详情弹窗。
+  2. 用于在首页点击公司简介卡片后展示完整富文本内容。
+  3. 它与设置页中的公司内容编辑功能形成前后呼应。
+-->
 <template>
   <el-dialog
     v-model="dialogVisible"
@@ -24,9 +30,9 @@ const valueHtml = ref('')
 
 const sectionMap = {
   1: '公司简介',
-  2: '公司架构',
-  3: '公司战略',
-  4: '公司高层',
+  2: '公司愿景',
+  3: '企业文化',
+  4: '公司概览',
 } as const
 
 type SectionId = keyof typeof sectionMap

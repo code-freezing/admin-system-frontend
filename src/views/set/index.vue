@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 系统设置页面。
+  2. 同时承载个人账号设置、公司信息设置和首页轮播/内容管理。
+  3. 因为它连接用户资料与首页展示配置，所以是一个聚合型页面。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="common-wrapped">
@@ -233,6 +239,7 @@ const avatarUrl = ref(
 const swiperUrl = ref(
   `${(import.meta.env.VITE_API_BASEURL || 'http://127.0.0.1:3007').replace(/\/$/, '')}/set/uploadSwiper`,
 )
+// 上传地址在前端动态拼接，是为了兼容本地和未来可能的不同 API 域名配置。
 const companyName = ref('')
 const changeP = ref()
 const editorP = ref()
@@ -263,6 +270,7 @@ const loadCompanyName = async () => {
 }
 
 const loadSwiperList = async () => {
+  // 轮播图数组顺序必须和 swiperData 对应，模板里通过下标一一渲染上传区域。
   imageUrl.value = (await getAllSwiper()) as string[]
 }
 
@@ -281,6 +289,7 @@ const handleAvatarSuccess = async (response: any) => {
     return
   }
 
+  // 先乐观更新本地头像，让页面立刻反馈新图片。
   userStore.$patch({
     imageUrl: response.url,
   })
@@ -295,6 +304,7 @@ const handleAvatarSuccess = async (response: any) => {
   if (res?.status === 0) {
     ElMessage.success('头像更新成功')
   } else {
+    // 上传成功但绑定失败时，说明文件已进上传目录，但还没真正绑定到用户资料。
     ElMessage.error((res as any)?.message || '头像绑定失败')
   }
 }
@@ -316,6 +326,7 @@ const beforeAvatarUpload = (rawFile: File) => {
 }
 
 const handleSwiperSuccess = () => {
+  // 轮播图上传成功后直接重新拉取后端列表，保证页面展示的是后端最终保存结果。
   loadSwiperList()
 }
 
@@ -361,6 +372,8 @@ const resetCompanyName = async () => {
 }
 
 const openEditor = async (id: number) => {
+  // 公司简介、愿景、企业文化、公司概览都复用同一个富文本弹窗，
+  // 通过 id 区分当前要编辑的是哪一块配置。
   editorP.value.open(id)
 }
 
@@ -388,6 +401,7 @@ const handleProductClose = async (tag: string) => {
 const showInput = () => {
   inputVisible.value = true
   nextTick(() => {
+    // 切成输入态后立刻聚焦，避免用户还要额外点一次输入框。
     InputRef.value?.input?.focus()
   })
 }
@@ -401,6 +415,8 @@ const showProductInput = () => {
 
 const handleInputConfirm = async () => {
   if (inputValue.value) {
+    // 这里采用“整体覆盖保存”的写法：把最新数组一次性传给后端。
+    // 好处是后端不需要维护单条增删接口，代价是前后端要约定数组序列化格式。
     dynamicTags.value = [...dynamicTags.value, inputValue.value]
     const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))
     if (res.status == 0) {
@@ -430,6 +446,7 @@ const handleInputProductConfirm = async () => {
 }
 
 onMounted(async () => {
+  // 设置页是聚合页，但基础数据都比较独立，适合在首屏并行加载。
   await Promise.all([loadCompanyName(), loadSwiperList(), loadDepartmentList(), loadProductList()])
 })
 </script>

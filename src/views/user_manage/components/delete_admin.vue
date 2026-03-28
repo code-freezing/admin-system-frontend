@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 删除管理员确认弹窗。
+  2. 用于删除管理员账号前的二次确认。
+  3. 与列表页解耦后，可以统一危险操作反馈。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="删除用户" width="30%" center>
     <span v-if="adminId">确认后会将管理员降级为普通用户。</span>
@@ -58,12 +64,12 @@ const deleteAdmin = async () => {
   }
 
   if (userId.value) {
-    const res = await deleteUser(userId.value, Number(account.value))
+    const res = await deleteUser(userId.value, account.value)
     if (res.status == 0) {
       const userInfoStr = localStorage.getItem('userinfo')
       const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
       const operatorName = userInfo?.name ?? ''
-      await tracking('删除用户', operatorName, name.value, 'high')
+      await tracking('删除用户', operatorName, name.value, '高级')
       ElMessage.success('用户已删除')
       emit('success', 'delete')
     } else {

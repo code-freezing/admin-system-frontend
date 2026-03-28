@@ -1,8 +1,16 @@
+/**
+ * 模块说明：
+ * 1. 用户信息 store。
+ * 2. 统一保存当前登录用户的基础资料，避免页面反复从接口结果里解构字段。
+ * 3. 登录后和刷新恢复时，页面都会依赖这里的状态。
+ */
+
 import { defineStore } from 'pinia'
 import { getUserInfo } from '@/api/userinfor'
 import { ref } from 'vue'
 
 interface UserProfilePayload {
+  id?: number
   image_url?: string
   identity?: string
   account?: string
@@ -55,6 +63,7 @@ export const useUserInfo = defineStore(
       const res = (await getUserInfo(userId)) as UserProfileResponse
       const data = resolveProfile(res)
 
+      id.value = data.id ?? userId
       imageUrl.value = data.image_url ?? ''
       identity.value = data.identity ?? ''
       account.value = data.account ?? ''
@@ -62,7 +71,28 @@ export const useUserInfo = defineStore(
       sex.value = data.sex ?? ''
       department.value = data.department ?? ''
       email.value = data.email ?? ''
-      id.value = userId
+    }
+
+    const applyProfile = (profile: UserProfilePayload) => {
+      id.value = profile.id ?? 0
+      imageUrl.value = profile.image_url ?? ''
+      identity.value = profile.identity ?? ''
+      account.value = profile.account ?? ''
+      name.value = profile.name ?? ''
+      sex.value = profile.sex ?? ''
+      department.value = profile.department ?? ''
+      email.value = profile.email ?? ''
+    }
+
+    const reset = () => {
+      id.value = 0
+      account.value = ''
+      name.value = ''
+      sex.value = ''
+      imageUrl.value = ''
+      identity.value = ''
+      department.value = ''
+      email.value = ''
     }
 
     return {
@@ -74,6 +104,8 @@ export const useUserInfo = defineStore(
       identity,
       department,
       email,
+      applyProfile,
+      reset,
       userInfo,
     }
   },

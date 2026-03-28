@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 消息删除确认弹窗。
+  2. 用于把消息放入回收站或执行删除前的二次确认。
+  3. 把危险操作单独封装，便于统一处理提示文案。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" :title="titleText" width="30%" center>
     <span>{{ tips }}</span>

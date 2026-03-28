@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 产品编辑弹窗。
+  2. 负责修改产品基础信息、库存数量和备注，并触发总价重算。
+  3. 它和创建流程共享同一批产品字段，但服务于不同场景。
+-->
 <template>
   <el-dialog v-model="dialogVisible" title="编辑商品" width="600px" align-center draggable>
     <div class="dialog-content">

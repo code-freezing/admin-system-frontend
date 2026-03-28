@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 消息新建/编辑弹窗。
+  2. 负责消息表单填写、富文本内容维护以及创建和编辑两种模式复用。
+  3. 消息列表和回收站页面都会依赖这个组件。
+-->
 <template>
   <el-dialog
     v-model="dialogFormVisible"
@@ -174,10 +180,14 @@ const loadDepartmentList = async () => {
   const res = await getDepartment()
   const list = Array.isArray(res) ? (res as string[]) : []
   options.value = list.map((value) => ({ value }))
+  // 系统里历史数据同时出现过“全体员工”和“全体成员”两种叫法，
+  // 当前前端创建入口沿用“全体员工”，后端消息编辑联动逻辑里仍会处理“全体成员”的旧值。
   allOptions.value = [...options.value, { value: '全体员工' }]
 }
 
 const resetForm = () => {
+  // 弹窗被复用于四种模式：发布公司消息、编辑公司消息、发布系统消息、编辑系统消息。
+  // 因此每次打开创建态前，都需要把旧内容和富文本编辑器状态完全清空。
   Object.assign(formData, {
     id: null,
     message_title: '',
@@ -193,6 +203,8 @@ const resetForm = () => {
 
 const openCreate = (id: number) => {
   resetForm()
+  // 通过一个简单的数字区分“发布公司消息 / 发布系统消息”，
+  // 是为了让父页面按钮调用更轻量，不必传完整配置对象。
   title.value = id == 1 ? '发布公司消息' : '发布系统消息'
   dialogFormVisible.value = true
 }
@@ -221,6 +233,7 @@ const openEditSystem = (row: any) => {
 }
 
 const handleCreated = (editor: any) => {
+  // wangeditor 实例需要在组件卸载时手动销毁，所以这里先保存引用。
   editorRef.value = editor
 }
 
@@ -232,6 +245,8 @@ const yes = async () => {
     formData.message_category = '公司消息'
     const res = await publishMessage(formData)
     if (res.status == 0) {
+      // 公司消息发布后，要把消息 id 写入部门成员的未读列表，
+      // 并刷新当前用户顶部消息 store，保证铃铛提示能立刻变化。
       await changeUserReadList(res.id, formData.message_receipt_object)
       await msgStore.returnReadList(Number(localStorage.getItem('id')))
       ElMessage.success('公司消息发布成功')
@@ -245,6 +260,8 @@ const yes = async () => {
 
   if (title.value === '编辑公司消息') {
     const res = await editMessageApi(formData)
+    // 编辑公司消息也要刷新当前用户的部门消息状态，
+    // 因为接收部门、接收范围或内容可能已经发生变化。
     await msgStore.returnReadList(Number(localStorage.getItem('id')))
     if (res.status == 0) {
       ElMessage.success('公司消息编辑成功')
@@ -284,6 +301,7 @@ const yes = async () => {
 onBeforeUnmount(() => {
   const editor = editorRef.value
   if (editor) {
+    // 富文本编辑器内部有自己的事件和 DOM 资源，不销毁会造成内存泄漏。
     editor.destroy()
   }
 })

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 创建管理员弹窗。
+  2. 供超级管理员新增产品管理员、用户管理员或消息管理员账号。
+  3. 创建完成后会刷新对应身份的列表。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" :title="title" width="600px" align-center draggable>
     <div class="dialog-content">

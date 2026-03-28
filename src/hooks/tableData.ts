@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 用户管理表格分页 hook。
+ * 2. 封装列表分页、搜索、总数同步和删除后页码回退等通用逻辑。
+ * 3. 不同管理员页面只需传入身份类型即可复用这套流程。
+ */
+
 import { getAdminListLength, returnListData, searchUser } from '@/api/userinfor'
 import { reactive, ref } from 'vue'
 
@@ -46,16 +53,19 @@ export const useTable = (identity: string) => {
 
   const searchAdmin = async () => {
     if (adminAccount.value === undefined || adminAccount.value === '') {
-      await loadPage(paginationData.currentPage)
+      await getFirstPageList()
       return
     }
 
-    const list = await searchUser(Number(adminAccount.value), identity)
+    const list = await searchUser(String(adminAccount.value).trim(), identity)
     tableData.value = toRows<TableRow>(list)
+    adminTotal.value = tableData.value.length
+    paginationData.pageCount = 1
+    paginationData.currentPage = 1
   }
 
   const clearInput = async () => {
-    await loadPage(paginationData.currentPage)
+    await getFirstPageList()
   }
 
   const refreshTable = async (action: 'create' | 'edit' | 'delete' = 'edit') => {

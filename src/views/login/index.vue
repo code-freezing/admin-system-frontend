@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 登录页。
+  2. 负责账号登录、注册入口、菜单加载和登录后状态初始化。
+  3. 这是前端认证链路和动态路由恢复的起点。
+-->
 <template>
   <div class="common-layout">
     <el-container>
@@ -70,8 +76,9 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import forget from './components/forget_password.vue'
-import { login, register, returnMenuList } from '@/api/login'
+import { authProfile, login, register } from '@/api/login'
 import { loginLog } from '@/api/log'
+import { usePermission } from '@/stores/permission'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMenu } from '@/stores/menu'
 import { setAuthTokens } from '@/utils/auth'
@@ -85,6 +92,7 @@ interface AuthForm {
 const router = useRouter()
 const userStore = useUserInfo()
 const menuStore = useMenu()
+const permissionStore = usePermission()
 
 const activeName = ref('first')
 const loginData = reactive<AuthForm>({
@@ -102,6 +110,13 @@ const openForget = () => {
   forgetP.value?.open()
 }
 
+const persistUserContext = (user: Record<string, any>) => {
+  localStorage.setItem('id', String(user.id ?? ''))
+  localStorage.setItem('name', user.name ?? '')
+  localStorage.setItem('department', user.department ?? '')
+  localStorage.setItem('userinfo', JSON.stringify(user ?? {}))
+}
+
 // 登录链路会串起三件事：
 // 1. 调登录接口拿 access token
 // 2. 拉菜单并动态注入路由
@@ -114,24 +129,22 @@ const loginAction = async () => {
     return
   }
 
-  const { id, account, name, email, department } = res.results
+  const { account, name, email } = res.results
   const accessToken = res.accessToken || res.token
-  const routerList = (await returnMenuList(id)) as any
 
   if (!accessToken) {
     ElMessage.error('登录态无效，请重新登录')
     return
   }
 
-  ElMessage.success('登录成功')
-  menuStore.setRouter(Array.isArray(routerList) ? routerList : [])
   setAuthTokens(accessToken)
-  localStorage.setItem('id', String(id))
-  localStorage.setItem('name', name)
-  localStorage.setItem('department', department ?? '')
-  localStorage.setItem('userinfo', JSON.stringify(res.results))
+  const profile = (await authProfile()) as any
+  permissionStore.setAccessProfile(profile)
+  menuStore.setRouter(permissionStore.menuTree)
+  userStore.applyProfile(profile?.user ?? {})
+  persistUserContext(profile?.user ?? res.results)
 
-  await userStore.userInfo(id)
+  ElMessage.success('登录成功')
   await loginLog(account, name, email)
   await router.push('/menu')
 }

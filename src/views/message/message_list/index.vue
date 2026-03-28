@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 消息列表页面。
+  2. 负责公告查询、发布、编辑、查看详情和进入回收站等主流程。
+  3. 它是消息模块最核心的操作入口。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="module-common-wrapped">
@@ -72,7 +78,7 @@
             </div>
             <div class="table-footer">
               <el-pagination
-                :page-size="1"
+                :page-size="10"
                 :current-page="paginationData.companyCurrentPage"
                 :pager-count="7"
                 :total="paginationData.companyTotal"
@@ -118,7 +124,7 @@
             </div>
             <div class="table-footer">
               <el-pagination
-                :page-size="1"
+                :page-size="10"
                 :current-page="paginationData.systemCurrentPage"
                 :pager-count="7"
                 :total="paginationData.systemTotal"
@@ -179,6 +185,7 @@ const companyTableData = ref<MessageRow[]>([])
 const systemTableData = ref<MessageRow[]>([])
 
 // 两套分页状态分别维护公司消息和系统消息，避免切换标签时互相覆盖。
+// 这和产品页的思路一致：每个标签页都有自己的分页上下文。
 const paginationData = reactive({
   companyTotal: 0,
   companyPageCount: 0,
@@ -189,53 +196,75 @@ const paginationData = reactive({
 })
 
 const loadDepartmentList = async () => {
+  // 发布部门来自系统设置中的“字典维护”，不是在页面里写死的枚举。
   const res = await getDepartment()
   departmentData.value = Array.isArray(res) ? (res as string[]) : []
 }
 
 const loadCompanyLength = async () => {
   const res = await getCompanyMessageLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof res?.length === 'number' ? res.length : 0
   paginationData.companyTotal = total
   paginationData.companyPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const loadSystemLength = async () => {
   const res = await getSystemMessageLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof res?.length === 'number' ? res.length : 0
   paginationData.systemTotal = total
   paginationData.systemCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getCompanyFirstPageList = async () => {
+  // 公司消息承担更多筛选能力，所以“刷新公司消息”按钮只恢复这一组列表。
+  paginationData.companyCurrentPage = 1
   companyTableData.value = (await returnCompanyListData(1)) as MessageRow[]
 }
 
 const getSystemFirstPageList = async () => {
+  paginationData.systemCurrentPage = 1
   systemTableData.value = (await returnSystemListData(1)) as MessageRow[]
 }
 
 // 公司消息支持按部门和等级筛选；系统消息列表保持简单展示。
 const getListByDepartment = async () => {
   if (!department.value) {
-    await getCompanyFirstPageList()
+    await reloadCompanyTab()
     return
   }
   companyTableData.value = (await searchMessageBydepartment(department.value)) as MessageRow[]
+  paginationData.companyCurrentPage = 1
+  paginationData.companyTotal = companyTableData.value.length
+  paginationData.companyPageCount = 1
 }
 
 const getMessageListByLevel = async () => {
+  // 等级筛选和部门筛选都是直接替换公司消息列表。
+  // 当前实现里它们不是组合查询，而是谁最后触发就以谁的结果为准。
   if (!radio2.value) {
-    await getCompanyFirstPageList()
+    await reloadCompanyTab()
     return
   }
   companyTableData.value = (await searchMessageByLevel(radio2.value)) as MessageRow[]
+  paginationData.companyCurrentPage = 1
+  paginationData.companyTotal = companyTableData.value.length
+  paginationData.companyPageCount = 1
 }
 
 const changeTwoPageList = async () => {
+  // 新建、编辑、删除后先把筛选状态清空，再刷新两类消息列表。
+  // 否则用户可能仍停留在旧筛选结果中，看不到刚刚提交的改动。
   department.value = undefined
   radio2.value = undefined
-  await Promise.all([getCompanyFirstPageList(), getSystemFirstPageList()])
+  await Promise.all([reloadCompanyTab(), reloadSystemTab()])
+}
+
+const reloadCompanyTab = async () => {
+  await Promise.all([loadCompanyLength(), getCompanyFirstPageList()])
+}
+
+const reloadSystemTab = async () => {
+  await Promise.all([loadSystemLength(), getSystemFirstPageList()])
 }
 
 const companyCurrentChange = async (value: number) => {
@@ -262,19 +291,19 @@ const editSystemMessage = (row: MessageRow) => {
 
 const delete_msg = ref()
 const deleteMessage = (row: MessageRow) => {
+  // 公司消息删除会把整行传给弹窗，因为回收站逻辑需要保留更多上下文字段。
   delete_msg.value.openDelete(row)
 }
 const deleteSystemMessage = (id: number) => {
+  // 系统消息删除走的是另一套更直接的删除入口，只需要主键 id。
   delete_msg.value.openRealDelete(id)
 }
 
 onMounted(async () => {
   await Promise.all([
     loadDepartmentList(),
-    loadCompanyLength(),
-    loadSystemLength(),
-    getCompanyFirstPageList(),
-    getSystemFirstPageList(),
+    reloadCompanyTab(),
+    reloadSystemTab(),
   ])
 })
 </script>

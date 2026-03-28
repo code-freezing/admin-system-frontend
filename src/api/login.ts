@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 认证模块接口封装。
+ * 2. 覆盖注册、登录、刷新 token、退出登录和菜单加载等登录链路。
+ * 3. 配合请求层的刷新逻辑，实现 access token 自动续期。
+ */
+
 import { post } from './request'
 
 // 登录模块只负责和认证相关接口通信，页面层再决定如何处理 UI。
@@ -30,11 +37,11 @@ export const logout = () => {
   return post('/api/logout', undefined, { _skipAuthRefresh: true })
 }
 
-// 登录成功后会根据用户 id 拉取菜单，并恢复动态路由。
-export const returnMenuList = (id: number) => {
-  return post('/api/returnMenuList', { id })
+export const authProfile = () => {
+  return post('/api/authProfile')
 }
 
+// 登录成功后会根据用户 id 拉取菜单，并恢复动态路由。
 // 找回密码流程先校验账号和邮箱，再允许重置密码。
 export const verify = ({ account, email }: VerifyPayload) => {
   return post('/user/verifyAccountAndEmail', { account, email })

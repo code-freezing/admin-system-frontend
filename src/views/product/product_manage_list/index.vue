@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 产品库存管理页面。
+  2. 负责库存列表展示、分页、查询、入库、编辑、申请出库和审核入口。
+  3. 这是产品模块最核心、交互最密集的页面。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="module-common-wrapped">
@@ -15,7 +21,7 @@
                     placeholder="按产品编号搜索"
                     clearable
                     @change="searchProduct()"
-                    @clear="getProductFirstPageList"
+                    @clear="reloadProductList"
                   >
                     <template #prefix>
                       <Search />
@@ -23,7 +29,9 @@
                   </el-input>
                 </div>
                 <div class="button-wrapped">
-                  <el-button type="primary" @click="productInWarehouse">产品入库</el-button>
+                  <el-button v-permission="'button.product.create'" type="primary" @click="productInWarehouse">
+                    产品入库
+                  </el-button>
                 </div>
               </div>
               <div class="module-common-table">
@@ -74,6 +82,7 @@
                     <template #default="{ row }">
                       <div>
                         <el-button
+                          v-permission="'button.product.apply'"
                           type="primary"
                           :disabled="
                             row.product_out_status == '产品已出库' || row.product_in_warehouse_number == 0
@@ -83,6 +92,7 @@
                           产品出库
                         </el-button>
                         <el-button
+                          v-permission="'button.product.edit'"
                           type="success"
                           :disabled="row.product_out_status == '产品已出库'"
                           @click="editProduct(row)"
@@ -90,6 +100,7 @@
                           编辑
                         </el-button>
                         <el-button
+                          v-permission="'button.product.delete'"
                           type="danger"
                           :disabled="row.product_out_status == '产品已出库'"
                           @click="deleteProduct(row.id)"
@@ -104,7 +115,7 @@
             </div>
             <div class="table-footer">
               <el-pagination
-                :page-size="1"
+                :page-size="10"
                 :current-page="paginationData.productCurrentPage"
                 :pager-count="7"
                 :total="paginationData.productTotal"
@@ -127,7 +138,7 @@
                     clearable
                     placeholder="按出库编号搜索"
                     @change="searchApplyProduct()"
-                    @clear="getApplyProductFirstPageList"
+                    @clear="reloadApplyProductList"
                   >
                     <template #prefix>
                       <Search />
@@ -161,15 +172,24 @@
                   <el-table-column label="操作" width="300" fixed="right">
                     <template #default="{ row }">
                       <div>
-                        <el-button type="primary" @click="withdrawProduct(row.id)">撤回申请</el-button>
                         <el-button
+                          v-permission="'button.product.withdraw'"
+                          type="primary"
+                          @click="withdrawProduct(row.id)"
+                        >
+                          撤回申请
+                        </el-button>
+                        <el-button
+                          v-permission="'button.product.reapply'"
                           type="success"
                           :disabled="row.product_out_status == '产品已出库'"
                           @click="againApply(row)"
                         >
                           重新申请
                         </el-button>
-                        <el-button type="danger" @click="auditProduct(row)">审核</el-button>
+                        <el-button v-permission="'button.product.audit'" type="danger" @click="auditProduct(row)">
+                          审核
+                        </el-button>
                       </div>
                     </template>
                   </el-table-column>
@@ -178,7 +198,7 @@
             </div>
             <div class="table-footer">
               <el-pagination
-                :page-size="1"
+                :page-size="10"
                 :current-page="paginationData.applyProductCurrentPage"
                 :pager-count="7"
                 :total="paginationData.applyProductTotal"
@@ -192,13 +212,13 @@
       </el-tabs>
     </div>
   </div>
-  <warehousing ref="in_warehouse" @success="getProductFirstPageList" />
-  <apply ref="apply_product" @success="changeTwoPageList" />
-  <edit ref="edit_product" @success="getProductFirstPageList" />
-  <remove ref="delete_product" @success="getProductFirstPageList" />
-  <audit ref="audit_product" @success="changeTwoPageList" />
-  <withdraw ref="withdraw_product" @success="changeTwoPageList" />
-  <again ref="again_product" @success="getApplyProductFirstPageList" />
+  <warehousing ref="in_warehouse" @success="reloadProductList" />
+  <apply ref="apply_product" @success="reloadTwoPageList" />
+  <edit ref="edit_product" @success="reloadProductList" />
+  <remove ref="delete_product" @success="reloadProductList" />
+  <audit ref="audit_product" @success="reloadTwoPageList" />
+  <withdraw ref="withdraw_product" @success="reloadTwoPageList" />
+  <again ref="again_product" @success="reloadApplyProductList" />
 </template>
 
 <script lang="ts" setup>
@@ -214,6 +234,7 @@ import {
   searchProductForApplyId,
   searchProductForId,
 } from '@/api/product'
+import { usePermission } from '@/hooks/usePermission'
 import warehousing from '../components/product_in_warehouse.vue'
 import apply from '../components/apply.vue'
 import edit from '../components/edit_product.vue'
@@ -243,12 +264,14 @@ const item = ref({
 })
 
 const activeName = ref('first')
-const productId = ref<number>()
-const productOutId = ref<number>()
+const { hasPermission } = usePermission()
+const productId = ref<number | string>()
+const productOutId = ref<number | string>()
 const tableData = ref<ProductRow[]>([])
 const applyTableData = ref<ProductRow[]>([])
 
 // 两套分页状态分别服务于库存列表和出库申请列表。
+// 之所以不复用同一套 currentPage，是因为两个标签页都会独立记住翻页位置。
 const paginationData = reactive({
   productTotal: 0,
   productPageCount: 0,
@@ -263,30 +286,46 @@ const toArray = <T,>(data: unknown): T[] => {
 }
 
 // 后端分页接口固定每页 10 条，这里只负责同步总数和页码。
+// 注意：项目里总数字段返回格式并不统一，所以这里统一做一次兜底转换。
 const loadProductLength = async () => {
   const res = await getProductLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof (res as { length?: number })?.length === 'number' ? (res as { length: number }).length : 0
   paginationData.productTotal = total
   paginationData.productPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const loadApplyProductLength = async () => {
   const res = await getApplyProductLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof (res as { length?: number })?.length === 'number'
+    ? (res as { length: number }).length
+    : 0
   paginationData.applyProductTotal = total
   paginationData.applyProductCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getProductFirstPageList = async () => {
+  // “回到第一页”主要用于搜索清空、弹窗成功后刷新、首次进入页面等场景。
+  paginationData.productCurrentPage = 1
   tableData.value = toArray<ProductRow>(await returnProductListData(1))
 }
 
 const getApplyProductFirstPageList = async () => {
+  paginationData.applyProductCurrentPage = 1
   applyTableData.value = toArray<ProductRow>(await returnApplyProductListData(1))
 }
 
-const changeTwoPageList = async () => {
-  await Promise.all([getProductFirstPageList(), getApplyProductFirstPageList()])
+const reloadProductList = async () => {
+  await Promise.all([loadProductLength(), getProductFirstPageList()])
+}
+
+const reloadApplyProductList = async () => {
+  await Promise.all([loadApplyProductLength(), getApplyProductFirstPageList()])
+}
+
+const reloadTwoPageList = async () => {
+  // 出库申请、审核、撤回等动作会同时影响两个标签页，
+  // 所以这里统一刷新库存列表和申请列表，避免页面残留旧状态。
+  await Promise.all([reloadProductList(), reloadApplyProductList()])
 }
 
 // 标签切换时只刷新当前视图对应的数据，避免每次切页都全量请求。
@@ -310,53 +349,83 @@ const applyProductCurrentChange = async (value: number) => {
 }
 
 const searchProduct = async () => {
+  // 搜索接口直接返回精确匹配结果，因此会临时覆盖表格数据。
+  // 用户清空输入框后，再通过 @clear 恢复分页列表。
+  if (productId.value === undefined || productId.value === null || productId.value === '') {
+    await reloadProductList()
+    return
+  }
+
   tableData.value = toArray<ProductRow>(await searchProductForId(productId.value as number))
+  paginationData.productCurrentPage = 1
+  paginationData.productTotal = tableData.value.length
+  paginationData.productPageCount = 1
 }
 
 const searchApplyProduct = async () => {
+  if (productOutId.value === undefined || productOutId.value === null || productOutId.value === '') {
+    await reloadApplyProductList()
+    return
+  }
+
   applyTableData.value = toArray<ProductRow>(
     await searchProductForApplyId(productOutId.value as number),
   )
+  paginationData.applyProductCurrentPage = 1
+  paginationData.applyProductTotal = applyTableData.value.length
+  paginationData.applyProductCount = 1
 }
 
 // 这些 ref 对应各个弹窗组件，页面本身只负责打开弹窗和在成功后刷新列表。
 const in_warehouse = ref()
 const productInWarehouse = () => {
+  // 具体表单校验和提交都在弹窗内部，页面只负责打开入口和监听成功事件。
+  if (!hasPermission('button.product.create')) return
   in_warehouse.value.open()
 }
 
 const apply_product = ref()
 const applyOut = (row: ProductRow) => {
+  // 产品出库会把当前库存行完整传入，弹窗据此回填库存数量、单价、产品名等信息。
+  if (!hasPermission('button.product.apply')) return
   apply_product.value.open(row)
 }
 
 const edit_product = ref()
 const editProduct = (row: ProductRow) => {
+  if (!hasPermission('button.product.edit')) return
   edit_product.value.open(row)
 }
 
 const delete_product = ref()
 const deleteProduct = (id: number) => {
+  if (!hasPermission('button.product.delete')) return
   delete_product.value.open(id)
 }
 
 const audit_product = ref()
 const auditProduct = (row: ProductRow) => {
+  if (!hasPermission('button.product.audit')) return
   audit_product.value.open(row)
 }
 
 const withdraw_product = ref()
 const withdrawProduct = (id: number) => {
+  if (!hasPermission('button.product.withdraw')) return
   withdraw_product.value.open(id)
 }
 
 const again_product = ref()
 const againApply = (row: ProductRow) => {
+  // 重新申请只存在于“出库管理”标签页，用于处理被否决后的二次提交流程。
+  if (!hasPermission('button.product.reapply')) return
   again_product.value.open(row)
 }
 
 onMounted(async () => {
-  await Promise.all([loadProductLength(), loadApplyProductLength(), getProductFirstPageList(), getApplyProductFirstPageList()])
+  // 首次进入页面时，同时把两套总数和第一页数据都准备好，
+  // 这样用户切换到第二个标签页时不需要再等待首次加载。
+  await reloadTwoPageList()
 })
 </script>
 

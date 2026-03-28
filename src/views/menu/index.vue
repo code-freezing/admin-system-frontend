@@ -1,76 +1,39 @@
+<!--
+  组件说明：
+  1. 后台主布局页。
+  2. 负责渲染左侧菜单、顶部用户区、消息入口和内部 router-view。
+  3. 登录成功后，几乎所有业务页面都会在这个壳子里切换。
+-->
 <template>
   <div class="common-layout">
     <el-container>
       <el-aside width="210px">
         <el-menu class="el-menu-vertical-demo" router>
           <div class="title">通用后台管理系统</div>
-          <el-menu-item index="/home">
-            <el-icon><House /></el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="/overview" v-if="isSuperAdmin">
-            <el-icon><Document /></el-icon>
-            <span>系统概览</span>
-          </el-menu-item>
-          <el-sub-menu index="3" v-if="canManageUsers">
-            <template #title>
-              <el-icon><User /></el-icon>
-              <span>用户管理</span>
-            </template>
-            <el-menu-item-group title="管理员管理" v-if="isSuperAdmin">
-              <el-menu-item index="/product_manage">产品管理员</el-menu-item>
-              <el-menu-item index="/users_manage">用户管理员</el-menu-item>
-              <el-menu-item index="/message_manage">消息管理员</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="员工管理">
-              <el-menu-item index="/user_list">用户列表</el-menu-item>
-            </el-menu-item-group>
-          </el-sub-menu>
-          <el-sub-menu index="4" v-if="canManageProducts">
-            <template #title>
-              <el-icon><TakeawayBox /></el-icon>
-              <span>产品管理</span>
-            </template>
-            <el-menu-item-group title="入库管理">
-              <el-menu-item index="/product_manage_list">产品列表</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="出库管理">
-              <el-menu-item index="/out_product_manage_list">出库列表</el-menu-item>
-            </el-menu-item-group>
-          </el-sub-menu>
-          <el-sub-menu index="5" v-if="canManageMessages">
-            <template #title>
-              <el-icon><ChatSquare /></el-icon>
-              <span>消息管理</span>
-            </template>
-            <el-menu-item-group title="消息管理">
-              <el-menu-item index="/message_list">消息列表</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="回收站">
-              <el-menu-item index="/recycle">回收站</el-menu-item>
-            </el-menu-item-group>
-          </el-sub-menu>
-          <el-menu-item index="/file" v-if="isSuperAdmin">
-            <el-icon><IconMenu /></el-icon>
-            <span>合同管理</span>
-          </el-menu-item>
-          <el-menu-item index="/operation_log" v-if="isSuperAdmin">
-            <el-icon><IconMenu /></el-icon>
-            <span>操作日志</span>
-          </el-menu-item>
-          <el-menu-item index="/login_log" v-if="isSuperAdmin">
-            <el-icon><IconMenu /></el-icon>
-            <span>登录日志</span>
-          </el-menu-item>
-          <el-menu-item index="/set">
-            <el-icon><Tools /></el-icon>
-            <span>系统设置</span>
-          </el-menu-item>
+          <template v-for="item in permissionStore.menuTree" :key="item.name">
+            <el-sub-menu v-if="item.children?.length" :index="item.name">
+              <template #title>
+                <el-icon>
+                  <component :is="resolveIcon(item.meta?.icon)" />
+                </el-icon>
+                <span>{{ item.meta?.title }}</span>
+              </template>
+              <el-menu-item v-for="child in item.children" :key="child.name" :index="child.path">
+                {{ child.meta?.title }}
+              </el-menu-item>
+            </el-sub-menu>
+            <el-menu-item v-else :index="item.path">
+              <el-icon>
+                <component :is="resolveIcon(item.meta?.icon)" />
+              </el-icon>
+              <span>{{ item.meta?.title }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </el-aside>
       <el-container>
         <el-header>
-          <span class="header-left-content">尊敬的 {{ name }} 欢迎您登录本系统</span>
+          <span class="header-left-content">尊敬的 {{ welcomeName }} 欢迎您登录本系统</span>
           <div class="header-right-content">
             <el-badge :is-dot="msgStore.read_list.length > 0" class="item" @click="openDepartmentMessage">
               <el-icon :size="20" class="message">
@@ -104,34 +67,50 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ChatSquare,
+  DataAnalysis,
   Document,
+  Files,
   House,
-  Menu as IconMenu,
   Message,
+  Memo,
   TakeawayBox,
   Tools,
   User,
 } from '@element-plus/icons-vue'
 import departmentMsg from '@/components/department_message.vue'
 import { logout } from '@/api/login'
+import { usePermission as usePermissionStore } from '@/stores/permission'
 import { useUserInfo } from '@/stores/userinfor'
 import { useMsg } from '@/stores/message'
 import { useMenu } from '@/stores/menu'
 import { clearLoginState } from '@/utils/auth'
 
 const msgStore = useMsg()
+const permissionStore = usePermissionStore()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 const router = useRouter()
-const name = localStorage.getItem('name') ?? ''
+const welcomeName = computed(() => userStore.name || localStorage.getItem('name') || '')
 
-// 菜单页本身是整个后台的壳子，左侧菜单显示哪些项完全由用户身份决定。
-const isSuperAdmin = computed(() => userStore.identity === '超级管理员')
-const canManageUsers = computed(() => userStore.identity === '超级管理员' || userStore.identity === '用户管理员')
-const canManageProducts = computed(
-  () => userStore.identity === '超级管理员' || userStore.identity === '产品管理员' || userStore.identity === '用户',
-)
-const canManageMessages = computed(() => userStore.identity === '消息管理员' || userStore.identity === '超级管理员')
+const iconMap = {
+  House,
+  Tools,
+  User,
+  TakeawayBox,
+  ChatSquare,
+  Document,
+  DataAnalysis,
+  Files,
+  Memo,
+}
+
+const resolveIcon = (iconName?: string) => {
+  if (!iconName) {
+    return Document
+  }
+
+  return iconMap[iconName as keyof typeof iconMap] || Document
+}
 
 onMounted(() => {
   if (userStore.id) {
@@ -146,7 +125,10 @@ const goLogin = async () => {
     // 即使后端退出接口失败，前端也必须清掉本地状态，避免卡在半登录状态。
   }
 
-  menuStore.clearRouter()
+  menuStore.reset()
+  permissionStore.reset()
+  userStore.reset()
+  msgStore.reset()
   clearLoginState()
   router.push('/login')
 }

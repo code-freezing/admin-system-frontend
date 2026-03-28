@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 登录日志页面。
+  2. 展示用户登录行为、时间和分页信息，帮助管理员审计账号访问记录。
+  3. 通常只对高权限角色开放。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -38,7 +44,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.loginCurrentPage"
         :pager-count="7"
         :total="paginationData.loginTotal"
@@ -48,7 +54,7 @@
       />
     </div>
   </div>
-  <tips ref="tip" @success="getLoginFirstPageList" />
+  <tips ref="tip" @success="reloadLoginList" />
 </template>
 
 <script lang="ts" setup>
@@ -81,12 +87,13 @@ const paginationData = reactive({
 
 const loadLoginLength = async () => {
   const res = await loginLogListLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof res?.length === 'number' ? res.length : 0
   paginationData.loginTotal = total
   paginationData.loginPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getLoginFirstPageList = async () => {
+  paginationData.loginCurrentPage = 1
   tableData.value = (await returnLoginListData(1)) as LoginLogRow[]
 }
 
@@ -96,15 +103,19 @@ const loginCurrentChange = async (value: number) => {
 }
 
 const searchLoginAccount = async () => {
-  tableData.value = (await searchLoginLogList(Number(account.value))) as LoginLogRow[]
+  tableData.value = (await searchLoginLogList(account.value.trim())) as LoginLogRow[]
 }
 
 const clearList = () => {
   tip.value.open()
 }
 
-onMounted(async () => {
+const reloadLoginList = async () => {
   await Promise.all([loadLoginLength(), getLoginFirstPageList()])
+}
+
+onMounted(async () => {
+  await reloadLoginList()
 })
 </script>
 

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 操作日志页面。
+  2. 展示后台关键业务操作的审计记录，辅助排查问题和追踪责任。
+  3. 前端 tracking 工具写入的内容最终会在这里查看。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -26,7 +32,7 @@
         <el-table :data="tableData" style="width: 100%">
           <el-table-column prop="operation_person" label="操作人">
             <template #default="{ row }">
-              <div :class="level(row.operation_level)">
+              <div :class="levelClass(row.operation_level)">
                 <span class="person">{{ row.operation_person }}</span>
               </div>
             </template>
@@ -34,7 +40,7 @@
           <el-table-column prop="operation_content" label="操作内容" />
           <el-table-column prop="operation_level" label="操作级别">
             <template #default="{ row }">
-              <el-tag class="ml-2" :type="level(row.operation_level) as any">
+              <el-tag class="ml-2" :type="levelTagType(row.operation_level) as any">
                 {{ row.operation_level }}
               </el-tag>
             </template>
@@ -49,7 +55,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.operationCurrentPage"
         :pager-count="7"
         :total="paginationData.operationTotal"
@@ -59,7 +65,7 @@
       />
     </div>
   </div>
-  <tips ref="tip" @success="getOperationFirstPageList" />
+  <tips ref="tip" @success="reloadOperationList" />
 </template>
 
 <script lang="ts" setup>
@@ -94,12 +100,13 @@ const paginationData = reactive({
 
 const loadOperationLength = async () => {
   const res = await operationLogListLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof res?.length === 'number' ? res.length : 0
   paginationData.operationTotal = total
   paginationData.operationPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getOperationFirstPageList = async () => {
+  paginationData.operationCurrentPage = 1
   tableData.value = (await returnOperationListData(1)) as OperationRow[]
 }
 
@@ -109,21 +116,31 @@ const operationCurrentChange = async (value: number) => {
 }
 
 const searchOperationPerson = async () => {
-  tableData.value = (await searchOperationLogList(name.value)) as OperationRow[]
+  tableData.value = (await searchOperationLogList(name.value.trim())) as OperationRow[]
 }
 
-const level = (value?: string) => {
-  if (value == '错误') return 'danger'
-  if (value == '警告') return 'warning'
+const levelClass = (value?: string) => {
+  if (value == '高级' || value == '错误') return 'danger'
+  if (value == '中级' || value == '警告') return 'warning'
   return 'normal'
+}
+
+const levelTagType = (value?: string) => {
+  if (value == '高级' || value == '错误') return 'danger'
+  if (value == '中级' || value == '警告') return 'warning'
+  return 'info'
 }
 
 const clearList = () => {
   tip.value.open()
 }
 
-onMounted(async () => {
+const reloadOperationList = async () => {
   await Promise.all([loadOperationLength(), getOperationFirstPageList()])
+}
+
+onMounted(async () => {
+  await reloadOperationList()
 })
 </script>
 

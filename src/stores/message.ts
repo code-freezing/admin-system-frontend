@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 部门消息 store。
+ * 2. 统一保存当前用户的已读列表和部门消息列表，供顶部消息入口复用。
+ * 3. 把部门解析和两类请求整合到 store 中，减少页面重复代码。
+ */
+
 import { defineStore } from 'pinia'
 import { getReadListAndStatus, getDepartmentMsgList } from '@/api/dep_msg'
 import { ref } from 'vue'
@@ -48,9 +55,15 @@ export const useMsg = defineStore(
         : []
     }
 
+    const reset = () => {
+      read_list.value = []
+      msg_list.value = []
+    }
+
     return {
       read_list,
       msg_list,
+      reset,
       returnReadList,
     }
   },

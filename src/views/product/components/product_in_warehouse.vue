@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 产品入库弹窗。
+  2. 负责新增库存产品，录入基础档案、数量、单价和入库备注。
+  3. 成功后会生成新的库存记录，供后续出库流程使用。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="产品入库" width="600px" align-center draggable>
     <div class="dialog-content">

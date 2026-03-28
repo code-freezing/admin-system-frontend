@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 出库记录页面。
+  2. 展示已经审核通过并实际完成出库的历史记录。
+  3. 它与库存列表、审核列表一起组成完整的产品流转链路。
+-->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -11,7 +17,7 @@
             placeholder="按出库编号搜索"
             clearable
             @change="searchProductOutId()"
-            @clear="getFirstPageList"
+            @clear="reloadList"
           >
             <template #prefix>
               <Search />
@@ -43,7 +49,7 @@
     </div>
     <div class="table-footer">
       <el-pagination
-        :page-size="1"
+        :page-size="10"
         :current-page="paginationData.currentPage"
         :pager-count="7"
         :total="outProductTotal"
@@ -74,7 +80,7 @@ const item = ref({
   second: '出库列表',
 })
 
-const productOutId = ref<number>()
+const productOutId = ref<number | string>()
 const tableData = ref<OutProductRow[]>([])
 const outProductTotal = ref(0)
 
@@ -86,13 +92,18 @@ const paginationData = reactive({
 
 const loadOutProductLength = async () => {
   const res = await getOutProductLength()
-  const total = Array.isArray(res) ? res.length : 0
+  const total = typeof (res as { length?: number })?.length === 'number' ? (res as { length: number }).length : 0
   outProductTotal.value = total
   paginationData.pageCount = Math.max(1, Math.ceil(total / 10))
 }
 
 const getFirstPageList = async () => {
+  paginationData.currentPage = 1
   tableData.value = (await returnOutProductListData(1)) as OutProductRow[]
+}
+
+const reloadList = async () => {
+  await Promise.all([loadOutProductLength(), getFirstPageList()])
 }
 
 // 搜索按出库编号精确查询，清空输入框后恢复第一页默认数据。
@@ -102,11 +113,19 @@ const currentChange = async (value: number) => {
 }
 
 const searchProductOutId = async () => {
+  if (productOutId.value === undefined || productOutId.value === null || productOutId.value === '') {
+    await reloadList()
+    return
+  }
+
   tableData.value = (await searchProductForOutId(productOutId.value as number)) as OutProductRow[]
+  paginationData.currentPage = 1
+  outProductTotal.value = tableData.value.length
+  paginationData.pageCount = 1
 }
 
 onMounted(async () => {
-  await Promise.all([loadOutProductLength(), getFirstPageList()])
+  await reloadList()
 })
 </script>
 

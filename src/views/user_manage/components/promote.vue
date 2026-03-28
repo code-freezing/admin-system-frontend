@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 权限提升弹窗。
+  2. 用于把普通用户提升为指定管理员角色。
+  3. 权限变更后，前后端菜单与可访问页面也会随之变化。
+-->
 <template>
   <el-dialog v-model="dialogPromoteVisible" title="提升权限" center width="30%">
     <el-radio-group v-model="radio" class="ml-4">

@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 静态路由声明。
+ * 2. 这里只放公共页面和后台壳子页面，业务页由登录后动态注入。
+ * 3. 这样可以让不同身份共享同一套路由骨架。
+ */
+
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 
 // 这里只保留公共路由和主布局。
@@ -21,6 +28,14 @@ const routes: RouteRecordRaw[] = [
     redirect: '/home',
     component: () => import('@/views/menu/index.vue'),
     children: [],
+  },
+  {
+    name: '403',
+    path: '/403',
+    component: () => import('@/views/403/index.vue'),
+    meta: {
+      title: '403',
+    },
   },
   {
     name: '404',

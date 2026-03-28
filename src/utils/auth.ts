@@ -1,3 +1,10 @@
+/**
+ * 模块说明：
+ * 1. 登录态工具。
+ * 2. 负责 access token 的本地存取、Bearer 前缀规范化和登录态清理。
+ * 3. 请求层、路由守卫和退出登录逻辑都会依赖这里。
+ */
+
 const ACCESS_TOKEN_KEY = 'accessToken'
 
 const normalizeAccessToken = (token: string | null | undefined) => {

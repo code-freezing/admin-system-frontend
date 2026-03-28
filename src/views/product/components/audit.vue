@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 出库审核弹窗。
+  2. 供审核人查看申请详情并给出同意或否决结果。
+  3. 审核通过后会真正扣减库存并写入出库历史。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="审核出库申请" width="30%" center>
     <div class="describe">确认审核结果后再提交。</div>
@@ -56,6 +62,8 @@ const formData = reactive<AuditForm>({
 
 // 打开弹窗时把当前申请快照拷进表单，确保提交时后端有完整审核上下文。
 const open = (row: any) => {
+  // 审核时需要的不只是申请结果，还包括当前库存、申请数量、单价、申请时间等上下文。
+  // 因此这里直接保存整条申请快照，避免后端再次做额外查询拼装。
   formData.id = row.id
   formData.product_out_id = row.product_out_id
   formData.product_name = row.product_name
@@ -74,6 +82,8 @@ const open = (row: any) => {
 const audit = async () => {
   const res = await auditProduct(formData)
   if (res.status == 0) {
+    // 操作日志记录的是“谁对哪个产品做了什么审核”，
+    // 这样之后在操作日志页里可以直接回溯审批行为。
     const userInfoStr = localStorage.getItem('userinfo')
     const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
     const operatorName = userInfo?.name ?? ''

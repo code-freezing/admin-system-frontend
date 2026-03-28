@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 富文本编辑弹窗。
+  2. 用于编辑公司简介、愿景、文化等富文本配置内容。
+  3. 设置页中的多个编辑按钮都会复用这个组件。
+-->
 <template>
   <el-dialog v-model="state.dialogFormVisible" :title="title" width="600px" destroy-on-close>
     <div style="border: 1px solid #ccc">

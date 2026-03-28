@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 操作日志提示弹窗。
+  2. 用于展示日志详情或页面辅助说明。
+  3. 它让主页面可以专注于筛选和列表呈现。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="清空操作日志" width="30%" center>
     <span>确认后会清空全部操作日志，无法恢复。</span>

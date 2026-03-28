@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 撤回出库申请弹窗。
+  2. 允许申请人在审核前撤销已提交的出库申请。
+  3. 撤回后产品记录会回到未申请状态。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="撤回出库申请" width="30%" center>
     <span>确认后将撤回该出库申请。</span>

@@ -1,3 +1,9 @@
+<!--
+  组件说明：
+  1. 再次申请出库弹窗。
+  2. 当出库申请被否决后，允许基于原记录重新调整信息并再次提交。
+  3. 它帮助用户在不重建整条记录的前提下继续推进流程。
+-->
 <template>
   <el-dialog v-model="dialogFormVisible" title="重新申请出库" width="30%" center>
     <span>确认后将按当前信息重新提交申请。</span>
