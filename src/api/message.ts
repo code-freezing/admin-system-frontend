@@ -6,7 +6,14 @@
  */
 
 import { post } from './request'
-import { toApiResult, toArray, toLengthData, type ApiResult, isRecord } from '@/http/response'
+import {
+  getNumberField,
+  getStringField,
+  toApiResult,
+  toArray,
+  toLengthData,
+  type ApiResult,
+} from '@/http/response'
 
 export interface MessageRow {
   id: number
@@ -25,125 +32,89 @@ export interface MessageRow {
   [key: string]: unknown
 }
 
-// 消息模块既有公告发布，也有回收站和统计列表，所以接口数量会比较多。
 export const publishMessage = (data: Record<string, unknown>) => {
-  const { message_title, ...rest } = data
-  return post<ApiResult<{ id: number; department: string }>>('/msg/publishMessage', {
-    message_title,
-    ...rest,
-  }).then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      id: typeof record['id'] === 'number' ? record['id'] : 0,
-      department: typeof record['department'] === 'string' ? record['department'] : '',
-    })
-  })
+  // 发布消息后前端还要继续同步部门已读列表，所以这里额外带回消息 id 和接收部门。
+  return post<ApiResult<{ id: number; department: string }>>('/msg/publishMessage', data).then((raw) =>
+    toApiResult(raw, {
+      id: getNumberField(raw, 'id'),
+      department: getStringField(raw, 'department'),
+    }),
+  )
 }
 
-export const companyMessageList = () => {
-  return post<ApiResult<MessageRow[]>>('/msg/companyMessageList').then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const companyMessageList = () =>
+  post<ApiResult<MessageRow[]>>('/msg/companyMessageList').then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-export const systemMessageList = () => {
-  return post<ApiResult<MessageRow[]>>('/msg/systemMessageList').then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const systemMessageList = () =>
+  post<ApiResult<MessageRow[]>>('/msg/systemMessageList').then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-// 编辑接口会触发后端同步未读列表，前端只需要提交最新表单。
-export const editMessage = (data: Record<string, unknown>) => {
-  const { message_title, ...rest } = data
-  return post<ApiResult<null>>('/msg/editMessage', { message_title, ...rest }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const editMessage = (data: Record<string, unknown>) =>
+  post<ApiResult<null>>('/msg/editMessage', data).then((raw) => toApiResult(raw, null))
 
-export const searchMessageBydepartment = (message_publish_department: string) => {
-  return post<ApiResult<MessageRow[]>>('/msg/searchMessageBydepartment', {
-    message_publish_department,
-  }).then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const searchMessageBydepartment = (message_publish_department: string) =>
+  post<ApiResult<MessageRow[]>>('/msg/searchMessageBydepartment', { message_publish_department }).then(
+    (raw) => toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-export const searchMessageByLevel = (message_level: string) => {
-  return post<ApiResult<MessageRow[]>>('/msg/searchMessageByLevel', { message_level }).then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const searchMessageByLevel = (message_level: string) =>
+  post<ApiResult<MessageRow[]>>('/msg/searchMessageByLevel', { message_level }).then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-export const getMessage = (id: number) => {
-  return post<ApiResult<MessageRow[]>>('/msg/getMessage', { id }).then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const getMessage = (id: number) =>
+  post<ApiResult<MessageRow[]>>('/msg/getMessage', { id }).then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-// 点击量更新单独拆成接口，方便详情页打开时直接上报浏览次数。
-export const updateClick = (message_click_number: number, id: number) => {
-  return post<ApiResult<null>>('/msg/updateClick', { message_click_number, id }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const updateClick = (message_click_number: number, id: number) =>
+  post<ApiResult<null>>('/msg/updateClick', { message_click_number, id }).then((raw) =>
+    toApiResult(raw, null),
+  )
 
-// 删除分成软删除、恢复和永久删除，和后端回收站流程保持一致。
-export const firstDelete = (id: number) => {
-  return post<ApiResult<null>>('/msg/firstDelete', { id }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const firstDelete = (id: number) =>
+  post<ApiResult<null>>('/msg/firstDelete', { id }).then((raw) => toApiResult(raw, null))
 
-export const recycleList = () => {
-  return post<ApiResult<MessageRow[]>>('/msg/recycleList').then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const recycleList = () =>
+  post<ApiResult<MessageRow[]>>('/msg/recycleList').then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-export const getRecycleMessageLength = () => {
-  return post<ApiResult<{ length: number }>>('/msg/getRecycleMessageLength').then((raw) => {
-    return toApiResult(raw, toLengthData(raw))
-  })
-}
+export const getRecycleMessageLength = () =>
+  post<ApiResult<{ length: number }>>('/msg/getRecycleMessageLength').then((raw) =>
+    toApiResult(raw, toLengthData(raw)),
+  )
 
-export const returnRecycleListData = (pager: number) => {
-  return post<ApiResult<MessageRow[]>>('/msg/returnRecycleListData', { pager }).then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const returnRecycleListData = (pager: number) =>
+  post<ApiResult<MessageRow[]>>('/msg/returnRecycleListData', { pager }).then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-export const recover = (id: number) => {
-  return post<ApiResult<null>>('/msg/recover', { id }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const recover = (id: number) =>
+  post<ApiResult<null>>('/msg/recover', { id }).then((raw) => toApiResult(raw, null))
 
-export const deleteMessage = (id: number) => {
-  return post<ApiResult<null>>('/msg/deleteMessage', { id }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const deleteMessage = (id: number) =>
+  post<ApiResult<null>>('/msg/deleteMessage', { id }).then((raw) => toApiResult(raw, null))
 
-export const getCompanyMessageLength = () => {
-  return post<ApiResult<{ length: number }>>('/msg/getCompanyMessageLength').then((raw) => {
-    return toApiResult(raw, toLengthData(raw))
-  })
-}
+export const getCompanyMessageLength = () =>
+  post<ApiResult<{ length: number }>>('/msg/getCompanyMessageLength').then((raw) =>
+    toApiResult(raw, toLengthData(raw)),
+  )
 
-export const getSystemMessageLength = () => {
-  return post<ApiResult<{ length: number }>>('/msg/getSystemMessageLength').then((raw) => {
-    return toApiResult(raw, toLengthData(raw))
-  })
-}
+export const getSystemMessageLength = () =>
+  post<ApiResult<{ length: number }>>('/msg/getSystemMessageLength').then((raw) =>
+    toApiResult(raw, toLengthData(raw)),
+  )
 
-export const returnCompanyListData = (pager: number) => {
-  return post<ApiResult<MessageRow[]>>('/msg/returnCompanyListData', { pager }).then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const returnCompanyListData = (pager: number) =>
+  post<ApiResult<MessageRow[]>>('/msg/returnCompanyListData', { pager }).then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )
 
-export const returnSystemListData = (pager: number) => {
-  return post<ApiResult<MessageRow[]>>('/msg/returnSystemListData', { pager }).then((raw) => {
-    return toApiResult(raw, toArray<MessageRow>(raw))
-  })
-}
+export const returnSystemListData = (pager: number) =>
+  post<ApiResult<MessageRow[]>>('/msg/returnSystemListData', { pager }).then((raw) =>
+    toApiResult(raw, toArray<MessageRow>(raw)),
+  )

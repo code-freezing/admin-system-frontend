@@ -60,7 +60,6 @@ import type { FormProps } from 'element-plus'
 import { createProduct } from '@/api/product'
 import { getProduct } from '@/api/setting'
 
-// 入库弹窗只负责收集表单并提交，父页面在成功后刷新库存列表。
 interface FormData {
   product_id: number | null
   product_name: string
@@ -98,8 +97,8 @@ const rules = reactive({
   product_create_person: [{ required: true, message: '请输入创建人', trigger: 'blur' }],
 })
 
-// 产品分类来自系统设置，保持和字典维护中的产品分类一致。
 const loadCategoryList = async () => {
+  // 产品分类来自系统设置，保持和字典维护中的产品分类完全一致。
   const res = await getProduct()
   categoryData.value = res.data
 }
@@ -108,8 +107,8 @@ const open = () => {
   dialogFormVisible.value = true
 }
 
-// 成功后通过 success 事件通知父页面刷新，不在弹窗内部处理列表状态。
 const add = async () => {
+  // 入库成功后只通知父页面刷新列表，弹窗本身不接管库存表格状态。
   const res = await createProduct(formDataInfo)
   if (res.status == 0) {
     ElMessage.success('产品入库成功')

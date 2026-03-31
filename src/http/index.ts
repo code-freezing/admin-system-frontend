@@ -14,7 +14,7 @@ import { usePermission } from '@/stores/permission'
 import { useUserInfo } from '@/stores/userinfor'
 import { clearLoginState, getAccessToken, setAuthTokens } from '@/utils/auth'
 import { getApiBaseUrl } from '@/utils/runtime_url'
-import { getStatus, toAccessProfileData } from './response'
+import { getMessage, getStatus, getStringField, toAccessProfileData } from './response'
 
 const baseURL = getApiBaseUrl()
 
@@ -27,19 +27,18 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
 const instance = axios.create({
   baseURL,
   timeout: 6000,
-  // refresh token 在 HttpOnly Cookie 中，这里必须允许浏览器自动带 Cookie。
+  // refresh token 在 HttpOnly Cookie 中，这里必须允许浏览器自动携带 Cookie。
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// 这个单例 Promise 用来保证多个 401 同时出现时只发一个刷新请求。
+// 多个请求同时 401 时复用同一个刷新请求，避免并发刷新把会话状态打乱。
 let refreshRequest: Promise<string> | null = null
 
 const redirectToLogin = async () => {
-  // 登录态彻底失效后，必须同时清 token 和用户上下文。
-  // 如果只跳转页面而不清本地状态，刷新后仍可能被误判为“已登录”。
+  // 登录态失效后同时清空本地用户上下文，避免刷新后还被误判成已登录。
   useMenu(pinia).reset()
   usePermission(pinia).reset()
   useUserInfo(pinia).reset()
@@ -52,6 +51,7 @@ const redirectToLogin = async () => {
 }
 
 const syncAccessProfile = async () => {
+  // 403 后主动同步一次最新权限上下文，避免按钮和菜单继续停留在旧状态。
   const res = await instance.request({
     url: '/api/authProfile',
     method: 'POST',
@@ -65,7 +65,7 @@ const syncAccessProfile = async () => {
   const userStore = useUserInfo(pinia)
 
   permissionStore.setAccessProfile(profile)
-  userStore.applyProfile(profile.user ?? {})
+  userStore.applyProfile(profile.user)
   menuStore.setRouter(permissionStore.menuTree)
 }
 
@@ -74,25 +74,23 @@ const refreshAccessToken = async () => {
     refreshRequest = instance.request({
       url: '/api/refresh',
       method: 'POST',
-      // 刷新请求自己不需要 access token，也不能再次触发刷新逻辑。
+      // 刷新请求自身不能再带旧 access token，也不能递归触发刷新逻辑。
       _skipAuthRefresh: true,
     } as RetryableRequestConfig)
       .then((res: unknown) => {
-        const record = typeof res === 'object' && res !== null ? (res as Record<string, unknown>) : {}
-        const accessToken = typeof record.accessToken === 'string' ? record.accessToken : ''
-        const message = typeof record.message === 'string' ? record.message : '刷新 Token 失败'
+        const accessToken = getStringField(res, 'accessToken')
+        const message = getMessage(res) || '刷新 Token 失败'
 
         if (getStatus(res) !== 0 || !accessToken) {
           throw new Error(message)
         }
 
-        // 刷新成功后立即覆盖本地 access token。
-        // 后续排队等待的请求会直接复用这次刷新拿到的新 token。
+        // 刷新成功后立即覆盖本地 access token，让等待中的请求直接复用新 token。
         setAuthTokens(accessToken)
         return accessToken
       })
       .finally(() => {
-        // 无论成功还是失败，都要释放锁，避免后续 401 永远卡住。
+        // 刷新结束后立即释放锁，避免后续 401 永远等待上一轮结果。
         refreshRequest = null
       })
   }
@@ -105,7 +103,7 @@ instance.interceptors.request.use(
     if (!config._skipAuthRefresh) {
       const token = getAccessToken()
       if (token) {
-        // 统一在这里附带 Authorization，页面层和 api 层都不需要关心 token 细节。
+        // Authorization 统一在请求层补齐，页面和 API 层只负责业务参数。
         config.headers.Authorization = token
       }
     }
@@ -115,8 +113,8 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
-// 大多数业务代码都希望直接拿到后端返回体，所以这里统一返回 response.data。
 instance.interceptors.response.use(
+  // 业务层统一直接消费后端返回体，不再额外解包 AxiosResponse。
   (response) => response.data,
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined
@@ -124,29 +122,25 @@ instance.interceptors.response.use(
 
     if (status === 401 && originalRequest && !originalRequest._retry && !originalRequest._skipAuthRefresh) {
       try {
-        // access token 过期时，先刷新，再把刚才失败的请求重放一次。
+        // access token 过期后先刷新，再重放当前失败的原始请求。
         originalRequest._retry = true
         const nextAccessToken = await refreshAccessToken()
         originalRequest.headers.Authorization = nextAccessToken
         return instance(originalRequest)
       } catch (refreshError) {
-        // 刷新失败通常意味着 refresh token 也已经失效，当前会话必须作废。
         await redirectToLogin()
         return Promise.reject(refreshError)
       }
     }
 
     if (status === 401) {
-      // 已经是刷新请求本身失败，或该请求明确禁止刷新时，直接回登录页。
       await redirectToLogin()
     }
 
     if (status === 403 && originalRequest && !originalRequest._skipAccessSync) {
       try {
         await syncAccessProfile()
-      } catch {
-        // 如果权限上下文同步失败，保持原始 403 即可。
-      }
+      } catch {}
     }
 
     return Promise.reject(error)

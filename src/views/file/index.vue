@@ -162,6 +162,7 @@ const paginationData = reactive({
 })
 
 const loadFileLength = async () => {
+  // 文件总数单独维护，保持和当前分页组件的页码计算逻辑一致。
   const res = await fileListLength()
   const total = res.data.length
   paginationData.fileTotal = total
@@ -374,9 +375,7 @@ const abortTask = async (uid: number) => {
   if (controller?.uploadId) {
     try {
       await abortMultipartUpload(controller.uploadId)
-    } catch {
-      // 会话可能已经结束，保持前端任务状态即可。
-    }
+    } catch {}
   }
 }
 
@@ -493,7 +492,7 @@ const handleUploadRequest = (options: UploadRequestOptions) => {
   const rawFile = options.file as UploadRawFile
   void runUpload(rawFile)
 
-  // el-upload 内部会缓存已选文件。这里立即清空内部列表，避免隐藏文件列表时 limit 永久占满。
+  // el-upload 会缓存已选文件，这里立刻清空内部列表避免隐藏文件列表后 limit 被占满。
   window.setTimeout(() => {
     uploadRef.value?.clearFiles()
   }, 0)

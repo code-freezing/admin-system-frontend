@@ -104,6 +104,7 @@ const clearResetForm = () => {
 }
 
 const handleVerify = async () => {
+  // 先验证账号和邮箱，再进入重置密码步骤，避免直接暴露重置入口。
   const valid = await verifyFormRef.value?.validate().catch(() => false)
   if (!valid) {
     return
@@ -122,6 +123,7 @@ const handleVerify = async () => {
 }
 
 const handleReset = async () => {
+  // 重置密码前先校验两次输入一致，再把当前用户 id 和新密码一起提交给后端。
   const valid = await resetFormRef.value?.validate().catch(() => false)
   if (!valid) {
     return

@@ -26,6 +26,7 @@ export const usePagedTable = <T>(options: UsePagedTableOptions<T>) => {
   })
 
   const syncTotal = async () => {
+    // 没有远端总数接口时，直接用当前列表长度回填分页状态。
     if (!options.loadTotal) {
       total.value = tableData.value.length
       pagination.pageCount = Math.max(1, Math.ceil(total.value / pageSize))

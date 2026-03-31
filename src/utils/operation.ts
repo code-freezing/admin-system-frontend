@@ -7,11 +7,7 @@
 
 import { operationLog } from '@/api/log'
 
-const buildOperationContent = (
-  module: string,
-  operation_object: string,
-  operation_status?: string,
-) => {
+const buildOperationContent = (module: string, operation_object: string, operation_status?: string) => {
   if (module.includes('删除用户')) {
     return `删除了用户“${operation_object}”`
   }
@@ -41,7 +37,6 @@ const normalizeOperationLevel = (value: string) => {
   return '一般'
 }
 
-// 统一把页面里的操作行为转换成日志文案，避免每个页面自己拼字符串。
 export const tracking = async (
   module: string,
   operation_person: string,
@@ -49,6 +44,7 @@ export const tracking = async (
   operation_level: string,
   operation_status?: string,
 ) => {
+  // 页面层只传操作语义，这里统一收敛成最终日志文案并调用日志接口落库。
   const operation_content = buildOperationContent(module, operation_object, operation_status)
   await operationLog(operation_person, operation_content, normalizeOperationLevel(operation_level))
 }

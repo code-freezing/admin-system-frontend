@@ -74,23 +74,25 @@ const rules = reactive({
 })
 
 const loadDepartment = async () => {
+  // 部门字典来自系统设置，管理员编辑和用户编辑共用同一份选项。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
 const open = async (id: number) => {
+  // 打开编辑弹窗时先拉一份最新用户资料，避免列表展示字段和真实资料发生偏差。
   const res = await getUserInfo(id)
-  formDataInfo.id = typeof res.data.id === 'number' ? res.data.id : null
-  formDataInfo.account =
-    typeof res.data.account === 'number' ? res.data.account : Number(res.data.account ?? 0)
-  formDataInfo.name = res.data.name ?? ''
-  formDataInfo.sex = res.data.sex ?? ''
-  formDataInfo.email = res.data.email ?? ''
-  formDataInfo.department = res.data.department ?? ''
+  formDataInfo.id = res.data.id
+  formDataInfo.account = Number(res.data.account)
+  formDataInfo.name = res.data.name
+  formDataInfo.sex = res.data.sex
+  formDataInfo.email = res.data.email
+  formDataInfo.department = res.data.department
   dialogFormVisible.value = true
 }
 
 const edit = async () => {
+  // 编辑成功后只通知父列表刷新，具体分页回填逻辑交给外层页面处理。
   const res = await editAdmin(formDataInfo)
   if (res.status == 0) {
     ElMessage.success('管理员信息已更新')

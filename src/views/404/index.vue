@@ -1,13 +1,40 @@
-<!--
-  组件说明：
-  1. 404 页面。
-  2. 当动态路由或静态路由都未命中时，用于提示用户访问的地址不存在。
-  3. 它是整个前端路由系统的兜底出口。
--->
 <template>
-  <div>404</div>
+  <div class="not-found-page">
+    <div class="content">
+      <h1>404</h1>
+      <p>当前访问的页面不存在。</p>
+    </div>
+  </div>
 </template>
 
-<script lang="ts" setup></script>
+<script setup lang="ts"></script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.not-found-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef2f8 100%);
+}
+
+.content {
+  padding: 48px 56px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(19, 33, 68, 0.12);
+  text-align: center;
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: 64px;
+    color: #1f2d3d;
+  }
+
+  p {
+    margin: 0;
+    font-size: 16px;
+    color: #606266;
+  }
+}
+</style>

@@ -108,6 +108,7 @@ const createButtonText = computed(() => `新增${props.title}`)
 
 const create_admin = ref()
 const openCreate = () => {
+  // 页面差异通过 createType 传给创建弹窗，弹窗内部再决定创建哪类管理员。
   if (!hasPermission('button.user.admin.create')) return
   create_admin.value.open(props.createType)
 }

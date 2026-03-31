@@ -20,7 +20,6 @@ import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { applyOutProduct } from '@/api/product'
 
-// 重新申请弹窗复用原申请数据，适合被否决后按原信息再次提交。
 interface FormData {
   id: number | null
   product_name: string
@@ -46,8 +45,8 @@ const formData = reactive<FormData>({
   apply_memo: '',
 })
 
-// 打开时直接把上一条申请的快照带入，用户无需重新填写整份表单。
 const open = (row: any) => {
+  // 重新申请直接复用上一条申请快照，避免用户再重填一整份申请表单。
   formData.id = row.id
   formData.product_in_warehouse_number = row.product_in_warehouse_number
   formData.product_name = row.product_name
@@ -59,7 +58,6 @@ const open = (row: any) => {
   dialogFormVisible.value = true
 }
 
-// 成功后仍然通过 success 通知父页面刷新申请列表。
 const applyProduct = async () => {
   const res = await applyOutProduct(formData)
   if (res.status == 0) {

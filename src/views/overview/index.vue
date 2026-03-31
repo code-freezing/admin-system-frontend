@@ -138,16 +138,17 @@ const routerTo = (path: string) => {
 }
 
 const loadUserProfile = async () => {
+  // 概览页头像直接复用 store，文字资料则按当前用户 id 再补一份最新详情。
   const currentUserId = userStore.id
   if (!currentUserId) {
     return
   }
 
   const { data } = await getUserInfo(currentUserId)
-  userProfile.name = data.name ?? ''
-  userProfile.sex = data.sex ?? ''
-  userProfile.identity = data.identity ?? ''
-  userProfile.department = data.department ?? ''
+  userProfile.name = data.name
+  userProfile.sex = data.sex
+  userProfile.identity = data.identity
+  userProfile.department = data.department
 }
 
 const mountChart = (chart: EChartsType, option: Record<string, unknown>) => {
@@ -156,6 +157,7 @@ const mountChart = (chart: EChartsType, option: Record<string, unknown>) => {
 }
 
 const bindResize = () => {
+  // 图表实例只绑定一次 resize，避免重复进入页面后叠加多个监听器。
   if (resizeHandler) {
     return
   }
@@ -167,6 +169,7 @@ const bindResize = () => {
 }
 
 const renderCharts = async () => {
+  // 图表数据和运行时代码都延后到真正需要时再加载，减少首屏图表开销。
   if (hasStartedChartLoad) {
     return
   }
@@ -314,6 +317,7 @@ const renderCharts = async () => {
 }
 
 const observeChartSection = () => {
+  // 图表区域进入可视区后再渲染，避免用户还没滚到中部就提前初始化所有图表。
   if (!chartAreaRef.value || typeof window === 'undefined') {
     void renderCharts()
     return

@@ -86,6 +86,7 @@ const paginationData = reactive({
 })
 
 const loadLoginLength = async () => {
+  // 总数单独维护，保持和当前登录日志分页组件的计算方式一致。
   const res = await loginLogListLength()
   const total = res.data.length
   paginationData.loginTotal = total

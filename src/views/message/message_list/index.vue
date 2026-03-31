@@ -159,7 +159,6 @@ import {
 import createEdit from '../components/create_edit.vue'
 import deleteM from '../components/delete.vue'
 
-// 消息列表页分为公司消息和系统消息两个标签页，但都复用同一套弹窗组件。
 interface MessageRow {
   id: number
   message_title?: string
@@ -208,7 +207,7 @@ const {
 })
 
 const loadDepartmentList = async () => {
-  // 发布部门来自系统设置中的“字典维护”，不是在页面里写死的枚举。
+  // 发布部门来自系统设置里的字典配置，不在页面里写死。
   const res = await getDepartment()
   departmentData.value = res.data
 }
@@ -217,9 +216,8 @@ const loadCompanyFilterSource = async () => {
   companyFilterSource.value = (await companyMessageList()).data as MessageRow[]
 }
 
-// 公司消息支持按部门和等级组合筛选。
-// 为了避免多次切换筛选条件时互相覆盖，这里基于完整公司消息列表做前端组合过滤。
 const applyCompanyFilters = async () => {
+  // 公司消息筛选基于完整列表做前端组合过滤，避免多条件切换时互相覆盖结果。
   if (!department.value && !radio2.value) {
     await reloadCompanyTab()
     return
@@ -247,14 +245,12 @@ const resetCompanyFilters = async () => {
 }
 
 const changeTwoPageList = async () => {
-  // 新建、编辑、删除后先把筛选状态清空，再刷新两类消息列表。
-  // 否则用户可能仍停留在旧筛选结果中，看不到刚刚提交的改动。
+  // 新建、编辑和删除后先清空筛选，再刷新两类消息列表避免残留旧结果。
   department.value = undefined
   radio2.value = undefined
   await Promise.all([loadCompanyFilterSource(), reloadCompanyTab(), reloadSystemTab()])
 }
 
-// createEdit 和 deleteM 都是弹窗组件，列表页只负责传入当前行数据。
 const cre = ref()
 const createMessage = (id: number) => {
   cre.value.openCreate(id)
@@ -268,11 +264,10 @@ const editSystemMessage = (row: MessageRow) => {
 
 const delete_msg = ref()
 const deleteMessage = (row: MessageRow) => {
-  // 公司消息删除会把整行传给弹窗，因为回收站逻辑需要保留更多上下文字段。
+  // 公司消息删除会把整行传给弹窗，因为回收站逻辑需要更多上下文。
   delete_msg.value.openDelete(row)
 }
 const deleteSystemMessage = (id: number) => {
-  // 系统消息删除走的是另一套更直接的删除入口，只需要主键 id。
   delete_msg.value.openRealDelete(id)
 }
 

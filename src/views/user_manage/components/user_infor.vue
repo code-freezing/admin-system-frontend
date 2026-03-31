@@ -58,11 +58,11 @@ const userData = reactive({
 })
 
 const avatarSrc = computed(() => {
-  if (!userData.imageUrl) return undefined
-  return toAbsoluteResourceUrl(userData.imageUrl)
+  return userData.imageUrl ? toAbsoluteResourceUrl(userData.imageUrl) : undefined
 })
 
 const open = (row: any) => {
+  // 弹窗直接消费列表行快照，避免详情展示再发一次接口请求。
   userData.id = row.id
   userData.imageUrl = row.image_url
   userData.account = row.account
@@ -94,6 +94,7 @@ const openDelete = (id: number) => {
 }
 
 const handleChildSuccess = () => {
+  // 子弹窗成功后先关闭当前详情，再通知父列表按当前视图刷新。
   dialogUserVisible.value = false
   emit('success')
 }

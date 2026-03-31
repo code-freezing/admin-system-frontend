@@ -131,13 +131,13 @@ interface CompanyIntroduceItem {
 interface BulletinRow {
   message_title: string
   message_content: string
-  message_level?: string
-  message_publish_department?: string
-  message_publish_time?: string
+  message_category: string
+  message_level: string
+  message_publish_name: string
+  message_publish_department: string
+  message_publish_time: string
   [key: string]: any
 }
-
-const router = useRouter()
 
 const breadcrumbItem = ref({
   first: '首页',
@@ -174,13 +174,14 @@ const applyHomePayload = (payload: {
   companyMessages: BulletinRow[]
   systemMessages: BulletinRow[]
 }) => {
-  imageUrls.value = Array.isArray(payload.imageUrls) ? payload.imageUrls : []
-  companyIntroduce.value = Array.isArray(payload.companyIntroduce) ? payload.companyIntroduce : []
-  companyMessages.value = Array.isArray(payload.companyMessages) ? payload.companyMessages : []
-  systemMessages.value = Array.isArray(payload.systemMessages) ? payload.systemMessages : []
+  imageUrls.value = payload.imageUrls
+  companyIntroduce.value = payload.companyIntroduce
+  companyMessages.value = payload.companyMessages
+  systemMessages.value = payload.systemMessages
 }
 
 const loadHomeData = async () => {
+  // 首页内容分散在多组接口里，命中短时缓存时直接复用上一轮聚合结果。
   const cachedPayload = getViewCache<{
     imageUrls: string[]
     companyIntroduce: CompanyIntroduceItem[]
@@ -230,11 +231,9 @@ const loadHomeData = async () => {
 }
 
 onMounted(() => {
-  // 首页展示的数据比较分散，这里统一做并发加载，并允许短时缓存复用。
+  // 首页展示数据来源分散，这里统一做并发加载，并允许短时缓存复用。
   void loadHomeData()
 })
-
-void router
 </script>
 
 <style lang="scss" scoped>

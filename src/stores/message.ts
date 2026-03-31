@@ -20,10 +20,7 @@ export const useMsg = defineStore(
     const read_list = ref<number[]>([])
     const msg_list = ref<DepartmentMessageItem[]>([])
 
-    // 部门消息接口依赖当前用户所在部门，这里统一从持久化用户信息里取。
-    const getCurrentDepartment = () => {
-      return useUserInfo().department
-    }
+    const getCurrentDepartment = () => useUserInfo().department
 
     const returnReadList = async (id = useUserInfo().id) => {
       read_list.value = []
@@ -43,7 +40,7 @@ export const useMsg = defineStore(
       const firstRow = res.data[0]
       read_list.value = JSON.parse(firstRow.read_list || '[]') as number[]
 
-      // 读列表和部门消息是两套来源，这里在一个动作里一起拉回 store。
+      // 顶部消息入口依赖已读列表和部门消息两套数据，这里统一一次性拉回。
       const departmentMessages = await getDepartmentMsgList(currentDepartment)
       msg_list.value = departmentMessages.data
     }

@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { getCompanyIntroduce } from '@/api/setting'
 
 const dialogVisible = ref(false)
@@ -37,28 +37,16 @@ const sectionMap = {
 
 type SectionId = keyof typeof sectionMap
 
-const state = reactive({
-  loading: false,
-})
-
 const loadContent = async (sectionId: SectionId) => {
-  state.loading = true
-  try {
-    const sectionTitle = sectionMap[sectionId]
-    title.value = sectionTitle
+  // 首页详情弹窗只按 sectionMap 拉对应内容，不额外维护复杂状态。
+  const sectionTitle = sectionMap[sectionId]
+  title.value = sectionTitle
 
-    const res = await getCompanyIntroduce(sectionTitle)
-    valueHtml.value = res.data
-  } finally {
-    state.loading = false
-  }
+  const res = await getCompanyIntroduce(sectionTitle)
+  valueHtml.value = res.data
 }
 
 const open = async (id: number) => {
-  if (!(id in sectionMap)) {
-    return
-  }
-
   await loadContent(id as SectionId)
   dialogVisible.value = true
 }

@@ -32,9 +32,7 @@ export const useTable = (identity: string) => {
     },
   })
 
-  const currentChange = async (value: number) => {
-    await loadPage(value)
-  }
+  const currentChange = async (value: number) => loadPage(value)
 
   const searchAdmin = async () => {
     if (adminAccount.value === undefined || adminAccount.value === '') {
@@ -51,6 +49,7 @@ export const useTable = (identity: string) => {
   }
 
   const refreshTable = async (action: 'create' | 'edit' | 'delete' = 'edit') => {
+    // 删除导致当前页空表时回退一页，避免分页器停在已经无数据的页码上。
     await syncTotalCount()
 
     const list = await returnListData(paginationData.currentPage, identity)

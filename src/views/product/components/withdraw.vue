@@ -20,7 +20,6 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { withdrawApplyProduct } from '@/api/product'
 
-// 撤回弹窗针对的是待审核申请，撤回后后端会清空申请相关字段。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 const withdrawId = ref<number | null>(null)
@@ -30,11 +29,9 @@ const open = (id: number) => {
   dialogFormVisible.value = true
 }
 
-// 这里先判断 id 是否存在，避免弹窗状态异常时误发请求。
 const withdraw = async () => {
-  if (!withdrawId.value) return
-
-  const res = await withdrawApplyProduct(withdrawId.value)
+  // 撤回成功后后端会清空当前产品记录上的申请字段，让库存回到未申请状态。
+  const res = await withdrawApplyProduct(withdrawId.value as number)
   if (res.status == 0) {
     ElMessage.success('撤回成功')
     emit('success')

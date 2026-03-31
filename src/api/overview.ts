@@ -6,7 +6,7 @@
  */
 
 import { post } from './request'
-import { toApiResult, type ApiResult, isRecord } from '@/http/response'
+import { getArrayField, toApiResult, type ApiResult } from '@/http/response'
 
 export interface PieStatsItem {
   name: string
@@ -31,41 +31,37 @@ export interface DayAndNumberData {
   number: number[]
 }
 
-// 概览页只做统计查询。
 export const getCategoryAndNumber = () => {
-  return post<ApiResult<CategoryAndNumberData>>('/ov/getCategoryAndNumber').then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      category: Array.isArray(record['category']) ? (record['category'] as string[]) : [],
-      price: Array.isArray(record['price']) ? (record['price'] as number[]) : [],
-    })
-  })
+  // 概览页图表数据结构不统一，这里统一把后端裸对象收敛成固定字段。
+  return post<ApiResult<CategoryAndNumberData>>('/ov/getCategoryAndNumber').then((raw) =>
+    toApiResult(raw, {
+      category: getArrayField<string>(raw, 'category'),
+      price: getArrayField<number>(raw, 'price'),
+    }),
+  )
 }
 
 export const getAdminAndNumber = () => {
-  return post<ApiResult<AdminAndNumberData>>('/ov/getAdminAndNumber').then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      data: Array.isArray(record['data']) ? (record['data'] as PieStatsItem[]) : [],
-    })
-  })
+  return post<ApiResult<AdminAndNumberData>>('/ov/getAdminAndNumber').then((raw) =>
+    toApiResult(raw, {
+      data: getArrayField<PieStatsItem>(raw, 'data'),
+    }),
+  )
 }
 
 export const getLevelAndNumber = () => {
-  return post<ApiResult<LevelAndNumberData>>('/ov/getLevelAndNumber').then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      data: Array.isArray(record['data']) ? (record['data'] as PieStatsItem[]) : [],
-    })
-  })
+  return post<ApiResult<LevelAndNumberData>>('/ov/getLevelAndNumber').then((raw) =>
+    toApiResult(raw, {
+      data: getArrayField<PieStatsItem>(raw, 'data'),
+    }),
+  )
 }
 
 export const getDayAndNumber = () => {
-  return post<ApiResult<DayAndNumberData>>('/ov/getDayAndNumber').then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      week: Array.isArray(record['week']) ? (record['week'] as string[]) : [],
-      number: Array.isArray(record['number']) ? (record['number'] as number[]) : [],
-    })
-  })
+  return post<ApiResult<DayAndNumberData>>('/ov/getDayAndNumber').then((raw) =>
+    toApiResult(raw, {
+      week: getArrayField<string>(raw, 'week'),
+      number: getArrayField<number>(raw, 'number'),
+    }),
+  )
 }

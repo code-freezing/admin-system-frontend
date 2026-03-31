@@ -23,9 +23,9 @@ export interface MenuNode {
 
 interface AccessProfile {
   user?: Record<string, unknown>
-  roles?: string[]
-  permissionCodes?: string[]
-  menus?: MenuNode[]
+  roles: string[]
+  permissionCodes: string[]
+  menus: MenuNode[]
 }
 
 export const usePermission = defineStore(
@@ -35,12 +35,13 @@ export const usePermission = defineStore(
     const permissionCodes = ref<string[]>([])
     const menuTree = ref<MenuNode[]>([])
 
+    // 权限判断统一走 Set，避免模板和脚本层频繁线性扫描 permissionCodes。
     const permissionCodeSet = computed(() => new Set(permissionCodes.value))
 
-    const setAccessProfile = (profile: AccessProfile | null | undefined) => {
-      roles.value = Array.isArray(profile?.roles) ? profile.roles : []
-      permissionCodes.value = Array.isArray(profile?.permissionCodes) ? profile.permissionCodes : []
-      menuTree.value = Array.isArray(profile?.menus) ? profile.menus : []
+    const setAccessProfile = (profile?: AccessProfile | null) => {
+      roles.value = profile?.roles ?? []
+      permissionCodes.value = profile?.permissionCodes ?? []
+      menuTree.value = profile?.menus ?? []
     }
 
     const hasPermission = (code?: string) => {
@@ -51,9 +52,7 @@ export const usePermission = defineStore(
       return permissionCodeSet.value.has(code)
     }
 
-    const hasAnyPermission = (codes: string[] = []) => {
-      return codes.some((code) => hasPermission(code))
-    }
+    const hasAnyPermission = (codes: string[]) => codes.some((code) => hasPermission(code))
 
     const reset = () => {
       roles.value = []

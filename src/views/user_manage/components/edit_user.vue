@@ -74,23 +74,25 @@ const rules = reactive({
 })
 
 const loadDepartment = async () => {
+  // 普通用户编辑也直接复用系统设置里的部门字典。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
 const open = async (id: number) => {
+  // 进入编辑态前先拉最新资料，避免弹窗展示旧列表里的过期字段。
   const res = await getUserInfo(id)
-  formData.id = typeof res.data.id === 'number' ? res.data.id : 0
-  formData.account =
-    typeof res.data.account === 'number' ? res.data.account : Number(res.data.account ?? 0)
-  formData.name = res.data.name ?? ''
-  formData.sex = res.data.sex ?? ''
-  formData.email = res.data.email ?? ''
-  formData.department = res.data.department ?? ''
+  formData.id = res.data.id
+  formData.account = Number(res.data.account)
+  formData.name = res.data.name
+  formData.sex = res.data.sex
+  formData.email = res.data.email
+  formData.department = res.data.department
   dialogFormVisible.value = true
 }
 
 const editUser = async () => {
+  // 普通用户和管理员编辑共用后端编辑接口，这里只负责提交当前表单数据。
   const res = await editAdmin(formData)
   if (res.status == 0) {
     ElMessage.success('用户信息已更新')

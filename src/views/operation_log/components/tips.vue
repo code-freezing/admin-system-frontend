@@ -28,6 +28,7 @@ const open = () => {
 }
 
 const clearList = async () => {
+  // 清空成功后只通知父页面重拉日志列表，弹窗本身不维护外层分页状态。
   const res = await clearOperationLogList()
   if (res.status == 0) {
     ElMessage.success('操作日志已清空')

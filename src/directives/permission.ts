@@ -11,15 +11,15 @@ import { usePermission } from '@/stores/permission'
 
 const updateElementVisibility = (el: HTMLElement, binding: DirectiveBinding<string | string[]>) => {
   const permissionStore = usePermission(pinia)
-  const rawValue = binding.value
-  const codes = Array.isArray(rawValue) ? rawValue : [rawValue]
-  const visible = permissionStore.hasAnyPermission(codes.filter(Boolean) as string[])
+  const codes = (Array.isArray(binding.value) ? binding.value : [binding.value]).filter(Boolean) as string[]
+  const visible = permissionStore.hasAnyPermission(codes)
 
   el.style.display = visible ? '' : 'none'
 }
 
 export const registerPermissionDirective = (app: App) => {
   app.directive('permission', {
+    // mounted 和 updated 都走同一套判断，保证权限数据刷新后模板显隐能及时同步。
     mounted(el, binding) {
       updateElementVisibility(el as HTMLElement, binding)
     },

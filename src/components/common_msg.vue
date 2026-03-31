@@ -41,16 +41,6 @@ import { reactive, ref } from 'vue'
 interface MessageRow {
   message_title: string
   message_content: string
-  message_publish_department?: string
-  message_category?: string
-  message_level?: string
-  message_publish_name?: string
-  message_publish_time?: string
-}
-
-interface MessageInfo {
-  message_title: string
-  message_content: string
   message_publish_department: string
   message_category: string
   message_level: string
@@ -64,7 +54,7 @@ const dialog = ref(false)
 const showDepartment = ref(false)
 const showLevel = ref(false)
 
-const messageInfo: MessageInfo = reactive({
+const messageInfo: MessageRow = reactive({
   message_title: '',
   message_content: '',
   message_publish_department: '',
@@ -86,13 +76,13 @@ const resetMessageInfo = () => {
 
 // 统一填充消息字段，避免两个打开函数重复赋值。
 const fillMessage = (row: MessageRow) => {
-  messageInfo.message_title = row.message_title ?? ''
-  messageInfo.message_content = row.message_content ?? ''
-  messageInfo.message_publish_department = row.message_publish_department ?? ''
-  messageInfo.message_category = row.message_category ?? ''
-  messageInfo.message_level = row.message_level ?? ''
-  messageInfo.message_publish_name = row.message_publish_name ?? ''
-  messageInfo.message_publish_time = row.message_publish_time ?? ''
+  messageInfo.message_title = row.message_title
+  messageInfo.message_content = row.message_content
+  messageInfo.message_publish_department = row.message_publish_department
+  messageInfo.message_category = row.message_category
+  messageInfo.message_level = row.message_level
+  messageInfo.message_publish_name = row.message_publish_name
+  messageInfo.message_publish_time = row.message_publish_time
 }
 
 const openCompany = (row: MessageRow) => {

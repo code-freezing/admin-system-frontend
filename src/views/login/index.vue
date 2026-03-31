@@ -112,11 +112,8 @@ const openForget = () => {
   forgetP.value?.open()
 }
 
-// 登录链路会串起三件事：
-// 1. 调登录接口拿 access token
-// 2. 拉菜单并动态注入路由
-// 3. 拉用户信息并记录登录日志
 const loginAction = async () => {
+  // 登录成功后立即补齐权限、菜单和用户信息，让后台壳子直接按最新会话启动。
   const res = await login(loginData)
 
   if (res.status !== 0) {
@@ -145,6 +142,7 @@ const loginAction = async () => {
 }
 
 const registerAction = async () => {
+  // 注册页只做最小校验，账号密码规则交给后端统一裁决。
   if (registerData.password !== registerData.rePassword) {
     ElMessage.error('两次输入的密码不一致，请重新输入')
     return

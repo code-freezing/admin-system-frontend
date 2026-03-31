@@ -96,7 +96,6 @@ import { getDepartment } from '@/api/setting'
 import { useMsg } from '@/stores/message'
 import { useUserInfo } from '@/stores/userinfor'
 
-// 公司消息和系统消息共用同一个富文本弹窗，通过 title 判断当前处于哪种模式。
 interface SelectOption {
   value: string
 }
@@ -112,6 +111,16 @@ interface FormData {
   message_content: string
 }
 
+interface EditableMessageRow {
+  id: number
+  message_title: string
+  message_publish_department: string
+  message_publish_name: string
+  message_receipt_object: string
+  message_level: string
+  message_content: string
+}
+
 const msgStore = useMsg()
 const userStore = useUserInfo()
 const title = ref('')
@@ -121,11 +130,10 @@ const emit = defineEmits(['success'])
 
 const options = ref<SelectOption[]>([])
 const allOptions = ref<SelectOption[]>([])
-const editorRef = shallowRef()
+const editorRef = shallowRef<any>(null)
 const mode = ref('default')
 const valueHtml = ref('')
 
-// 表单字段刻意保持完整，避免在创建/编辑/不同消息类型之间频繁切换结构。
 const formData = reactive<FormData>({
   id: null,
   message_title: '',
@@ -141,7 +149,6 @@ const needsDepartmentFields = computed(() => {
   return title.value === '发布公司消息' || title.value === '编辑公司消息'
 })
 
-// 富文本工具栏刻意裁掉复杂功能，让后台公告编辑保持轻量。
 const rules = reactive({
   message_title: [{ required: true, message: '请输入消息标题', trigger: 'blur' }],
   message_publish_department: [{ required: true, message: '请选择发布部门', trigger: 'blur' }],
@@ -177,19 +184,16 @@ const editorConfig = {
   MENU_CONF: {},
 }
 
-// 部门选项来自系统设置，“全体员工”是在前端额外补上的特殊接收对象。
 const loadDepartmentList = async () => {
+  // 部门选项来自系统设置，“全体员工”是前端额外补上的特殊接收对象。
   const res = await getDepartment()
   const list = res.data
   options.value = list.map((value) => ({ value }))
-  // 系统里历史数据同时出现过“全体员工”和“全体成员”两种叫法，
-  // 当前前端创建入口沿用“全体员工”，后端消息编辑联动逻辑里仍会处理“全体成员”的旧值。
   allOptions.value = [...options.value, { value: '全体员工' }]
 }
 
 const resetForm = () => {
-  // 弹窗被复用于四种模式：发布公司消息、编辑公司消息、发布系统消息、编辑系统消息。
-  // 因此每次打开创建态前，都需要把旧内容和富文本编辑器状态完全清空。
+  // 弹窗复用于四种模式，所以每次进创建态前都要把表单和富文本内容完全清空。
   Object.assign(formData, {
     id: null,
     message_title: '',
@@ -205,13 +209,12 @@ const resetForm = () => {
 
 const openCreate = (id: number) => {
   resetForm()
-  // 通过一个简单的数字区分“发布公司消息 / 发布系统消息”，
-  // 是为了让父页面按钮调用更轻量，不必传完整配置对象。
+  // 父页面只传一个简单编号，弹窗内部再决定当前属于公司消息还是系统消息。
   title.value = id == 1 ? '发布公司消息' : '发布系统消息'
   dialogFormVisible.value = true
 }
 
-const openEdit = (row: any) => {
+const openEdit = (row: EditableMessageRow) => {
   title.value = '编辑公司消息'
   formData.id = row.id
   formData.message_title = row.message_title
@@ -220,35 +223,34 @@ const openEdit = (row: any) => {
   formData.message_receipt_object = row.message_receipt_object
   formData.message_level = row.message_level
   formData.message_content = row.message_content
-  valueHtml.value = row.message_content ?? ''
+  valueHtml.value = row.message_content
   dialogFormVisible.value = true
 }
 
-const openEditSystem = (row: any) => {
+const openEditSystem = (row: Pick<EditableMessageRow, 'id' | 'message_title' | 'message_publish_name' | 'message_content'>) => {
   title.value = '编辑系统消息'
   formData.id = row.id
   formData.message_title = row.message_title
   formData.message_publish_name = row.message_publish_name
   formData.message_content = row.message_content
-  valueHtml.value = row.message_content ?? ''
+  valueHtml.value = row.message_content
   dialogFormVisible.value = true
 }
 
 const handleCreated = (editor: any) => {
-  // wangeditor 实例需要在组件卸载时手动销毁，所以这里先保存引用。
+  // 编辑器实例需要在组件卸载时手动销毁，这里先缓存引用。
   editorRef.value = editor
 }
 
-// 保存逻辑按标题分支，是因为公司消息和系统消息在字段要求、后续联动上不完全一样。
 const yes = async () => {
+  // 保存逻辑按标题分支，是因为公司消息和系统消息在字段要求和联动上不完全一样。
   formData.message_content = valueHtml.value
 
   if (title.value === '发布公司消息') {
     formData.message_category = '公司消息'
     const res = await publishMessage(formData)
     if (res.status == 0) {
-      // 公司消息发布后，要把消息 id 写入部门成员的未读列表，
-      // 并刷新当前用户顶部消息 store，保证铃铛提示能立刻变化。
+      // 公司消息发布后要同步部门未读列表，并刷新当前用户顶部消息状态。
       await changeUserReadList(res.data.id, formData.message_receipt_object)
       await msgStore.returnReadList()
       ElMessage.success('公司消息发布成功')
@@ -262,8 +264,7 @@ const yes = async () => {
 
   if (title.value === '编辑公司消息') {
     const res = await editMessageApi(formData)
-    // 编辑公司消息也要刷新当前用户的部门消息状态，
-    // 因为接收部门、接收范围或内容可能已经发生变化。
+    // 编辑公司消息后也要刷新部门消息状态，因为接收范围或内容可能已经变化。
     await msgStore.returnReadList()
     if (res.status == 0) {
       ElMessage.success('公司消息编辑成功')
@@ -303,7 +304,6 @@ const yes = async () => {
 onBeforeUnmount(() => {
   const editor = editorRef.value
   if (editor) {
-    // 富文本编辑器内部有自己的事件和 DOM 资源，不销毁会造成内存泄漏。
     editor.destroy()
   }
 })

@@ -157,6 +157,7 @@ const {
 })
 
 const loadDepartment = async () => {
+  // 部门筛选项来自系统设置中的字典配置，不在页面里写死。
   const res = await getDepartment()
   departmentData.value = res.data
 }
@@ -200,6 +201,7 @@ const banUserList = async () => {
 }
 
 const refreshUserListByCurrentView = async () => {
+  // 用户列表有多种视图模式，刷新后要尽量保持用户当前正在看的那一类结果。
   if (userListViewMode.value === 'banned') {
     await banUserList()
     return
@@ -219,11 +221,13 @@ const refreshUserListByCurrentView = async () => {
 }
 
 const searchUserByAccount = async () => {
+  // 账号搜索和部门筛选互斥，切到账号搜索时先清空部门条件。
   department.value = undefined
   await applyAccountFilter()
 }
 
 const searchForDepartment = async (value?: string) => {
+  // 部门筛选和账号搜索互斥，切到部门筛选时先清空账号关键字。
   adminAccount.value = ''
   await applyDepartmentFilter(value)
 }
@@ -262,6 +266,7 @@ const refreshAfterUserAction = async () => {
 }
 
 const openUser = (row: UserRow) => {
+  // 双击行只在具备至少一种操作权限时才打开详情弹窗。
   if (!hasAnyPermission(['button.user.user.edit', 'button.user.user.promote', 'button.user.user.delete'])) {
     return
   }

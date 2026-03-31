@@ -38,10 +38,9 @@ import { ElMessage } from 'element-plus'
 import { changeCompanyIntroduce, getCompanyIntroduce } from '@/api/setting'
 import { buildApiUrl, toAbsoluteResourceUrl } from '@/utils/runtime_url'
 
-// 公司介绍类配置共用一个富文本弹窗，靠传入 id 决定编辑哪一块内容。
 const title = ref('')
 const currentKey = ref('')
-const editorRef = shallowRef()
+const editorRef = shallowRef<any>(null)
 const mode = ref('default')
 const valueHtml = ref('')
 const state = reactive({
@@ -86,8 +85,8 @@ const editorConfig = {
   },
 }
 
-// id 和 setting.set_name 的映射集中放在这里，便于后续新增公司介绍模块。
 const open = async (id: number) => {
+  // 页面侧只传一个简单 id，这里统一映射到具体的设置项标题和 set_name。
   const mapping: Record<number, { title: string; key: string }> = {
     1: { title: '编辑公司简介', key: '公司简介' },
     2: { title: '编辑公司愿景', key: '公司愿景' },
@@ -104,6 +103,7 @@ const open = async (id: number) => {
 }
 
 const yes = async () => {
+  // 保存时直接用当前 set_name 覆盖对应内容，不在弹窗里再区分具体配置项。
   const res = await changeCompanyIntroduce(valueHtml.value, currentKey.value)
   if (res.status == 0) {
     ElMessage.success('内容更新成功')

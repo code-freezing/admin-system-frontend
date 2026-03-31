@@ -52,7 +52,6 @@ import { ElMessage } from 'element-plus'
 import { applyOutProduct } from '@/api/product'
 import { useUserInfo } from '@/stores/userinfor'
 
-// 出库申请弹窗从列表行带入当前库存和单价，用户只补充申请编号、数量和备注。
 interface FormData {
   id: number | null
   product_name: string
@@ -86,8 +85,8 @@ const rules = reactive({
   product_out_apply_person: [{ required: true, message: '申请人不能为空', trigger: 'blur' }],
 })
 
-// 申请数量不能大于当前库存，这个判断放在前端先做一层快速限制。
 const canSubmitOutApply = computed(() => {
+  // 申请数量不能超过当前库存，前端先做一层即时限制减少无效提交。
   const warehouseNumber = formDataInfo.product_in_warehouse_number
   const outNumber = formDataInfo.product_out_number
   if (warehouseNumber == null || outNumber == null) return false
@@ -95,7 +94,7 @@ const canSubmitOutApply = computed(() => {
 })
 
 const open = (row: any) => {
-  // 每次打开都重置“申请相关字段”，避免上一次弹窗留下的编号或备注串到下一条产品。
+  // 每次打开都重置申请字段，避免上一条库存记录的编号和备注串到下一次申请。
   formDataInfo.id = row.id
   formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
   formDataInfo.product_name = row.product_name
@@ -107,10 +106,8 @@ const open = (row: any) => {
   dialogFormVisible.value = true
 }
 
-// 提交成功后通过 success 事件通知父页面刷新库存和申请列表。
 const addProduct = async () => {
-  // 后端会把这次申请写回当前 product 记录，而不是立刻生成出库历史。
-  // 真正的库存扣减要等审核弹窗提交“同意”后才发生。
+  // 申请只会写回当前 product 记录，真正扣库存要等审核通过后才发生。
   const res = await applyOutProduct(formDataInfo)
   if (res.status == 0) {
     ElMessage.success('出库申请已提交')

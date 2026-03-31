@@ -7,7 +7,16 @@
 
 import type { AxiosProgressEvent } from 'axios'
 import { post } from './request'
-import { toApiResult, toArray, toLengthData, type ApiResult, isRecord } from '@/http/response'
+import {
+  getArrayField,
+  getBooleanField,
+  getObjectField,
+  getStringField,
+  toApiResult,
+  toArray,
+  toLengthData,
+  type ApiResult,
+} from '@/http/response'
 
 export interface FileRow {
   id: number
@@ -44,14 +53,11 @@ export const initMultipartUpload = (data: {
   mimeType: string
 }) => {
   return post<ApiResult<InitMultipartUploadData>>('/file/initMultipartUpload', data).then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    const fileRecord = isRecord(record['fileRecord']) ? (record['fileRecord'] as FileRow) : null
-
     return toApiResult(raw, {
-      uploadId: typeof record['uploadId'] === 'string' ? record['uploadId'] : '',
-      shouldUpload: Boolean(record['shouldUpload']),
-      uploadedChunks: Array.isArray(record['uploadedChunks']) ? (record['uploadedChunks'] as number[]) : [],
-      fileRecord,
+      uploadId: getStringField(raw, 'uploadId'),
+      shouldUpload: getBooleanField(raw, 'shouldUpload'),
+      uploadedChunks: getArrayField<number>(raw, 'uploadedChunks'),
+      fileRecord: getObjectField<FileRow>(raw, 'fileRecord'),
     })
   })
 }
@@ -62,24 +68,22 @@ export const uploadChunk = (data: FormData, onUploadProgress?: (event: AxiosProg
       'Content-Type': 'multipart/form-data',
     },
     onUploadProgress,
-  }).then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      uploadedChunks: Array.isArray(record['uploadedChunks']) ? (record['uploadedChunks'] as number[]) : [],
-    })
-  })
+  }).then((raw) =>
+    toApiResult(raw, {
+      uploadedChunks: getArrayField<number>(raw, 'uploadedChunks'),
+    }),
+  )
 }
 
 export const completeMultipartUpload = (uploadId: string, contentHash: string) => {
   return post<ApiResult<{ fileRecord: FileRow | null }>>('/file/completeMultipartUpload', {
     uploadId,
     contentHash,
-  }).then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      fileRecord: isRecord(record['fileRecord']) ? (record['fileRecord'] as FileRow) : null,
-    })
-  })
+  }).then((raw) =>
+    toApiResult(raw, {
+      fileRecord: getObjectField<FileRow>(raw, 'fileRecord'),
+    }),
+  )
 }
 
 export const abortMultipartUpload = (uploadId: string) => {
@@ -89,12 +93,11 @@ export const abortMultipartUpload = (uploadId: string) => {
 }
 
 export const downloadFile = (id: number) => {
-  return post<ApiResult<DownloadFileData>>('/file/downloadFile', { id }).then((raw) => {
-    const record = isRecord(raw) ? raw : ({} as Record<string, unknown>)
-    return toApiResult(raw, {
-      url: typeof record['url'] === 'string' ? record['url'] : '',
-    })
-  })
+  return post<ApiResult<DownloadFileData>>('/file/downloadFile', { id }).then((raw) =>
+    toApiResult(raw, {
+      url: getStringField(raw, 'url'),
+    }),
+  )
 }
 
 export const fileList = () => {

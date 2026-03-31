@@ -226,7 +226,6 @@ import { buildApiUrl } from '@/utils/runtime_url'
 import change from './components/change_password.vue'
 import editor from './components/editor.vue'
 
-// 设置页把账号资料、公司配置、首页轮播图和字典维护合并在同一个标签页容器中。
 const userStore = useUserInfo()
 const breadcrumb = ref()
 const item = ref({
@@ -236,13 +235,11 @@ const item = ref({
 const activeName = ref('first')
 const avatarUrl = ref(buildApiUrl('/user/uploadAvatar'))
 const swiperUrl = ref(buildApiUrl('/set/uploadSwiper'))
-// 上传地址在前端动态拼接，是为了兼容本地和未来可能的不同 API 域名配置。
 const companyName = ref('')
 const changeP = ref()
 const editorP = ref()
 const imageUrl = ref<string[]>([])
 
-// 轮播图配置在后端按 swiper1~swiper6 存储，这里用固定数组驱动上传区域。
 const swiperData = [
   { name: 'swiper1' },
   { name: 'swiper2' },
@@ -261,13 +258,12 @@ const inputProductValue = ref('')
 const inputProductVisible = ref(false)
 const InputProductRef = ref<InstanceType<typeof ElInput>>()
 
-// 基础设置在页面初始化时一次性加载，避免切标签后重复请求。
 const loadCompanyName = async () => {
   companyName.value = (await getCompanyName()).data
 }
 
 const loadSwiperList = async () => {
-  // 轮播图数组顺序必须和 swiperData 对应，模板里通过下标一一渲染上传区域。
+  // 轮播图列表顺序必须和 swiperData 对应，模板里通过下标一一渲染上传区域。
   imageUrl.value = (await getAllSwiper()).data
 }
 
@@ -279,8 +275,8 @@ const loadProductList = async () => {
   dynamicProductTags.value = (await getProduct()).data
 }
 
-// 头像上传成功后，还要调用 bind 接口把临时上传记录和当前账号真正绑定起来。
 const handleAvatarSuccess = async (response: any) => {
+  // 头像上传成功后还要执行 bind，才能把临时上传记录真正绑定到当前账号。
   if (response.status !== 0) {
     ElMessage.error('头像上传失败')
     return
@@ -301,7 +297,6 @@ const handleAvatarSuccess = async (response: any) => {
   if (res.status === 0) {
     ElMessage.success('头像更新成功')
   } else {
-    // 上传成功但绑定失败时，说明文件已进上传目录，但还没真正绑定到用户资料。
     ElMessage.error(res.message || '头像绑定失败')
   }
 }
@@ -323,11 +318,9 @@ const beforeAvatarUpload = (rawFile: File) => {
 }
 
 const handleSwiperSuccess = () => {
-  // 轮播图上传成功后直接重新拉取后端列表，保证页面展示的是后端最终保存结果。
   loadSwiperList()
 }
 
-// 账号资料保存拆成独立按钮，减少一次改多项时的联动风险。
 const openChangePassword = () => {
   changeP.value.open()
 }
@@ -369,13 +362,12 @@ const resetCompanyName = async () => {
 }
 
 const openEditor = async (id: number) => {
-  // 公司简介、愿景、企业文化、公司概览都复用同一个富文本弹窗，
-  // 通过 id 区分当前要编辑的是哪一块配置。
+  // 公司简介、愿景、企业文化和概览都复用同一个富文本弹窗，通过 id 区分当前配置项。
   editorP.value.open(id)
 }
 
-// 字典维护直接操作本地 tag 数组，再整体提交给后端覆盖保存。
 const handleClose = async (tag: string) => {
+  // 字典维护直接提交整个数组快照，后端按最新结果整体覆盖保存。
   dynamicTags.value = dynamicTags.value.filter((item) => item !== tag)
   const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))
   if (res.status == 0) {
@@ -398,7 +390,6 @@ const handleProductClose = async (tag: string) => {
 const showInput = () => {
   inputVisible.value = true
   nextTick(() => {
-    // 切成输入态后立刻聚焦，避免用户还要额外点一次输入框。
     InputRef.value?.input?.focus()
   })
 }
@@ -412,8 +403,6 @@ const showProductInput = () => {
 
 const handleInputConfirm = async () => {
   if (inputValue.value) {
-    // 这里采用“整体覆盖保存”的写法：把最新数组一次性传给后端。
-    // 好处是后端不需要维护单条增删接口，代价是前后端要约定数组序列化格式。
     dynamicTags.value = [...dynamicTags.value, inputValue.value]
     const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))
     if (res.status == 0) {
@@ -443,7 +432,7 @@ const handleInputProductConfirm = async () => {
 }
 
 onMounted(async () => {
-  // 设置页是聚合页，但基础数据都比较独立，适合在首屏并行加载。
+  // 设置页虽然是聚合页，但各块数据彼此独立，适合在首屏并行加载。
   await Promise.all([loadCompanyName(), loadSwiperList(), loadDepartmentList(), loadProductList()])
 })
 </script>

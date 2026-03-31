@@ -90,11 +90,13 @@ const rules = reactive({
 })
 
 const loadDepartment = async () => {
+  // 部门选项来自系统设置里的字典配置，创建管理员时直接复用。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
 const open = (id: number) => {
+  // 每次打开前先清空旧表单，避免上一位管理员的资料残留到下一次创建。
   Object.assign(formData, {
     account: '',
     password: '',
@@ -115,6 +117,7 @@ const open = (id: number) => {
 }
 
 const addAdmin = async () => {
+  // 创建成功后只通知父列表刷新，弹窗本身不接管外层列表状态。
   const res = await createAdmin(formData)
   if (res.status == 0) {
     ElMessage.success('管理员创建成功')

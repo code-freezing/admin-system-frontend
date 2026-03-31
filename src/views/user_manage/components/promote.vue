@@ -36,6 +36,7 @@ const open = (id: number) => {
 }
 
 const yes = async () => {
+  // 提权前必须明确目标角色，避免把空身份直接提交给后端。
   if (!userid.value || !radio.value) {
     ElMessage.error('请选择要提升的身份')
     return

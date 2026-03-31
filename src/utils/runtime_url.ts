@@ -10,6 +10,7 @@ const DEFAULT_API_BASE_URL = 'http://127.0.0.1:3007'
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
 
 export const getApiBaseUrl = () => {
+  // 同时兼容两套历史环境变量名，避免老环境配置切不过来。
   const configuredUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASEURL
   return trimTrailingSlash(configuredUrl || DEFAULT_API_BASE_URL)
 }
@@ -20,13 +21,9 @@ export const buildApiUrl = (path: string) => {
 }
 
 export const toAbsoluteResourceUrl = (value?: string | null) => {
-  if (!value) {
-    return ''
-  }
+  if (!value) return ''
 
-  if (/^https?:\/\//.test(value)) {
-    return value
-  }
+  if (/^https?:\/\//.test(value)) return value
 
   return buildApiUrl(value)
 }

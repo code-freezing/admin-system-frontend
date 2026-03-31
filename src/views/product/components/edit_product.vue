@@ -61,7 +61,6 @@ import { ElMessage } from 'element-plus'
 import { editProduct } from '@/api/product'
 import { getProduct } from '@/api/setting'
 
-// 编辑商品弹窗只处理已有产品，不允许修改产品编号和创建人。
 interface ProductFormModel {
   id: number | null
   product_id: number | null
@@ -105,8 +104,8 @@ const rules: FormRules<ProductFormModel> = {
   product_create_person: [{ required: true, message: '创建人不能为空', trigger: 'blur' }],
 }
 
-// 分类选项来自系统设置，和入库弹窗共享同一份字典数据。
 const loadCategoryData = async () => {
+  // 分类选项来自系统设置，和入库弹窗共享同一份产品分类字典。
   categoryData.value = (await getProduct()).data
 }
 
@@ -124,14 +123,14 @@ const fillForm = (row: Partial<ProductFormModel>) => {
   formData.in_memo = row.in_memo ?? ''
 }
 
-// 打开时先用行数据填充表单，关闭与重新打开之间不依赖父组件保留状态。
 const open = (row: Partial<ProductFormModel>) => {
+  // 每次打开都用当前行数据重新回填表单，避免依赖上一次弹窗状态。
   fillForm(row)
   dialogVisible.value = true
 }
 
-// 这里在提交前走一次 Element Plus 表单校验，避免把空字段直接送到后端。
 const handleEdit = async () => {
+  // 提交前先走表单校验，避免把缺字段的编辑请求直接送到后端。
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) {
     return

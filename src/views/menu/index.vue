@@ -105,11 +105,7 @@ const iconMap = {
 }
 
 const resolveIcon = (iconName?: string) => {
-  if (!iconName) {
-    return Document
-  }
-
-  return iconMap[iconName as keyof typeof iconMap] || Document
+  return iconName ? iconMap[iconName as keyof typeof iconMap] || Document : Document
 }
 
 type IdleWindow = Window &
@@ -125,9 +121,8 @@ const scheduleUnreadLoad = () => {
     return
   }
 
-  const task = () => {
-    void msgStore.returnReadList(userStore.id)
-  }
+  // 未读消息属于非阻塞信息，放到空闲时机加载能减少首屏竞争。
+  const task = () => void msgStore.returnReadList(userStore.id)
   const idleWindow = window as IdleWindow
 
   if (typeof idleWindow.requestIdleCallback === 'function') {
@@ -139,7 +134,7 @@ const scheduleUnreadLoad = () => {
 }
 
 const cancelUnreadLoad = () => {
-  if (unreadTaskHandle === null || typeof window === 'undefined') {
+  if (unreadTaskHandle === null) {
     return
   }
 
@@ -163,11 +158,8 @@ onBeforeUnmount(() => {
 })
 
 const goLogin = async () => {
-  try {
-    await logout()
-  } catch {
-    // 即使后端退出接口失败，前端也必须清掉本地状态，避免卡在半登录状态。
-  }
+  // 退出登录后同时清空本地上下文，避免下一次进入后台时复用旧菜单和旧用户信息。
+  await logout()
 
   menuStore.reset()
   permissionStore.reset()

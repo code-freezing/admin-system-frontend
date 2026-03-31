@@ -30,6 +30,7 @@ const open = (row: any) => {
 }
 
 const operationFiles = async () => {
+  // 文件删除成功后只通知父页面刷新文件列表，弹窗本身不接管分页状态。
   const res = await deleteFile(fileId.value as number)
   if (res.status == 0) {
     ElMessage.success('文件删除成功')

@@ -6,7 +6,7 @@
  */
 
 import { post } from './request'
-import { toApiResult, toArray, type ApiResult } from '@/http/response'
+import { getArrayField, getNumberField, toApiResult, toArray, type ApiResult } from '@/http/response'
 
 export interface DepartmentMessageItem {
   id: number
@@ -24,47 +24,34 @@ export interface ReadStatusItem {
 }
 
 // 部门消息接口。
-export const getDepartmentMsg = (id: number, department: string) => {
-  return post<ApiResult<{ id: number; read_list: number[] }>>('/dm/getDepartmentMsg', {
-    id,
-    department,
-  }).then((raw) => {
-    const record =
-      typeof raw === 'object' && raw !== null ? (raw as unknown as Record<string, unknown>) : {}
+export const getDepartmentMsg = (id: number, department: string) =>
+  post<ApiResult<{ id: number; read_list: number[] }>>('/dm/getDepartmentMsg', { id, department }).then(
+    (raw) =>
+      toApiResult(raw, {
+        id: getNumberField(raw, 'id'),
+        read_list: getArrayField<number>(raw, 'read_list'),
+      }),
+  )
 
-    return toApiResult(raw, {
-      id: typeof record.id === 'number' ? record.id : 0,
-      read_list: Array.isArray(record.read_list) ? (record.read_list as number[]) : [],
-    })
-  })
-}
+export const getDepartmentMsgList = (department: string) =>
+  post<ApiResult<DepartmentMessageItem[]>>('/dm/getDepartmentMsgList', { department }).then((raw) =>
+    toApiResult(raw, toArray<DepartmentMessageItem>(raw)),
+  )
 
-export const getDepartmentMsgList = (department: string) => {
-  return post<ApiResult<DepartmentMessageItem[]>>('/dm/getDepartmentMsgList', { department }).then((raw) => {
-    return toApiResult(raw, toArray<DepartmentMessageItem>(raw))
-  })
-}
+export const getReadListAndStatus = (id: number) =>
+  post<ApiResult<ReadStatusItem[]>>('/dm/getReadListAndStatus', { id }).then((raw) =>
+    toApiResult(raw, toArray<ReadStatusItem>(raw)),
+  )
 
-export const getReadListAndStatus = (id: number) => {
-  return post<ApiResult<ReadStatusItem[]>>('/dm/getReadListAndStatus', { id }).then((raw) => {
-    return toApiResult(raw, toArray<ReadStatusItem>(raw))
-  })
-}
+export const clickDelete = (readId: number, id: number) =>
+  post<ApiResult<null>>('/dm/clickDelete', { readId, id }).then((raw) => toApiResult(raw, null))
 
-export const clickDelete = (readId: number, id: number) => {
-  return post<ApiResult<null>>('/dm/clickDelete', { readId, id }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const changeUserReadList = (newId: number, department: string) =>
+  post<ApiResult<null>>('/dm/changeUserReadList', { newId, department }).then((raw) =>
+    toApiResult(raw, null),
+  )
 
-export const changeUserReadList = (newId: number, department: string) => {
-  return post<ApiResult<null>>('/dm/changeUserReadList', { newId, department }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
-
-export const changeUserReadListButDelete = (deleteId: number, department: string) => {
-  return post<ApiResult<null>>('/dm/changeUserReadListButDelete', { deleteId, department }).then((raw) => {
-    return toApiResult(raw, null)
-  })
-}
+export const changeUserReadListButDelete = (deleteId: number, department: string) =>
+  post<ApiResult<null>>('/dm/changeUserReadListButDelete', { deleteId, department }).then((raw) =>
+    toApiResult(raw, null),
+  )

@@ -244,9 +244,6 @@ import audit from '../components/audit.vue'
 import withdraw from '../components/withdraw.vue'
 import again from '../components/again_apply.vue'
 
-// 产品列表页分成两个标签页：
-// 1. 入库管理负责当前库存维护
-// 2. 出库管理负责待审核申请和撤回/重提
 interface ProductRow {
   id: number
   product_out_status?: string
@@ -295,13 +292,12 @@ const {
 })
 
 const reloadTwoPageList = async () => {
-  // 出库申请、审核、撤回等动作会同时影响两个标签页，
-  // 所以这里统一刷新库存列表和申请列表，避免页面残留旧状态。
+  // 出库申请、审核和撤回都会同时影响两个标签页，所以这里统一刷新两套列表。
   await Promise.all([reloadProductList(), reloadApplyProductList()])
 }
 
-// 标签切换时只刷新当前视图对应的数据，避免每次切页都全量请求。
 const handleClick = (tab: TabsPaneContext) => {
+  // 标签切换时只刷新当前页签，避免每次切页都把两套列表重拉一遍。
   if (tab.props.label === '入库管理') {
     getProductFirstPageList()
   }
@@ -311,8 +307,7 @@ const handleClick = (tab: TabsPaneContext) => {
 }
 
 const searchProduct = async () => {
-  // 搜索接口直接返回精确匹配结果，因此会临时覆盖表格数据。
-  // 用户清空输入框后，再通过 @clear 恢复分页列表。
+  // 搜索结果会直接覆盖分页表格，清空输入框后再恢复默认分页列表。
   if (productId.value === undefined || productId.value === null || productId.value === '') {
     await reloadProductList()
     return
@@ -332,17 +327,15 @@ const searchApplyProduct = async () => {
   )
 }
 
-// 这些 ref 对应各个弹窗组件，页面本身只负责打开弹窗和在成功后刷新列表。
 const in_warehouse = ref()
 const productInWarehouse = () => {
-  // 具体表单校验和提交都在弹窗内部，页面只负责打开入口和监听成功事件。
   if (!hasPermission('button.product.create')) return
   in_warehouse.value.open()
 }
 
 const apply_product = ref()
 const applyOut = (row: ProductRow) => {
-  // 产品出库会把当前库存行完整传入，弹窗据此回填库存数量、单价、产品名等信息。
+  // 出库弹窗直接复用当前库存行，避免页面再手动拆字段。
   if (!hasPermission('button.product.apply')) return
   apply_product.value.open(row)
 }
@@ -373,14 +366,13 @@ const withdrawProduct = (id: number) => {
 
 const again_product = ref()
 const againApply = (row: ProductRow) => {
-  // 重新申请只存在于“出库管理”标签页，用于处理被否决后的二次提交流程。
+  // 重新申请只针对被否决的出库记录，弹窗会沿用原申请内容做二次提交。
   if (!hasPermission('button.product.reapply')) return
   again_product.value.open(row)
 }
 
 onMounted(async () => {
-  // 首次进入页面时，同时把两套总数和第一页数据都准备好，
-  // 这样用户切换到第二个标签页时不需要再等待首次加载。
+  // 首次进入时同时准备两套列表，切到第二个标签页时就不需要额外等待。
   await reloadTwoPageList()
 })
 </script>

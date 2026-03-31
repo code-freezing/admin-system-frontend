@@ -8,17 +8,7 @@
 import { defineStore } from 'pinia'
 import { getUserInfo } from '@/api/userinfor'
 import { ref } from 'vue'
-
-interface UserProfilePayload {
-  id?: number
-  image_url?: string
-  identity?: string
-  account?: string
-  name?: string
-  sex?: string
-  department?: string
-  email?: string
-}
+import type { SessionUserProfile } from '@/http/response'
 
 export const useUserInfo = defineStore(
   'userinfo',
@@ -32,30 +22,31 @@ export const useUserInfo = defineStore(
     const department = ref<string>('')
     const email = ref<string>('')
 
-    // 拉取用户详情后，把页面常用字段拆到独立 ref，避免页面每次都手动解构。
+    // 拉取用户详情后直接拆成字段状态，页面层只消费扁平数据。
     const userInfo = async (userId: number) => {
       const res = await getUserInfo(userId)
       const data = res.data
 
-      id.value = data.id ?? userId
-      imageUrl.value = data.image_url ?? ''
-      identity.value = data.identity ?? ''
-      account.value = typeof data.account === 'string' ? data.account : String(data.account ?? '')
-      name.value = data.name ?? ''
-      sex.value = data.sex ?? ''
-      department.value = data.department ?? ''
-      email.value = data.email ?? ''
+      id.value = data.id
+      imageUrl.value = data.image_url
+      identity.value = data.identity
+      account.value = data.account
+      name.value = data.name
+      sex.value = data.sex
+      department.value = data.department
+      email.value = data.email
     }
 
-    const applyProfile = (profile: UserProfilePayload) => {
-      id.value = profile.id ?? 0
-      imageUrl.value = profile.image_url ?? ''
-      identity.value = profile.identity ?? ''
-      account.value = typeof profile.account === 'string' ? profile.account : String(profile.account ?? '')
-      name.value = profile.name ?? ''
-      sex.value = profile.sex ?? ''
-      department.value = profile.department ?? ''
-      email.value = profile.email ?? ''
+    // 会话恢复和登录成功都直接复用这套字段同步逻辑。
+    const applyProfile = (profile: SessionUserProfile) => {
+      id.value = profile.id
+      imageUrl.value = profile.image_url
+      identity.value = profile.identity
+      account.value = profile.account
+      name.value = profile.name
+      sex.value = profile.sex
+      department.value = profile.department
+      email.value = profile.email
     }
 
     const reset = () => {

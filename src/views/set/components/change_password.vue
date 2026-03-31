@@ -31,7 +31,6 @@ import { changePassword } from '@/api/userinfor'
 import { useMenu } from '@/stores/menu'
 import { useUserInfo } from '@/stores/userinfor'
 
-// 修改密码弹窗只负责当前登录用户的密码修改，成功后会强制重新登录。
 interface PasswordData {
   oldPassword: string
   newPassword: string
@@ -56,8 +55,8 @@ const rules = reactive({
   newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
 })
 
-// 修改密码成功后清掉动态路由并跳回登录页，避免继续使用旧登录态。
 const changeUserPassword = async () => {
+  // 修改密码成功后强制重新登录，避免继续复用旧会话和旧动态路由。
   if (!passwordData.oldPassword || !passwordData.newPassword) {
     ElMessage.error('请先输入完整的密码信息')
     return

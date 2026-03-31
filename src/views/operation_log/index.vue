@@ -99,6 +99,7 @@ const paginationData = reactive({
 })
 
 const loadOperationLength = async () => {
+  // 总数单独维护，保持和当前操作日志分页组件的计算方式一致。
   const res = await operationLogListLength()
   const total = res.data.length
   paginationData.operationTotal = total
@@ -120,6 +121,7 @@ const searchOperationPerson = async () => {
 }
 
 const levelClass = (value?: string) => {
+  // 左侧色条和标签类型都基于同一套级别语义，先在这里统一归类。
   if (value == '高级' || value == '错误') return 'danger'
   if (value == '中级' || value == '警告') return 'warning'
   return 'normal'

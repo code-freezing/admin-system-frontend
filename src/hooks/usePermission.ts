@@ -9,6 +9,7 @@ import { storeToRefs } from 'pinia'
 import { usePermission as usePermissionStore } from '@/stores/permission'
 
 export const usePermission = () => {
+  // 组合式函数只暴露权限层真正常用的读能力，页面不直接碰 store 内部细节。
   const permissionStore = usePermissionStore()
   const { roles, permissionCodes, menuTree } = storeToRefs(permissionStore)
 

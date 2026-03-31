@@ -36,6 +36,7 @@ const account = ref('')
 const name = ref('')
 
 const open = (target: DeleteTarget) => {
+  // 一个弹窗同时服务管理员降级和普通用户删除两种动作，打开时先清空上一次目标信息。
   adminId.value = null
   userId.value = null
   account.value = ''
@@ -53,6 +54,7 @@ const open = (target: DeleteTarget) => {
 }
 
 const deleteAdmin = async () => {
+  // 管理员删除本质是降级成普通用户，只有普通用户删除才会真正删账号。
   if (adminId.value) {
     const res = await changeIdentityToUser(adminId.value)
     if (res.status == 0) {

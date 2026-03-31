@@ -81,8 +81,8 @@ const {
   loadTotal: async () => (await getRecycleMessageLength()).data.length,
 })
 
-// 恢复和永久删除都由子组件处理确认逻辑，页面只负责刷新列表。
 const renew = (row: RecycleRow) => {
+  // 恢复和永久删除都交给同一个确认弹窗处理，页面只负责刷新回收站列表。
   rad.value.openRecover(row)
 }
 

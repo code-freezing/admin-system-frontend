@@ -14,14 +14,14 @@ export interface ApiResult<T> {
 }
 
 export interface SessionUserProfile {
-  id?: number
-  image_url?: string
-  identity?: string
-  account?: string
-  name?: string
-  sex?: string
-  department?: string
-  email?: string
+  id: number
+  image_url: string
+  identity: string
+  account: string
+  name: string
+  sex: string
+  department: string
+  email: string
   [key: string]: unknown
 }
 
@@ -34,24 +34,19 @@ export interface AccessProfileData {
 
 type UnknownRecord = Record<string, unknown>
 
-export const isRecord = (value: unknown): value is UnknownRecord => {
-  return typeof value === 'object' && value !== null
-}
+export const isRecord = (value: unknown): value is UnknownRecord =>
+  typeof value === 'object' && value !== null
+
+export const toRecord = (value: unknown): UnknownRecord => (isRecord(value) ? value : {})
 
 export const getStatus = (value: unknown) => {
-  if (!isRecord(value) || typeof value.status !== 'number') {
-    return 0
-  }
-
-  return value.status
+  const record = toRecord(value)
+  return typeof record.status === 'number' ? record.status : 0
 }
 
 export const getMessage = (value: unknown) => {
-  if (!isRecord(value) || typeof value.message !== 'string') {
-    return ''
-  }
-
-  return value.message
+  const record = toRecord(value)
+  return typeof record.message === 'string' ? record.message : ''
 }
 
 export const toApiResult = <T>(value: unknown, data: T): ApiResult<T> => {
@@ -62,12 +57,53 @@ export const toApiResult = <T>(value: unknown, data: T): ApiResult<T> => {
   }
 }
 
-export const toArray = <T>(value: unknown): T[] => {
-  return Array.isArray(value) ? (value as T[]) : []
+export const toArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+
+export const toStringData = (value: unknown) => (typeof value === 'string' ? value : '')
+
+export const getStringField = (value: unknown, key: string) => {
+  const field = toRecord(value)[key]
+  return typeof field === 'string' ? field : ''
 }
 
-export const toStringData = (value: unknown) => {
-  return typeof value === 'string' ? value : ''
+export const getTextField = (value: unknown, key: string) => {
+  const field = toRecord(value)[key]
+  return typeof field === 'string' || typeof field === 'number' ? String(field) : ''
+}
+
+export const getNumberField = (value: unknown, key: string) => {
+  const field = toRecord(value)[key]
+  return typeof field === 'number' ? field : 0
+}
+
+export const getNullableNumberField = (value: unknown, key: string) => {
+  const field = toRecord(value)[key]
+  return typeof field === 'number' ? field : null
+}
+
+export const getBooleanField = (value: unknown, key: string) => Boolean(toRecord(value)[key])
+
+export const getArrayField = <T>(value: unknown, key: string): T[] => toArray<T>(toRecord(value)[key])
+
+export const getObjectField = <T extends UnknownRecord>(value: unknown, key: string): T | null => {
+  const field = toRecord(value)[key]
+  return isRecord(field) ? (field as T) : null
+}
+
+export const toSessionUserProfile = (value: unknown): SessionUserProfile => {
+  const record = toRecord(value)
+
+  return {
+    ...record,
+    id: getNumberField(record, 'id'),
+    image_url: getStringField(record, 'image_url'),
+    identity: getStringField(record, 'identity'),
+    account: getTextField(record, 'account'),
+    name: getStringField(record, 'name'),
+    sex: getStringField(record, 'sex'),
+    department: getStringField(record, 'department'),
+    email: getStringField(record, 'email'),
+  }
 }
 
 export const toJsonStringArray = (value: unknown): string[] => {
@@ -88,21 +124,17 @@ export const toJsonStringArray = (value: unknown): string[] => {
 }
 
 export const toLengthData = (value: unknown) => {
-  const record =
-    typeof value === 'object' && value !== null ? (value as unknown as Record<string, unknown>) : {}
-
   return {
-    length: typeof record['length'] === 'number' ? record['length'] : 0,
+    length: getNumberField(value, 'length'),
   }
 }
 
 export const toAccessProfileData = (value: unknown): AccessProfileData => {
-  const record = isRecord(value) ? value : {}
-
+  // authProfile 的返回会直接驱动菜单、按钮和用户信息恢复，这里统一收敛成固定结构。
   return {
-    user: isRecord(record.user) ? (record.user as SessionUserProfile) : {},
-    roles: Array.isArray(record.roles) ? (record.roles as string[]) : [],
-    permissionCodes: Array.isArray(record.permissionCodes) ? (record.permissionCodes as string[]) : [],
-    menus: Array.isArray(record.menus) ? (record.menus as MenuNode[]) : [],
+    user: toSessionUserProfile(toRecord(value).user),
+    roles: getArrayField<string>(value, 'roles'),
+    permissionCodes: getArrayField<string>(value, 'permissionCodes'),
+    menus: getArrayField<MenuNode>(value, 'menus'),
   }
 }
