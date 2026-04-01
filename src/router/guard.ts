@@ -1,10 +1,3 @@
-/**
- * 模块说明：
- * 1. 全局路由守卫。
- * 2. 集中处理登录拦截、登录页重定向和页面标题同步。
- * 3. 守卫只做导航级规则，不承载业务接口调用。
- */
-
 import router from './index'
 import { hasAuthSession } from '@/utils/auth'
 import pinia from '@/stores'

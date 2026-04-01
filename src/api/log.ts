@@ -1,76 +1,54 @@
-/**
- * 模块说明：
- * 1. 日志接口封装。
- * 2. 同时服务登录日志、操作日志页面，以及前端埋点工具 tracking。
- * 3. 把日志接口集中在这里，便于后续统一调整字段。
- */
-
 import { post } from './request'
-import { toApiResult, toArray, toLengthData, type ApiResult } from '@/http/response'
+import { result, toArray, toLengthData } from '@/http/response'
 
-export interface LogRow {
-  id?: number
-  account?: string
-  name?: string
-  email?: string
-  login_time?: string
-  operation_person?: string
-  operation_content?: string
-  operation_level?: string
-  operation_time?: string
-  [key: string]: unknown
-}
+// 处理日志，在认证通过后建立当前会话。
+export const loginLog = (account, name, email) =>
+  post('/llog/loginLog', { account, name, email }).then((raw) => result(raw, null))
 
-export const loginLog = (account: string, name: string, email: string) =>
-  post<ApiResult<null>>('/llog/loginLog', { account, name, email }).then((raw) => toApiResult(raw, null))
-
-export const operationLog = (operation_person: string, operation_content: string, operation_level: string) =>
-  post<ApiResult<null>>('/olog/operationLog', {
+// 处理日志，把当前模块的关键逻辑集中在这里。
+export const operationLog = (operation_person, operation_content, operation_level) =>
+  post('/olog/operationLog', {
     operation_person,
     operation_content,
     operation_level,
-  }).then((raw) => toApiResult(raw, null))
+  }).then((raw) => result(raw, null))
 
+// 处理日志列表，在认证通过后建立当前会话。
 export const loginLogList = () =>
-  post<ApiResult<LogRow[]>>('/llog/loginLogList').then((raw) => toApiResult(raw, toArray<LogRow>(raw)))
+  post('/llog/loginLogList').then((raw) => result(raw, toArray(raw)))
 
+// 处理日志列表，把当前模块的关键逻辑集中在这里。
 export const operationLogList = () =>
-  post<ApiResult<LogRow[]>>('/olog/operationLogList').then((raw) =>
-    toApiResult(raw, toArray<LogRow>(raw)),
-  )
+  post('/olog/operationLogList').then((raw) => result(raw, toArray(raw)))
 
-export const searchLoginLogList = (account: string) =>
-  post<ApiResult<LogRow[]>>('/llog/searchLoginLogList', { account }).then((raw) =>
-    toApiResult(raw, toArray<LogRow>(raw)),
-  )
+// 查询登录日志列表，按当前条件筛出目标结果。
+export const searchLoginLogList = (account) =>
+  post('/llog/searchLoginLogList', { account }).then((raw) => result(raw, toArray(raw)))
 
-export const searchOperationLogList = (operation_person: string) =>
-  post<ApiResult<LogRow[]>>('/olog/searchOperationLogList', { operation_person }).then((raw) =>
-    toApiResult(raw, toArray<LogRow>(raw)),
-  )
+// 查询日志列表，按当前条件筛出目标结果。
+export const searchOperationLogList = (operation_person) =>
+  post('/olog/searchOperationLogList', { operation_person }).then((raw) => result(raw, toArray(raw)))
 
+// 处理日志列表，在认证通过后建立当前会话。
 export const loginLogListLength = () =>
-  post<ApiResult<{ length: number }>>('/llog/loginLogListLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/llog/loginLogListLength').then((raw) => result(raw, toLengthData(raw)))
 
+// 处理日志列表，把当前模块的关键逻辑集中在这里。
 export const operationLogListLength = () =>
-  post<ApiResult<{ length: number }>>('/olog/operationLogListLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/olog/operationLogListLength').then((raw) => result(raw, toLengthData(raw)))
 
-export const returnLoginListData = (pager: number) =>
-  post<ApiResult<LogRow[]>>('/llog/returnLoginListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<LogRow>(raw)),
-  )
+// 返回登录列表数据，让上层直接消费最终结果。
+export const returnLoginListData = (pager) =>
+  post('/llog/returnLoginListData', { pager }).then((raw) => result(raw, toArray(raw)))
 
-export const returnOperationListData = (pager: number) =>
-  post<ApiResult<LogRow[]>>('/olog/returnOperationListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<LogRow>(raw)),
-  )
+// 返回列表数据，让上层直接消费最终结果。
+export const returnOperationListData = (pager) =>
+  post('/olog/returnOperationListData', { pager }).then((raw) => result(raw, toArray(raw)))
 
+// 清理登录日志列表，防止旧状态残留到下一次流程。
 export const clearLoginLogList = () =>
-  post<ApiResult<null>>('/llog/clearLoginLogList').then((raw) => toApiResult(raw, null))
+  post('/llog/clearLoginLogList').then((raw) => result(raw, null))
 
+// 清理日志列表，防止旧状态残留到下一次流程。
 export const clearOperationLogList = () =>
-  post<ApiResult<null>>('/olog/clearOperationLogList').then((raw) => toApiResult(raw, null))
+  post('/olog/clearOperationLogList').then((raw) => result(raw, null))

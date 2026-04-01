@@ -1,52 +1,42 @@
-/**
- * 模块说明：
- * 1. 系统设置接口封装。
- * 2. 提供公司信息、轮播图、富文本配置等后台设置页需要的请求。
- * 3. 首页展示的数据也会间接依赖这一层维护的配置。
- */
-
 import { post } from './request'
-import { toApiResult, toArray, toJsonStringArray, toStringData, type ApiResult } from '@/http/response'
+import { result, toArray, toJsonStringArray, toStringData } from '@/http/response'
 
-export interface CompanySettingItem {
-  id: number
-  set_name: string
-  set_value: string | null
-  set_text: string
-}
-
+// 获取当前结果，让后续逻辑统一使用这一份数据。
 export const getAllSwiper = () =>
-  post<ApiResult<string[]>>('/set/getAllSwiper').then((raw) => toApiResult(raw, toArray<string>(raw)))
+  post('/set/getAllSwiper').then((raw) => result(raw, toArray(raw)))
 
+// 获取名称，让后续逻辑统一使用这一份结果。
 export const getCompanyName = () =>
-  post<ApiResult<string>>('/set/getCompanyName').then((raw) => toApiResult(raw, toStringData(raw)))
+  post('/set/getCompanyName').then((raw) => result(raw, toStringData(raw)))
 
-export const changeCompanyName = (set_value: string) =>
-  post<ApiResult<null>>('/set/changeCompanyName', { set_value }).then((raw) => toApiResult(raw, null))
+// 处理名称，把当前模块的关键逻辑集中在这里。
+export const changeCompanyName = (set_value) =>
+  post('/set/changeCompanyName', { set_value }).then((raw) => result(raw, null))
 
-export const changeCompanyIntroduce = (set_text: string, set_name: string) =>
-  post<ApiResult<null>>('/set/changeCompanyIntroduce', { set_text, set_name }).then((raw) =>
-    toApiResult(raw, null),
-  )
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const changeCompanyIntroduce = (set_text, set_name) =>
+  post('/set/changeCompanyIntroduce', { set_text, set_name }).then((raw) => result(raw, null))
 
-export const getCompanyIntroduce = (set_name: string) =>
-  post<ApiResult<string>>('/set/getCompanyIntroduce', { set_name }).then((raw) =>
-    toApiResult(raw, toStringData(raw)),
-  )
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getCompanyIntroduce = (set_name) =>
+  post('/set/getCompanyIntroduce', { set_name }).then((raw) => result(raw, toStringData(raw)))
 
+// 获取当前结果，让后续逻辑统一使用这一份数据。
 export const getAllCompanyIntroduce = () =>
-  post<ApiResult<CompanySettingItem[]>>('/set/getAllCompanyIntroduce').then((raw) =>
-    toApiResult(raw, toArray<CompanySettingItem>(raw)),
-  )
+  post('/set/getAllCompanyIntroduce').then((raw) => result(raw, toArray(raw)))
 
-export const setDepartment = (data: string | string[]) =>
-  post<ApiResult<null>>('/set/setDepartment', { set_value: data }).then((raw) => toApiResult(raw, null))
+// 更新部门，避免状态分散在多个位置维护。
+export const setDepartment = (data) =>
+  post('/set/setDepartment', { set_value: data }).then((raw) => result(raw, null))
 
+// 获取部门，让后续逻辑统一使用这一份结果。
 export const getDepartment = () =>
-  post<ApiResult<string[]>>('/set/getDepartment').then((raw) => toApiResult(raw, toJsonStringArray(raw)))
+  post('/set/getDepartment').then((raw) => result(raw, toJsonStringArray(raw)))
 
-export const setProduct = (data: string | string[]) =>
-  post<ApiResult<null>>('/set/setProduct', { set_value: data }).then((raw) => toApiResult(raw, null))
+// 更新产品，避免状态分散在多个位置维护。
+export const setProduct = (data) =>
+  post('/set/setProduct', { set_value: data }).then((raw) => result(raw, null))
 
+// 获取产品，让后续逻辑统一使用这一份结果。
 export const getProduct = () =>
-  post<ApiResult<string[]>>('/set/getProduct').then((raw) => toApiResult(raw, toJsonStringArray(raw)))
+  post('/set/getProduct').then((raw) => result(raw, toJsonStringArray(raw)))

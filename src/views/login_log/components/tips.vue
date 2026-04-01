@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 登录日志提示弹窗。
-  2. 承载日志页面中的辅助说明或单条日志详情展示。
-  3. 目的是让主表格只负责列表视图。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="清空登录日志" width="30%" center>
     <span>确认后会清空全部登录日志，无法恢复。</span>
@@ -21,12 +15,15 @@ import { ElMessage } from 'element-plus'
 import { clearLoginLogList } from '@/api/log'
 
 const emit = defineEmits(['success'])
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const open = () => {
   dialogFormVisible.value = true
 }
 
+// 清理列表，防止旧状态残留到下一次流程。
 const clearList = async () => {
   // 清空成功后只通知父页面重拉日志列表，弹窗本身不维护外层分页状态。
   const res = await clearLoginLogList()

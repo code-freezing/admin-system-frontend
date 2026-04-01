@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 公司介绍详情弹窗。
-  2. 用于在首页点击公司简介卡片后展示完整富文本内容。
-  3. 它与设置页中的公司内容编辑功能形成前后呼应。
--->
 <template>
   <el-dialog
     v-model="dialogVisible"
@@ -24,8 +18,11 @@
 import { ref } from 'vue'
 import { getCompanyIntroduce } from '@/api/setting'
 
+// 记录弹窗状态显示状态，方便后续逻辑统一读取和更新。
 const dialogVisible = ref(false)
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const title = ref('')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const valueHtml = ref('')
 
 const sectionMap = {
@@ -33,11 +30,10 @@ const sectionMap = {
   2: '公司愿景',
   3: '企业文化',
   4: '公司概览',
-} as const
+}
 
-type SectionId = keyof typeof sectionMap
-
-const loadContent = async (sectionId: SectionId) => {
+// 加载当前数据，让后续逻辑直接复用准备好的结果。
+const loadContent = async (sectionId) => {
   // 首页详情弹窗只按 sectionMap 拉对应内容，不额外维护复杂状态。
   const sectionTitle = sectionMap[sectionId]
   title.value = sectionTitle
@@ -46,8 +42,9 @@ const loadContent = async (sectionId: SectionId) => {
   valueHtml.value = res.data
 }
 
-const open = async (id: number) => {
-  await loadContent(id as SectionId)
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = async (id) => {
+  await loadContent(id)
   dialogVisible.value = true
 }
 

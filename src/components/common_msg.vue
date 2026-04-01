@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 通用消息详情弹窗。
-  2. 用于首页公告、系统消息等场景，统一承载消息内容查看。
-  3. 把弹窗逻辑集中后，多个页面可以复用同一套展示能力。
--->
 <template>
   <el-dialog v-model="dialog" :title="title" width="800px" center>
     <el-container>
@@ -38,23 +32,17 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
 
-interface MessageRow {
-  message_title: string
-  message_content: string
-  message_publish_department: string
-  message_category: string
-  message_level: string
-  message_publish_name: string
-  message_publish_time: string
-}
-
 // 弹窗内部只保存当前要看的消息，不直接依赖父组件状态。
 const title = ref('')
+// 记录弹窗状态，方便后续逻辑统一读取和更新。
 const dialog = ref(false)
+// 记录部门，方便后续逻辑统一读取和更新。
 const showDepartment = ref(false)
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const showLevel = ref(false)
 
-const messageInfo: MessageRow = reactive({
+// 记录消息信息，方便后续逻辑统一读取和更新。
+const messageInfo = reactive({
   message_title: '',
   message_content: '',
   message_publish_department: '',
@@ -64,6 +52,7 @@ const messageInfo: MessageRow = reactive({
   message_publish_time: '',
 })
 
+// 重置消息信息，把当前流程恢复到干净初始状态。
 const resetMessageInfo = () => {
   messageInfo.message_title = ''
   messageInfo.message_content = ''
@@ -75,7 +64,7 @@ const resetMessageInfo = () => {
 }
 
 // 统一填充消息字段，避免两个打开函数重复赋值。
-const fillMessage = (row: MessageRow) => {
+const fillMessage = (row) => {
   messageInfo.message_title = row.message_title
   messageInfo.message_content = row.message_content
   messageInfo.message_publish_department = row.message_publish_department
@@ -85,7 +74,8 @@ const fillMessage = (row: MessageRow) => {
   messageInfo.message_publish_time = row.message_publish_time
 }
 
-const openCompany = (row: MessageRow) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openCompany = (row) => {
   resetMessageInfo()
   title.value = '公司通知'
   showDepartment.value = true
@@ -94,7 +84,8 @@ const openCompany = (row: MessageRow) => {
   dialog.value = true
 }
 
-const openSystem = (row: MessageRow) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openSystem = (row) => {
   resetMessageInfo()
   title.value = '系统公告'
   showDepartment.value = false

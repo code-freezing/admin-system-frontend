@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 消息回收站页面。
-  2. 展示已移入回收站的消息，并提供恢复或彻底删除能力。
-  3. 和消息列表页一起构成完整的消息生命周期管理。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -53,22 +47,15 @@ import { getRecycleMessageLength, returnRecycleListData } from '@/api/message'
 import { usePagedTable } from '@/hooks/usePagedTable'
 import renewAndDelete from '../components/delete.vue'
 
-// 回收站页只关心软删除消息，恢复和永久删除都复用 delete 弹窗里的动作。
-interface RecycleRow {
-  id: number
-  message_title?: string
-  message_category?: string
-  message_publish_department?: string
-  message_receipt_object?: string
-  message_delete_time?: string
-}
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '消息管理',
   second: '回收站',
 })
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const rad = ref()
 const {
   tableData,
@@ -76,20 +63,24 @@ const {
   pagination: recyclePagination,
   loadPage: recycleCurrentChange,
   reload: reloadRecycleList,
-} = usePagedTable<RecycleRow>({
-  loadList: async (page) => (await returnRecycleListData(page)).data as RecycleRow[],
+} = usePagedTable({
+  // 回收站页只关心软删除消息，恢复和永久删除都复用 delete 弹窗里的动作。
+  loadList: async (page) => (await returnRecycleListData(page)).data,
   loadTotal: async () => (await getRecycleMessageLength()).data.length,
 })
 
-const renew = (row: RecycleRow) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const renew = (row) => {
   // 恢复和永久删除都交给同一个确认弹窗处理，页面只负责刷新回收站列表。
   rad.value.openRecover(row)
 }
 
-const realDelete = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const realDelete = (id) => {
   rad.value.openRealDelete(id)
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await reloadRecycleList()
 })

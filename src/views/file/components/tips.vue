@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 文件管理提示弹窗。
-  2. 用于展示文件相关的说明、预览提示或操作前确认信息。
-  3. 把提示型内容拆成子组件，能让主页面更聚焦在列表逻辑。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="删除文件" width="30%" center>
     <span>确认后将永久删除该文件，删除后无法恢复。</span>
@@ -21,17 +15,21 @@ import { ElMessage } from 'element-plus'
 import { deleteFile } from '@/api/file'
 
 const emit = defineEmits(['success'])
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
-const fileId = ref<number>()
+// 记录文件，方便后续逻辑统一读取和更新。
+const fileId = ref()
 
-const open = (row: any) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = (row) => {
   fileId.value = row.id
   dialogFormVisible.value = true
 }
 
+// 处理文件，把当前模块的关键逻辑集中在这里。
 const operationFiles = async () => {
   // 文件删除成功后只通知父页面刷新文件列表，弹窗本身不接管分页状态。
-  const res = await deleteFile(fileId.value as number)
+  const res = await deleteFile(fileId.value)
   if (res.status == 0) {
     ElMessage.success('文件删除成功')
     emit('success')

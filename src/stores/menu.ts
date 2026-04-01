@@ -1,26 +1,23 @@
 import { defineStore } from 'pinia'
 import router from '@/router'
-import type { Component } from 'vue'
 import { ref } from 'vue'
-import type { MenuNode } from './permission'
 
-type RouteLoader = (() => Promise<{ default: Component }>) | undefined
-const viewModules = import.meta.glob<{ default: Component }>('@/views/**/*.vue')
+// 预加载 views 目录，动态路由会按组件路径直接取对应页面。
+const viewModules = import.meta.glob('@/views/**/*.vue')
 
 export const useMenu = defineStore(
   'menuInfo',
   () => {
-    // menuData 保存后端返回的原始菜单，addedRouteNames 只记录本次注入过的动态路由。
-    const menuData = ref<MenuNode[]>([])
-    const addedRouteNames = ref<string[]>([])
+    // 记录菜单数据，方便后续逻辑统一读取和更新。
+    const menuData = ref([])
+    // 记录路由，方便后续逻辑统一读取和更新。
+    const addedRouteNames = ref([])
 
-    const loadComponent = (url: string): RouteLoader => {
-      // 后端返回 views 下的相对路径后，这里把它映射成真正的页面组件。
-      return viewModules[`/src/views/${url}.vue`]
-    }
+    // 加载组件，让后续逻辑直接复用准备好的数据。
+    const loadComponent = (url) => viewModules[`/src/views/${url}.vue`]
 
+    // 清理路由，防止旧状态残留到下一次流程。
     const clearRouter = () => {
-      // 这里只回收当前 store 注入过的动态路由，避免误删静态路由。
       addedRouteNames.value.forEach((name) => {
         if (router.hasRoute(name)) {
           router.removeRoute(name)
@@ -29,25 +26,22 @@ export const useMenu = defineStore(
       addedRouteNames.value = []
     }
 
-    // 递归扫描菜单，把后端给出的组件路径映射成真正的前端路由组件。
-    const compilerMenu = (arr: MenuNode[]) => {
-      if (arr.length === 0) {
+    const compilerMenu = (arr = []) => {
+      if (!arr.length) {
         return
       }
 
       arr.forEach((item) => {
         if (item.children?.length) {
-          // 有子节点的菜单只做分组容器，真正的页面路由继续向下递归。
           compilerMenu(item.children)
           return
         }
 
         if (router.hasRoute(item.name)) {
-          // 刷新恢复和重复登录都会走到这里，已存在的路由不重复注入。
           return
         }
 
-        const component = loadComponent(item.component ?? '')
+        const component = loadComponent(item.component || '')
         if (!component) {
           return
         }
@@ -62,17 +56,18 @@ export const useMenu = defineStore(
       })
     }
 
-    const setRouter = (arr: MenuNode[]) => {
+    const setRouter = (arr = []) => {
       clearRouter()
       menuData.value = arr
       compilerMenu(menuData.value)
     }
 
+    // 添加路由，把新结果并入当前状态。
     const addRouter = () => {
-      // addRouter 只基于当前缓存菜单重建路由，不改动 menuData 本身。
       compilerMenu(menuData.value)
     }
 
+    // 重置当前状态，把当前流程恢复到干净初始状态。
     const reset = () => {
       clearRouter()
       menuData.value = []

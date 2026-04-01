@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 出库记录页面。
-  2. 展示已经审核通过并实际完成出库的历史记录。
-  3. 它与库存列表、审核列表一起组成完整的产品流转链路。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -67,21 +61,19 @@ import { Search } from '@element-plus/icons-vue'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { getOutProductLength, returnOutProductListData, searchProductForOutId } from '@/api/product'
 
-// 这个页面只展示已经完成审核的出库记录，数据来源是 outproduct 表。
-interface OutProductRow {
-  product_apply_time?: string
-  product_audit_time?: string
-  [key: string]: unknown
-}
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '产品管理',
   second: '出库列表',
 })
 
-const productOutId = ref<number | string>()
-const tableData = ref<OutProductRow[]>([])
+// 记录产品，方便后续逻辑统一读取和更新。
+const productOutId = ref()
+// 记录表格数据数据，方便后续逻辑统一读取和更新。
+const tableData = ref([])
+// 记录产品总数，方便后续逻辑统一读取和更新。
 const outProductTotal = ref(0)
 
 // 出库记录列表结构简单，所以只维护一套分页状态。
@@ -90,6 +82,7 @@ const paginationData = reactive({
   currentPage: 1,
 })
 
+// 加载产品，让后续逻辑直接复用准备好的数据。
 const loadOutProductLength = async () => {
   const res = await getOutProductLength()
   const total = res.data.length
@@ -97,33 +90,37 @@ const loadOutProductLength = async () => {
   paginationData.pageCount = Math.max(1, Math.ceil(total / 10))
 }
 
+// 获取页码列表，让后续逻辑统一使用这一份结果。
 const getFirstPageList = async () => {
   paginationData.currentPage = 1
-  tableData.value = (await returnOutProductListData(1)).data as OutProductRow[]
+  tableData.value = (await returnOutProductListData(1)).data
 }
 
+// 处理列表，把当前模块的关键逻辑集中在这里。
 const reloadList = async () => {
   await Promise.all([loadOutProductLength(), getFirstPageList()])
 }
 
 // 搜索按出库编号精确查询，清空输入框后恢复第一页默认数据。
-const currentChange = async (value: number) => {
+const currentChange = async (value) => {
   paginationData.currentPage = value
-  tableData.value = (await returnOutProductListData(value)).data as OutProductRow[]
+  tableData.value = (await returnOutProductListData(value)).data
 }
 
+// 查询产品，按当前条件筛出目标结果。
 const searchProductOutId = async () => {
   if (productOutId.value === undefined || productOutId.value === null || productOutId.value === '') {
     await reloadList()
     return
   }
 
-  tableData.value = (await searchProductForOutId(productOutId.value as number)).data as OutProductRow[]
+  tableData.value = (await searchProductForOutId(productOutId.value)).data
   paginationData.currentPage = 1
   outProductTotal.value = tableData.value.length
   paginationData.pageCount = 1
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await reloadList()
 })

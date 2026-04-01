@@ -1,96 +1,72 @@
-/**
- * 模块说明：
- * 1. 前端接口响应标准化工具。
- * 2. 负责把后端“数组 / results / 直接对象”等不同返回形态收敛成统一结构。
- * 3. API 层和请求层都可以复用这里，减少页面里的 any 和协议分支判断。
- */
+// 处理记录，把当前模块的关键逻辑集中在这里。
+export const isRecord = (value) => typeof value === 'object' && value !== null
 
-import type { MenuNode } from '@/stores/permission'
+// 处理记录，把当前模块的关键逻辑集中在这里。
+export const toRecord = (value) => (isRecord(value) ? value : {})
 
-export interface ApiResult<T> {
-  status: number
-  message: string
-  data: T
-}
-
-export interface SessionUserProfile {
-  id: number
-  image_url: string
-  identity: string
-  account: string
-  name: string
-  sex: string
-  department: string
-  email: string
-  [key: string]: unknown
-}
-
-export interface AccessProfileData {
-  user: SessionUserProfile
-  roles: string[]
-  permissionCodes: string[]
-  menus: MenuNode[]
-}
-
-type UnknownRecord = Record<string, unknown>
-
-export const isRecord = (value: unknown): value is UnknownRecord =>
-  typeof value === 'object' && value !== null
-
-export const toRecord = (value: unknown): UnknownRecord => (isRecord(value) ? value : {})
-
-export const getStatus = (value: unknown) => {
+// 获取状态，让后续逻辑统一使用这一份结果。
+export const getStatus = (value) => {
   const record = toRecord(value)
   return typeof record.status === 'number' ? record.status : 0
 }
 
-export const getMessage = (value: unknown) => {
+// 获取消息，让后续逻辑统一使用这一份结果。
+export const getMessage = (value) => {
   const record = toRecord(value)
   return typeof record.message === 'string' ? record.message : ''
 }
 
-export const toApiResult = <T>(value: unknown, data: T): ApiResult<T> => {
-  return {
-    status: getStatus(value),
-    message: getMessage(value),
-    data,
-  }
-}
+// 处理结果，把当前模块的关键逻辑集中在这里。
+export const result = (value, data) => ({
+  status: getStatus(value),
+  message: getMessage(value),
+  data,
+})
 
-export const toArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const toArray = (value) => (Array.isArray(value) ? value : [])
 
-export const toStringData = (value: unknown) => (typeof value === 'string' ? value : '')
+// 处理数据，把当前模块的关键逻辑集中在这里。
+export const toStringData = (value) => (typeof value === 'string' ? value : '')
 
-export const getStringField = (value: unknown, key: string) => {
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getStringField = (value, key) => {
   const field = toRecord(value)[key]
   return typeof field === 'string' ? field : ''
 }
 
-export const getTextField = (value: unknown, key: string) => {
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getTextField = (value, key) => {
   const field = toRecord(value)[key]
   return typeof field === 'string' || typeof field === 'number' ? String(field) : ''
 }
 
-export const getNumberField = (value: unknown, key: string) => {
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getNumberField = (value, key) => {
   const field = toRecord(value)[key]
   return typeof field === 'number' ? field : 0
 }
 
-export const getNullableNumberField = (value: unknown, key: string) => {
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getNullableNumberField = (value, key) => {
   const field = toRecord(value)[key]
   return typeof field === 'number' ? field : null
 }
 
-export const getBooleanField = (value: unknown, key: string) => Boolean(toRecord(value)[key])
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getBooleanField = (value, key) => Boolean(toRecord(value)[key])
 
-export const getArrayField = <T>(value: unknown, key: string): T[] => toArray<T>(toRecord(value)[key])
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getArrayField = (value, key) => toArray(toRecord(value)[key])
 
-export const getObjectField = <T extends UnknownRecord>(value: unknown, key: string): T | null => {
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getObjectField = (value, key) => {
   const field = toRecord(value)[key]
-  return isRecord(field) ? (field as T) : null
+  return isRecord(field) ? field : null
 }
 
-export const toSessionUserProfile = (value: unknown): SessionUserProfile => {
+// 处理会话用户资料，把当前模块的关键逻辑集中在这里。
+export const toSessionUserProfile = (value) => {
   const record = toRecord(value)
 
   return {
@@ -106,9 +82,10 @@ export const toSessionUserProfile = (value: unknown): SessionUserProfile => {
   }
 }
 
-export const toJsonStringArray = (value: unknown): string[] => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const toJsonStringArray = (value) => {
   if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string')
+    return value.filter((item) => typeof item === 'string')
   }
 
   if (typeof value !== 'string' || value.trim() === '') {
@@ -117,24 +94,21 @@ export const toJsonStringArray = (value: unknown): string[] => {
 
   try {
     const parsed = JSON.parse(value)
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : []
   } catch {
     return []
   }
 }
 
-export const toLengthData = (value: unknown) => {
-  return {
-    length: getNumberField(value, 'length'),
-  }
-}
+// 处理数据，把当前模块的关键逻辑集中在这里。
+export const toLengthData = (value) => ({
+  length: getNumberField(value, 'length'),
+})
 
-export const toAccessProfileData = (value: unknown): AccessProfileData => {
-  // authProfile 的返回会直接驱动菜单、按钮和用户信息恢复，这里统一收敛成固定结构。
-  return {
-    user: toSessionUserProfile(toRecord(value).user),
-    roles: getArrayField<string>(value, 'roles'),
-    permissionCodes: getArrayField<string>(value, 'permissionCodes'),
-    menus: getArrayField<MenuNode>(value, 'menus'),
-  }
-}
+// 处理访问控制资料数据，把当前模块的关键逻辑集中在这里。
+export const toAccessProfileData = (value) => ({
+  user: toSessionUserProfile(toRecord(value).user),
+  roles: getArrayField(value, 'roles'),
+  permissionCodes: getArrayField(value, 'permissionCodes'),
+  menus: getArrayField(value, 'menus'),
+})

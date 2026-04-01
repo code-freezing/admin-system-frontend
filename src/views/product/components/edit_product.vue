@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 产品编辑弹窗。
-  2. 负责修改产品基础信息、库存数量和备注，并触发总价重算。
-  3. 它和创建流程共享同一批产品字段，但服务于不同场景。
--->
 <template>
   <el-dialog v-model="dialogVisible" title="编辑商品" width="600px" align-center draggable>
     <div class="dialog-content">
@@ -56,33 +50,23 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import type { FormInstance, FormProps, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { editProduct } from '@/api/product'
 import { getProduct } from '@/api/setting'
 
-interface ProductFormModel {
-  id: number | null
-  product_id: number | null
-  product_name: string
-  product_category: string
-  product_unit: string
-  product_in_warehouse_number: number | string | null
-  product_single_price: number | string | null
-  product_create_person: string
-  in_memo: string
-}
-
+// 记录弹窗状态显示状态，方便后续逻辑统一读取和更新。
 const dialogVisible = ref(false)
-const formRef = ref<FormInstance>()
-const emit = defineEmits<{
-  success: []
-}>()
+// 记录表单，方便后续逻辑统一读取和更新。
+const formRef = ref()
+const emit = defineEmits(['success'])
 
-const labelPosition = ref<FormProps['labelPosition']>('left')
-const categoryData = ref<string[]>([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const labelPosition = ref('left')
+// 记录数据，方便后续逻辑统一读取和更新。
+const categoryData = ref([])
 
-const formData = reactive<ProductFormModel>({
+// 记录表单数据，方便后续逻辑统一读取和更新。
+const formData = reactive({
   id: null,
   product_id: null,
   product_name: '',
@@ -94,7 +78,7 @@ const formData = reactive<ProductFormModel>({
   in_memo: '',
 })
 
-const rules: FormRules<ProductFormModel> = {
+const rules = {
   product_id: [{ required: true, message: '请输入商品编号', trigger: 'blur' }],
   product_name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
   product_category: [{ required: true, message: '请选择商品分类', trigger: 'change' }],
@@ -104,6 +88,7 @@ const rules: FormRules<ProductFormModel> = {
   product_create_person: [{ required: true, message: '创建人不能为空', trigger: 'blur' }],
 }
 
+// 加载数据，让后续逻辑直接复用准备好的数据。
 const loadCategoryData = async () => {
   // 分类选项来自系统设置，和入库弹窗共享同一份产品分类字典。
   categoryData.value = (await getProduct()).data
@@ -111,7 +96,7 @@ const loadCategoryData = async () => {
 
 loadCategoryData()
 
-const fillForm = (row: Partial<ProductFormModel>) => {
+const fillForm = (row = {}) => {
   formData.id = row.id ?? null
   formData.product_id = row.product_id ?? null
   formData.product_name = row.product_name ?? ''
@@ -123,12 +108,13 @@ const fillForm = (row: Partial<ProductFormModel>) => {
   formData.in_memo = row.in_memo ?? ''
 }
 
-const open = (row: Partial<ProductFormModel>) => {
+const open = (row = {}) => {
   // 每次打开都用当前行数据重新回填表单，避免依赖上一次弹窗状态。
   fillForm(row)
   dialogVisible.value = true
 }
 
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
 const handleEdit = async () => {
   // 提交前先走表单校验，避免把缺字段的编辑请求直接送到后端。
   const valid = await formRef.value?.validate().catch(() => false)

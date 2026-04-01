@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 产品入库弹窗。
-  2. 负责新增库存产品，录入基础档案、数量、单价和入库备注。
-  3. 成功后会生成新的库存记录，供后续出库流程使用。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="产品入库" width="600px" align-center draggable>
     <div class="dialog-content">
@@ -56,27 +50,19 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { FormProps } from 'element-plus'
 import { createProduct } from '@/api/product'
 import { getProduct } from '@/api/setting'
 
-interface FormData {
-  product_id: number | null
-  product_name: string
-  product_category: string
-  product_unit: string
-  product_in_warehouse_number: number | null
-  product_single_price: number | null
-  product_create_person: string
-  in_memo: string
-}
-
-const labelPosition = ref<FormProps['labelPosition']>('left')
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const labelPosition = ref('left')
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
-const categoryData = ref<string[]>([])
+// 记录数据，方便后续逻辑统一读取和更新。
+const categoryData = ref([])
 
-const formDataInfo = reactive<FormData>({
+// 记录表单数据信息，方便后续逻辑统一读取和更新。
+const formDataInfo = reactive({
   product_id: null,
   product_name: '',
   product_category: '',
@@ -87,6 +73,7 @@ const formDataInfo = reactive<FormData>({
   in_memo: '',
 })
 
+// 记录校验规则，方便后续逻辑统一读取和更新。
 const rules = reactive({
   product_id: [{ required: true, message: '请输入产品编号', trigger: 'blur' }],
   product_name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
@@ -97,16 +84,19 @@ const rules = reactive({
   product_create_person: [{ required: true, message: '请输入创建人', trigger: 'blur' }],
 })
 
+// 加载列表，让后续逻辑直接复用准备好的数据。
 const loadCategoryList = async () => {
   // 产品分类来自系统设置，保持和字典维护中的产品分类完全一致。
   const res = await getProduct()
   categoryData.value = res.data
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const open = () => {
   dialogFormVisible.value = true
 }
 
+// 把新结果并入当前状态，避免调用方手动维护同一份数据。
 const add = async () => {
   // 入库成功后只通知父页面刷新列表，弹窗本身不接管库存表格状态。
   const res = await createProduct(formDataInfo)

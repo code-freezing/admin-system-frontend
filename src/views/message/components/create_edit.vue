@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 消息新建/编辑弹窗。
-  2. 负责消息表单填写、富文本内容维护以及创建和编辑两种模式复用。
-  3. 消息列表和回收站页面都会依赖这个组件。
--->
 <template>
   <el-dialog
     v-model="dialogFormVisible"
@@ -89,52 +83,35 @@
 import { computed, onBeforeUnmount, reactive, ref, shallowRef } from 'vue'
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { ElMessage, type FormProps } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { changeUserReadList } from '@/api/dep_msg'
 import { editMessage as editMessageApi, publishMessage } from '@/api/message'
 import { getDepartment } from '@/api/setting'
 import { useMsg } from '@/stores/message'
 import { useUserInfo } from '@/stores/userinfor'
 
-interface SelectOption {
-  value: string
-}
-
-interface FormData {
-  id: number | null
-  message_title: string
-  message_publish_department: string
-  message_publish_name: string | null
-  message_category: string
-  message_receipt_object: string
-  message_level: string
-  message_content: string
-}
-
-interface EditableMessageRow {
-  id: number
-  message_title: string
-  message_publish_department: string
-  message_publish_name: string
-  message_receipt_object: string
-  message_level: string
-  message_content: string
-}
-
 const msgStore = useMsg()
 const userStore = useUserInfo()
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const title = ref('')
-const labelPosition = ref<FormProps['labelPosition']>('left')
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const labelPosition = ref('left')
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 
-const options = ref<SelectOption[]>([])
-const allOptions = ref<SelectOption[]>([])
-const editorRef = shallowRef<any>(null)
+// 记录选项，方便后续逻辑统一读取和更新。
+const options = ref([])
+// 记录选项，方便后续逻辑统一读取和更新。
+const allOptions = ref([])
+const editorRef = shallowRef(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const mode = ref('default')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const valueHtml = ref('')
 
-const formData = reactive<FormData>({
+// 记录表单数据，方便后续逻辑统一读取和更新。
+const formData = reactive({
   id: null,
   message_title: '',
   message_publish_department: '',
@@ -145,10 +122,12 @@ const formData = reactive<FormData>({
   message_content: '',
 })
 
+// 基于现有状态派生部门，避免同一份结果在多个地方重复计算。
 const needsDepartmentFields = computed(() => {
   return title.value === '发布公司消息' || title.value === '编辑公司消息'
 })
 
+// 记录校验规则，方便后续逻辑统一读取和更新。
 const rules = reactive({
   message_title: [{ required: true, message: '请输入消息标题', trigger: 'blur' }],
   message_publish_department: [{ required: true, message: '请选择发布部门', trigger: 'blur' }],
@@ -184,6 +163,7 @@ const editorConfig = {
   MENU_CONF: {},
 }
 
+// 加载部门列表，让后续逻辑直接复用准备好的数据。
 const loadDepartmentList = async () => {
   // 部门选项来自系统设置，“全体员工”是前端额外补上的特殊接收对象。
   const res = await getDepartment()
@@ -192,6 +172,7 @@ const loadDepartmentList = async () => {
   allOptions.value = [...options.value, { value: '全体员工' }]
 }
 
+// 重置表单，把当前流程恢复到干净初始状态。
 const resetForm = () => {
   // 弹窗复用于四种模式，所以每次进创建态前都要把表单和富文本内容完全清空。
   Object.assign(formData, {
@@ -207,14 +188,16 @@ const resetForm = () => {
   valueHtml.value = ''
 }
 
-const openCreate = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openCreate = (id) => {
   resetForm()
   // 父页面只传一个简单编号，弹窗内部再决定当前属于公司消息还是系统消息。
   title.value = id == 1 ? '发布公司消息' : '发布系统消息'
   dialogFormVisible.value = true
 }
 
-const openEdit = (row: EditableMessageRow) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openEdit = (row) => {
   title.value = '编辑公司消息'
   formData.id = row.id
   formData.message_title = row.message_title
@@ -227,7 +210,8 @@ const openEdit = (row: EditableMessageRow) => {
   dialogFormVisible.value = true
 }
 
-const openEditSystem = (row: Pick<EditableMessageRow, 'id' | 'message_title' | 'message_publish_name' | 'message_content'>) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openEditSystem = (row) => {
   title.value = '编辑系统消息'
   formData.id = row.id
   formData.message_title = row.message_title
@@ -237,11 +221,13 @@ const openEditSystem = (row: Pick<EditableMessageRow, 'id' | 'message_title' | '
   dialogFormVisible.value = true
 }
 
-const handleCreated = (editor: any) => {
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
+const handleCreated = (editor) => {
   // 编辑器实例需要在组件卸载时手动销毁，这里先缓存引用。
   editorRef.value = editor
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const yes = async () => {
   // 保存逻辑按标题分支，是因为公司消息和系统消息在字段要求和联动上不完全一样。
   formData.message_content = valueHtml.value

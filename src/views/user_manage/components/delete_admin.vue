@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 删除管理员确认弹窗。
-  2. 用于删除管理员账号前的二次确认。
-  3. 与列表页解耦后，可以统一危险操作反馈。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="删除用户" width="30%" center>
     <span v-if="adminId">确认后会将管理员降级为普通用户。</span>
@@ -23,19 +17,21 @@ import { changeIdentityToUser, deleteUser } from '@/api/userinfor'
 import { useUserInfo } from '@/stores/userinfor'
 import { tracking } from '@/utils/operation'
 
-type DeleteTarget =
-  | { kind: 'admin'; id: number }
-  | { kind: 'user'; id: number; account: string; name: string }
-
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 const userStore = useUserInfo()
-const adminId = ref<number | null>(null)
-const userId = ref<number | null>(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const adminId = ref(null)
+// 记录用户，方便后续逻辑统一读取和更新。
+const userId = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const account = ref('')
+// 记录名称，方便后续逻辑统一读取和更新。
 const name = ref('')
 
-const open = (target: DeleteTarget) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = (target) => {
   // 一个弹窗同时服务管理员降级和普通用户删除两种动作，打开时先清空上一次目标信息。
   adminId.value = null
   userId.value = null
@@ -53,6 +49,7 @@ const open = (target: DeleteTarget) => {
   dialogFormVisible.value = true
 }
 
+// 删除当前记录，避免旧数据继续影响后续流程。
 const deleteAdmin = async () => {
   // 管理员删除本质是降级成普通用户，只有普通用户删除才会真正删账号。
   if (adminId.value) {

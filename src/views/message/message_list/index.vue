@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 消息列表页面。
-  2. 负责公告查询、发布、编辑、查看详情和进入回收站等主流程。
-  3. 它是消息模块最核心的操作入口。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="module-common-wrapped">
@@ -159,30 +153,24 @@ import {
 import createEdit from '../components/create_edit.vue'
 import deleteM from '../components/delete.vue'
 
-interface MessageRow {
-  id: number
-  message_title?: string
-  message_publish_name?: string
-  message_publish_department?: string
-  message_receipt_object?: string
-  message_level?: string
-  message_publish_time?: string
-  message_update_time?: string
-  message_click_number?: number
-  [key: string]: unknown
-}
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '消息管理',
   second: '消息列表',
 })
 
+// 记录名称，方便后续逻辑统一读取和更新。
 const activeName = ref('first')
-const department = ref<string>()
-const radio2 = ref<string>()
-const departmentData = ref<string[]>([])
-const companyFilterSource = ref<MessageRow[]>([])
+// 记录部门，方便后续逻辑统一读取和更新。
+const department = ref()
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const radio2 = ref()
+// 记录部门数据，方便后续逻辑统一读取和更新。
+const departmentData = ref([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const companyFilterSource = ref([])
 const {
   tableData: companyTableData,
   total: companyTotal,
@@ -190,8 +178,8 @@ const {
   reload: reloadCompanyTab,
   loadPage: companyCurrentChange,
   replaceWithList: replaceCompanyList,
-} = usePagedTable<MessageRow>({
-  loadList: async (page) => (await returnCompanyListData(page)).data as MessageRow[],
+} = usePagedTable({
+  loadList: async (page) => (await returnCompanyListData(page)).data,
   loadTotal: async () => (await getCompanyMessageLength()).data.length,
 })
 
@@ -201,21 +189,24 @@ const {
   pagination: systemPagination,
   reload: reloadSystemTab,
   loadPage: systemCurrentChange,
-} = usePagedTable<MessageRow>({
-  loadList: async (page) => (await returnSystemListData(page)).data as MessageRow[],
+} = usePagedTable({
+  loadList: async (page) => (await returnSystemListData(page)).data,
   loadTotal: async () => (await getSystemMessageLength()).data.length,
 })
 
+// 加载部门列表，让后续逻辑直接复用准备好的数据。
 const loadDepartmentList = async () => {
   // 发布部门来自系统设置里的字典配置，不在页面里写死。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
+// 加载当前数据，让后续逻辑直接复用准备好的结果。
 const loadCompanyFilterSource = async () => {
-  companyFilterSource.value = (await companyMessageList()).data as MessageRow[]
+  companyFilterSource.value = (await companyMessageList()).data
 }
 
+// 处理当前操作，让页面动作真正进入业务流程。
 const applyCompanyFilters = async () => {
   // 公司消息筛选基于完整列表做前端组合过滤，避免多条件切换时互相覆盖结果。
   if (!department.value && !radio2.value) {
@@ -238,12 +229,14 @@ const applyCompanyFilters = async () => {
   replaceCompanyList(filteredList)
 }
 
+// 重置当前状态，把当前流程恢复到干净初始状态。
 const resetCompanyFilters = async () => {
   department.value = undefined
   radio2.value = undefined
   await reloadCompanyTab()
 }
 
+// 处理页码列表，把当前模块的关键逻辑集中在这里。
 const changeTwoPageList = async () => {
   // 新建、编辑和删除后先清空筛选，再刷新两类消息列表避免残留旧结果。
   department.value = undefined
@@ -251,26 +244,34 @@ const changeTwoPageList = async () => {
   await Promise.all([loadCompanyFilterSource(), reloadCompanyTab(), reloadSystemTab()])
 }
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const cre = ref()
-const createMessage = (id: number) => {
+// 创建消息，把当前输入转成新的业务记录。
+const createMessage = (id) => {
   cre.value.openCreate(id)
 }
-const editMessage = (row: MessageRow) => {
+// 更新消息，让当前记录按最新输入重新保存。
+const editMessage = (row) => {
   cre.value.openEdit(row)
 }
-const editSystemMessage = (row: MessageRow) => {
+// 更新消息，让当前记录按最新输入重新保存。
+const editSystemMessage = (row) => {
   cre.value.openEditSystem(row)
 }
 
+// 删除消息，避免旧数据继续影响后续流程。
 const delete_msg = ref()
-const deleteMessage = (row: MessageRow) => {
+// 删除消息，避免旧数据继续影响后续流程。
+const deleteMessage = (row) => {
   // 公司消息删除会把整行传给弹窗，因为回收站逻辑需要更多上下文。
   delete_msg.value.openDelete(row)
 }
-const deleteSystemMessage = (id: number) => {
+// 删除消息，避免旧数据继续影响后续流程。
+const deleteSystemMessage = (id) => {
   delete_msg.value.openRealDelete(id)
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await Promise.all([
     loadDepartmentList(),

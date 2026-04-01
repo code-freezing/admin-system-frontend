@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 登录日志页面。
-  2. 展示用户登录行为、时间和分页信息，帮助管理员审计账号访问记录。
-  3. 通常只对高权限角色开放。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -64,27 +58,29 @@ import breadCrumb from '@/components/bread_crumb.vue'
 import tips from './components/tips.vue'
 import { loginLogListLength, returnLoginListData, searchLoginLogList } from '@/api/log'
 
-interface LoginLogRow {
-  login_time?: string
-  [key: string]: unknown
-}
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '登录日志',
   second: '',
 })
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const account = ref('')
-const tableData = ref<LoginLogRow[]>([])
+// 记录表格数据数据，方便后续逻辑统一读取和更新。
+const tableData = ref([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const tip = ref()
 
+// 记录数据，方便后续逻辑统一读取和更新。
 const paginationData = reactive({
   loginTotal: 0,
   loginPageCount: 0,
   loginCurrentPage: 1,
 })
 
+// 加载登录，让后续逻辑直接复用准备好的数据。
 const loadLoginLength = async () => {
   // 总数单独维护，保持和当前登录日志分页组件的计算方式一致。
   const res = await loginLogListLength()
@@ -93,28 +89,34 @@ const loadLoginLength = async () => {
   paginationData.loginPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
+// 获取登录页码列表，让后续逻辑统一使用这一份结果。
 const getLoginFirstPageList = async () => {
   paginationData.loginCurrentPage = 1
-  tableData.value = (await returnLoginListData(1)).data as LoginLogRow[]
+  tableData.value = (await returnLoginListData(1)).data
 }
 
-const loginCurrentChange = async (value: number) => {
+// 处理当前状态，在认证通过后建立当前会话。
+const loginCurrentChange = async (value) => {
   paginationData.loginCurrentPage = value
-  tableData.value = (await returnLoginListData(value)).data as LoginLogRow[]
+  tableData.value = (await returnLoginListData(value)).data
 }
 
+// 查询登录，按当前条件筛出目标结果。
 const searchLoginAccount = async () => {
-  tableData.value = (await searchLoginLogList(account.value.trim())).data as LoginLogRow[]
+  tableData.value = (await searchLoginLogList(account.value.trim())).data
 }
 
+// 清理列表，防止旧状态残留到下一次流程。
 const clearList = () => {
   tip.value.open()
 }
 
+// 处理登录列表，把当前模块的关键逻辑集中在这里。
 const reloadLoginList = async () => {
   await Promise.all([loadLoginLength(), getLoginFirstPageList()])
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await reloadLoginList()
 })

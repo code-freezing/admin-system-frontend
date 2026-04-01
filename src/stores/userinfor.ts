@@ -1,29 +1,29 @@
-/**
- * 模块说明：
- * 1. 用户信息 store。
- * 2. 统一保存当前登录用户的基础资料，避免页面反复从接口结果里解构字段。
- * 3. 登录后和刷新恢复时，页面都会依赖这里的状态。
- */
-
 import { defineStore } from 'pinia'
 import { getUserInfo } from '@/api/userinfor'
 import { ref } from 'vue'
-import type { SessionUserProfile } from '@/http/response'
 
 export const useUserInfo = defineStore(
   'userinfo',
   () => {
-    const id = ref<number>(0)
-    const account = ref<string>('')
-    const name = ref<string>('')
-    const sex = ref<string>('')
-    const imageUrl = ref<string>('')
-    const identity = ref<string>('')
-    const department = ref<string>('')
-    const email = ref<string>('')
+    // 记录当前状态，方便后续逻辑统一读取和更新。
+    const id = ref(0)
+    // 记录当前状态，方便后续逻辑统一读取和更新。
+    const account = ref('')
+    // 记录名称，方便后续逻辑统一读取和更新。
+    const name = ref('')
+    // 记录当前状态，方便后续逻辑统一读取和更新。
+    const sex = ref('')
+    // 记录当前状态，方便后续逻辑统一读取和更新。
+    const imageUrl = ref('')
+    // 记录当前状态，方便后续逻辑统一读取和更新。
+    const identity = ref('')
+    // 记录部门，方便后续逻辑统一读取和更新。
+    const department = ref('')
+    // 记录当前状态，方便后续逻辑统一读取和更新。
+    const email = ref('')
 
-    // 拉取用户详情后直接拆成字段状态，页面层只消费扁平数据。
-    const userInfo = async (userId: number) => {
+    // 处理用户信息，把当前模块的关键逻辑集中在这里。
+    const userInfo = async (userId) => {
       const res = await getUserInfo(userId)
       const data = res.data
 
@@ -37,18 +37,18 @@ export const useUserInfo = defineStore(
       email.value = data.email
     }
 
-    // 会话恢复和登录成功都直接复用这套字段同步逻辑。
-    const applyProfile = (profile: SessionUserProfile) => {
-      id.value = profile.id
-      imageUrl.value = profile.image_url
-      identity.value = profile.identity
-      account.value = profile.account
-      name.value = profile.name
-      sex.value = profile.sex
-      department.value = profile.department
-      email.value = profile.email
+    const applyProfile = (profile = {}) => {
+      id.value = profile.id || 0
+      imageUrl.value = profile.image_url || ''
+      identity.value = profile.identity || ''
+      account.value = profile.account || ''
+      name.value = profile.name || ''
+      sex.value = profile.sex || ''
+      department.value = profile.department || ''
+      email.value = profile.email || ''
     }
 
+    // 重置当前状态，把当前流程恢复到干净初始状态。
     const reset = () => {
       id.value = 0
       account.value = ''

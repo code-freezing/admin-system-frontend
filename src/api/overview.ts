@@ -1,67 +1,36 @@
-/**
- * 模块说明：
- * 1. 系统概览接口封装。
- * 2. 为概览页提供图表、统计卡片和排行数据。
- * 3. 聚合概览相关请求，避免页面里散落多个 URL。
- */
-
 import { post } from './request'
-import { getArrayField, toApiResult, type ApiResult } from '@/http/response'
+import { getArrayField, result } from '@/http/response'
 
-export interface PieStatsItem {
-  name: string
-  value: number
-}
-
-export interface CategoryAndNumberData {
-  category: string[]
-  price: number[]
-}
-
-export interface AdminAndNumberData {
-  data: PieStatsItem[]
-}
-
-export interface LevelAndNumberData {
-  data: PieStatsItem[]
-}
-
-export interface DayAndNumberData {
-  week: string[]
-  number: number[]
-}
-
-export const getCategoryAndNumber = () => {
-  // 概览页图表数据结构不统一，这里统一把后端裸对象收敛成固定字段。
-  return post<ApiResult<CategoryAndNumberData>>('/ov/getCategoryAndNumber').then((raw) =>
-    toApiResult(raw, {
-      category: getArrayField<string>(raw, 'category'),
-      price: getArrayField<number>(raw, 'price'),
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getCategoryAndNumber = () =>
+  post('/ov/getCategoryAndNumber').then((raw) =>
+    result(raw, {
+      category: getArrayField(raw, 'category'),
+      price: getArrayField(raw, 'price'),
     }),
   )
-}
 
-export const getAdminAndNumber = () => {
-  return post<ApiResult<AdminAndNumberData>>('/ov/getAdminAndNumber').then((raw) =>
-    toApiResult(raw, {
-      data: getArrayField<PieStatsItem>(raw, 'data'),
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getAdminAndNumber = () =>
+  post('/ov/getAdminAndNumber').then((raw) =>
+    result(raw, {
+      data: getArrayField(raw, 'data'),
     }),
   )
-}
 
-export const getLevelAndNumber = () => {
-  return post<ApiResult<LevelAndNumberData>>('/ov/getLevelAndNumber').then((raw) =>
-    toApiResult(raw, {
-      data: getArrayField<PieStatsItem>(raw, 'data'),
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getLevelAndNumber = () =>
+  post('/ov/getLevelAndNumber').then((raw) =>
+    result(raw, {
+      data: getArrayField(raw, 'data'),
     }),
   )
-}
 
-export const getDayAndNumber = () => {
-  return post<ApiResult<DayAndNumberData>>('/ov/getDayAndNumber').then((raw) =>
-    toApiResult(raw, {
-      week: getArrayField<string>(raw, 'week'),
-      number: getArrayField<number>(raw, 'number'),
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+export const getDayAndNumber = () =>
+  post('/ov/getDayAndNumber').then((raw) =>
+    result(raw, {
+      week: getArrayField(raw, 'week'),
+      number: getArrayField(raw, 'number'),
     }),
   )
-}

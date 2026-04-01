@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 合同/文件管理页面。
-  2. 负责文件列表、分片上传、秒传、断点续传和删除下载等交互。
-  3. 上传链路改为前端自管，后端只负责会话、分片和最终文件落库。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -104,7 +98,6 @@
 import SparkMD5 from 'spark-md5'
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { UploadInstance, UploadRawFile, UploadRequestOptions } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
 import tips from './components/tips.vue'
 import {
@@ -115,52 +108,39 @@ import {
   initMultipartUpload,
   returnFilesListData,
   uploadChunk,
-  type FileRow,
 } from '@/api/file'
-
-type UploadTaskStatus =
-  | 'hashing'
-  | 'uploading'
-  | 'merging'
-  | 'success'
-  | 'instant'
-  | 'failed'
-  | 'aborted'
-
-interface UploadTask {
-  uid: number
-  name: string
-  size: number
-  progress: number
-  status: UploadTaskStatus
-  message: string
-  rawFile: UploadRawFile
-  uploadId: string
-}
 
 const CHUNK_SIZE = 2 * 1024 * 1024
 const HASH_PROGRESS_MAX = 15
 const UPLOAD_PROGRESS_START = 15
 const UPLOAD_PROGRESS_END = 92
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
-const uploadRef = ref<UploadInstance>()
+// 处理当前文件操作，把文件保存到约定位置后再继续后续流程。
+const uploadRef = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '文件管理',
   second: '',
 })
 
-const tableData = ref<FileRow[]>([])
-const uploadTasks = ref<UploadTask[]>([])
+// 记录表格数据数据，方便后续逻辑统一读取和更新。
+const tableData = ref([])
+// 处理当前文件操作，把文件保存到约定位置后再继续后续流程。
+const uploadTasks = ref([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const tip = ref()
 const uploadControllers = new Map<number, { cancelled: boolean; uploadId: string }>()
 
+// 记录数据，方便后续逻辑统一读取和更新。
 const paginationData = reactive({
   fileTotal: 0,
   filePageCount: 0,
   fileCurrentPage: 1,
 })
 
+// 加载文件，让后续逻辑直接复用准备好的数据。
 const loadFileLength = async () => {
   // 文件总数单独维护，保持和当前分页组件的页码计算逻辑一致。
   const res = await fileListLength()
@@ -169,29 +149,35 @@ const loadFileLength = async () => {
   paginationData.filePageCount = Math.max(1, Math.ceil(total / 10))
 }
 
+// 获取文件页码列表，让后续逻辑统一使用这一份结果。
 const getFileFirstPageList = async () => {
   paginationData.fileCurrentPage = 1
   tableData.value = (await returnFilesListData(1)).data
 }
 
-const fileCurrentChange = async (value: number) => {
+// 处理文件当前状态，把当前模块的关键逻辑集中在这里。
+const fileCurrentChange = async (value) => {
   paginationData.fileCurrentPage = value
   tableData.value = (await returnFilesListData(value)).data
 }
 
-const deleteFile = (row: FileRow) => {
+// 删除文件，避免旧数据继续影响后续流程。
+const deleteFile = (row) => {
   tip.value.open(row)
 }
 
+// 处理文件列表，把当前模块的关键逻辑集中在这里。
 const reloadFileList = async () => {
   await Promise.all([loadFileLength(), getFileFirstPageList()])
 }
 
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
 const handleExceed = () => {
   ElMessage.warning('最多只能同时上传 3 个文件')
 }
 
-const formatByteSize = (size: number) => {
+// 格式化大小，让展示层和业务层拿到统一结果。
+const formatByteSize = (size) => {
   if (!Number.isFinite(size) || size <= 0) {
     return '--'
   }
@@ -213,7 +199,8 @@ const formatByteSize = (size: number) => {
   return `${(mb / 1024).toFixed(2)} GB`
 }
 
-const formatStoredSize = (value?: string | number) => {
+// 格式化大小，让展示层和业务层拿到统一结果。
+const formatStoredSize = (value) => {
   const kb = Number(value || 0)
   if (!Number.isFinite(kb) || kb <= 0) {
     return '--'
@@ -231,7 +218,8 @@ const formatStoredSize = (value?: string | number) => {
   return `${(mb / 1024).toFixed(2)} GB`
 }
 
-const resolveProgressStatus = (status: UploadTaskStatus) => {
+// 解析状态，让后续分支基于统一结果继续执行。
+const resolveProgressStatus = (status) => {
   if (status === 'failed' || status === 'aborted') {
     return 'exception'
   }
@@ -243,11 +231,13 @@ const resolveProgressStatus = (status: UploadTaskStatus) => {
   return undefined
 }
 
-const getTask = (uid: number) => {
+// 获取当前结果，让后续逻辑统一使用这一份数据。
+const getTask = (uid) => {
   return uploadTasks.value.find((item) => item.uid === uid)
 }
 
-const createOrUpdateTask = (rawFile: UploadRawFile) => {
+// 创建新记录，把当前输入正式写成业务数据。
+const createOrUpdateTask = (rawFile) => {
   const existsTask = getTask(rawFile.uid)
   if (existsTask) {
     existsTask.name = rawFile.name
@@ -260,7 +250,7 @@ const createOrUpdateTask = (rawFile: UploadRawFile) => {
     return existsTask
   }
 
-  const task: UploadTask = {
+  const task = {
     uid: rawFile.uid,
     name: rawFile.name,
     size: rawFile.size,
@@ -275,37 +265,43 @@ const createOrUpdateTask = (rawFile: UploadRawFile) => {
   return task
 }
 
-const resetController = (uid: number) => {
+// 重置当前状态，把当前流程恢复到干净初始状态。
+const resetController = (uid) => {
   uploadControllers.set(uid, {
     cancelled: false,
     uploadId: '',
   })
 }
 
-const isCancelled = (uid: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const isCancelled = (uid) => {
   return uploadControllers.get(uid)?.cancelled === true
 }
 
-const setUploadId = (uid: number, uploadId: string) => {
+// 更新上传，避免状态分散在多个位置维护。
+const setUploadId = (uid, uploadId) => {
   const controller = uploadControllers.get(uid)
   if (controller) {
     controller.uploadId = uploadId
   }
 }
 
-const ensureNotCancelled = (uid: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const ensureNotCancelled = (uid) => {
   if (isCancelled(uid)) {
     throw new Error('UPLOAD_ABORTED')
   }
 }
 
-const calculateFileHash = (rawFile: UploadRawFile, task: UploadTask) => {
-  return new Promise<string>((resolve, reject) => {
+// 处理文件，把当前模块的关键逻辑集中在这里。
+const calculateFileHash = (rawFile, task) => {
+  return new Promise((resolve, reject) => {
     const chunkTotal = Math.max(1, Math.ceil(rawFile.size / CHUNK_SIZE))
     const spark = new SparkMD5.ArrayBuffer()
     const reader = new FileReader()
     let currentChunk = 0
 
+    // 加载当前数据，让后续逻辑直接复用准备好的结果。
     const loadNextChunk = () => {
       if (isCancelled(task.uid)) {
         reject(new Error('UPLOAD_ABORTED'))
@@ -350,7 +346,7 @@ const calculateFileHash = (rawFile: UploadRawFile, task: UploadTask) => {
   })
 }
 
-const updateUploadProgress = (task: UploadTask, finishedCount: number, chunkTotal: number, currentChunkRatio = 0) => {
+const updateUploadProgress = (task, finishedCount, chunkTotal, currentChunkRatio = 0) => {
   const ratio = Math.min(1, (finishedCount + currentChunkRatio) / Math.max(chunkTotal, 1))
   task.progress = Math.min(
     UPLOAD_PROGRESS_END,
@@ -358,7 +354,8 @@ const updateUploadProgress = (task: UploadTask, finishedCount: number, chunkTota
   )
 }
 
-const abortTask = async (uid: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const abortTask = async (uid) => {
   const controller = uploadControllers.get(uid)
   const task = getTask(uid)
   if (!task) {
@@ -379,7 +376,8 @@ const abortTask = async (uid: number) => {
   }
 }
 
-const runUpload = async (rawFile: UploadRawFile) => {
+// 处理上传，把当前模块的关键逻辑集中在这里。
+const runUpload = async (rawFile) => {
   const task = createOrUpdateTask(rawFile)
   resetController(task.uid)
 
@@ -413,7 +411,7 @@ const runUpload = async (rawFile: UploadRawFile) => {
     setUploadId(task.uid, initRes.data.uploadId)
     task.status = 'uploading'
 
-    const uploadedChunkSet = new Set<number>((initRes.data.uploadedChunks || []).map((item: number) => Number(item)))
+    const uploadedChunkSet = new Set((initRes.data.uploadedChunks || []).map((item) => Number(item)))
     updateUploadProgress(task, uploadedChunkSet.size, chunkTotal)
     if (uploadedChunkSet.size > 0) {
       task.message = `已恢复 ${uploadedChunkSet.size}/${chunkTotal} 个分片`
@@ -438,7 +436,7 @@ const runUpload = async (rawFile: UploadRawFile) => {
       formData.append('contentHash', contentHash)
       formData.append('chunk', chunk, `${rawFile.name}.part${chunkIndex}`)
 
-      const uploadRes = await uploadChunk(formData, (event: any) => {
+      const uploadRes = await uploadChunk(formData, (event) => {
         const currentChunkRatio = event?.total ? event.loaded / event.total : 0
         updateUploadProgress(task, uploadedChunkSet.size, chunkTotal, currentChunkRatio)
       })
@@ -465,7 +463,7 @@ const runUpload = async (rawFile: UploadRawFile) => {
     task.progress = 100
     task.message = '上传成功'
     await reloadFileList()
-  } catch (error: any) {
+  } catch (error) {
     if (error?.message === 'UPLOAD_ABORTED') {
       task.status = 'aborted'
       task.progress = 0
@@ -479,7 +477,8 @@ const runUpload = async (rawFile: UploadRawFile) => {
   }
 }
 
-const retryTask = async (uid: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const retryTask = async (uid) => {
   const task = getTask(uid)
   if (!task) {
     return
@@ -488,8 +487,9 @@ const retryTask = async (uid: number) => {
   await runUpload(task.rawFile)
 }
 
-const handleUploadRequest = (options: UploadRequestOptions) => {
-  const rawFile = options.file as UploadRawFile
+// 处理上传，把当前分支的核心逻辑集中在这里。
+const handleUploadRequest = (options) => {
+  const rawFile = options.file
   void runUpload(rawFile)
 
   // el-upload 会缓存已选文件，这里立刻清空内部列表避免隐藏文件列表后 limit 被占满。
@@ -504,7 +504,8 @@ const handleUploadRequest = (options: UploadRequestOptions) => {
   }
 }
 
-const handleDownload = async (row: FileRow) => {
+// 处理下载，把当前分支的核心逻辑集中在这里。
+const handleDownload = async (row) => {
   const res = await downloadFile(row.id)
   if (res.status !== 0 || !res.data.url) {
     ElMessage.error(res.message || '文件下载失败')
@@ -515,6 +516,7 @@ const handleDownload = async (row: FileRow) => {
   await fileCurrentChange(paginationData.fileCurrentPage)
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await reloadFileList()
 })

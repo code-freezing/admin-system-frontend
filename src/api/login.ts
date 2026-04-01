@@ -1,80 +1,49 @@
-/**
- * 模块说明：
- * 1. 认证模块接口封装。
- * 2. 覆盖注册、登录、刷新 token、退出登录和菜单加载等登录链路。
- * 3. 配合请求层的刷新逻辑，实现 access token 自动续期。
- */
-
 import { post } from './request'
 import {
-  toAccessProfileData,
-  toApiResult,
-  type AccessProfileData,
-  type ApiResult,
-  type SessionUserProfile,
   getNullableNumberField,
   getStringField,
+  result,
+  toAccessProfileData,
   toRecord,
   toSessionUserProfile,
 } from '@/http/response'
 
-export type LoginUser = SessionUserProfile
+// 处理当前注册流程，把账号信息正式写入系统。
+export const register = ({ account, password }) =>
+  post('/api/register', { account, password }).then((raw) => result(raw, null))
 
-type AuthPayload = {
-  account: string | number | null
-  password: string | null
-}
-
-type VerifyPayload = {
-  account: string | number | null
-  email: string | null
-}
-
-export const register = ({ account, password }: AuthPayload) =>
-  post<ApiResult<null>>('/api/register', { account, password }).then((raw) => toApiResult(raw, null))
-
-export const login = ({ account, password }: AuthPayload) => {
-  return post<ApiResult<{ accessToken: string; token: string; user: LoginUser }>>('/api/login', {
-    account,
-    password,
-  }).then((raw) => {
-    return toApiResult(raw, {
+// 处理当前登录流程，在认证通过后建立当前会话。
+export const login = ({ account, password }) =>
+  post('/api/login', { account, password }).then((raw) =>
+    result(raw, {
       accessToken: getStringField(raw, 'accessToken'),
       token: getStringField(raw, 'token'),
       user: toSessionUserProfile(toRecord(raw).results),
-    })
-  })
-}
+    }),
+  )
 
-export const refreshToken = () => {
-  // access token 过期后由请求层调用该接口，refresh token 会随 HttpOnly Cookie 自动发送。
-  return post<ApiResult<{ accessToken: string }>>('/api/refresh', undefined, {
-    _skipAuthRefresh: true,
-  }).then((raw) => {
-    return toApiResult(raw, {
+// 刷新Token，避免旧凭证过期后直接中断当前会话。
+export const refreshToken = () =>
+  post('/api/refresh', undefined, { _skipAuthRefresh: true }).then((raw) =>
+    result(raw, {
       accessToken: getStringField(raw, 'accessToken'),
-    })
-  })
-}
+    }),
+  )
 
+// 处理当前退出流程，把会话和相关凭证一起清掉。
 export const logout = () =>
-  post<ApiResult<null>>('/api/logout', undefined, { _skipAuthRefresh: true }).then((raw) =>
-    toApiResult(raw, null),
-  )
+  post('/api/logout', undefined, { _skipAuthRefresh: true }).then((raw) => result(raw, null))
 
+// 处理鉴权资料，把当前模块的关键逻辑集中在这里。
 export const authProfile = () =>
-  post<ApiResult<AccessProfileData>>('/api/authProfile').then((raw) =>
-    toApiResult(raw, toAccessProfileData(raw)),
+  post('/api/authProfile').then((raw) => result(raw, toAccessProfileData(raw)))
+
+// 校验当前请求，避免不符合条件的操作继续下发。
+export const verify = ({ account, email }) =>
+  post('/user/verifyAccountAndEmail', { account, email }).then((raw) =>
+    result(raw, { id: getNullableNumberField(raw, 'id') }),
   )
 
-export const verify = ({ account, email }: VerifyPayload) => {
-  // 找回密码前先验证账号和邮箱是否匹配同一个用户。
-  return post<ApiResult<{ id: number | null }>>('/user/verifyAccountAndEmail', { account, email }).then(
-    (raw) => toApiResult(raw, { id: getNullableNumberField(raw, 'id') }),
-  )
-}
-
-export const reset = (id: number, newPassword: string) =>
-  post<ApiResult<null>>('/user/changePasswordInLogin', { id, newPassword }).then((raw) =>
-    toApiResult(raw, null),
-  )
+// 重置当前状态，把当前流程恢复到干净初始状态。
+export const reset = (id, newPassword) =>
+  post('/user/changePasswordInLogin', { id, newPassword }).then((raw) => result(raw, null))

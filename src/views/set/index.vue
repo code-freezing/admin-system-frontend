@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 系统设置页面。
-  2. 同时承载个人账号设置、公司信息设置和首页轮播/内容管理。
-  3. 因为它连接用户资料与首页展示配置，所以是一个聚合型页面。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="common-wrapped">
@@ -209,7 +203,7 @@
 <script lang="ts" setup>
 import { nextTick, onMounted, ref, toRaw } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
-import { ElInput, ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import breadCrumb from '@/components/bread_crumb.vue'
 import { bind, changeEmail, changeName, changeSex } from '@/api/userinfor'
 import {
@@ -227,18 +221,27 @@ import change from './components/change_password.vue'
 import editor from './components/editor.vue'
 
 const userStore = useUserInfo()
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '系统设置',
 })
 
+// 记录名称，方便后续逻辑统一读取和更新。
 const activeName = ref('first')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const avatarUrl = ref(buildApiUrl('/user/uploadAvatar'))
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const swiperUrl = ref(buildApiUrl('/set/uploadSwiper'))
+// 记录名称，方便后续逻辑统一读取和更新。
 const companyName = ref('')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const changeP = ref()
+// 记录编辑器，方便后续逻辑统一读取和更新。
 const editorP = ref()
-const imageUrl = ref<string[]>([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const imageUrl = ref([])
 
 const swiperData = [
   { name: 'swiper1' },
@@ -249,33 +252,46 @@ const swiperData = [
   { name: 'swiper6' },
 ]
 
-const dynamicTags = ref<string[]>([])
-const dynamicProductTags = ref<string[]>([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const dynamicTags = ref([])
+// 记录产品，方便后续逻辑统一读取和更新。
+const dynamicProductTags = ref([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const inputValue = ref('')
+// 记录显示状态，方便后续逻辑统一读取和更新。
 const inputVisible = ref(false)
-const InputRef = ref<InstanceType<typeof ElInput>>()
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const InputRef = ref()
+// 记录产品，方便后续逻辑统一读取和更新。
 const inputProductValue = ref('')
+// 记录产品显示状态，方便后续逻辑统一读取和更新。
 const inputProductVisible = ref(false)
-const InputProductRef = ref<InstanceType<typeof ElInput>>()
+// 记录产品，方便后续逻辑统一读取和更新。
+const InputProductRef = ref()
 
+// 加载名称，让后续逻辑直接复用准备好的数据。
 const loadCompanyName = async () => {
   companyName.value = (await getCompanyName()).data
 }
 
+// 加载列表，让后续逻辑直接复用准备好的数据。
 const loadSwiperList = async () => {
   // 轮播图列表顺序必须和 swiperData 对应，模板里通过下标一一渲染上传区域。
   imageUrl.value = (await getAllSwiper()).data
 }
 
+// 加载部门列表，让后续逻辑直接复用准备好的数据。
 const loadDepartmentList = async () => {
   dynamicTags.value = (await getDepartment()).data
 }
 
+// 加载产品列表，让后续逻辑直接复用准备好的数据。
 const loadProductList = async () => {
   dynamicProductTags.value = (await getProduct()).data
 }
 
-const handleAvatarSuccess = async (response: any) => {
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
+const handleAvatarSuccess = async (response) => {
   // 头像上传成功后还要执行 bind，才能把临时上传记录真正绑定到当前账号。
   if (response.status !== 0) {
     ElMessage.error('头像上传失败')
@@ -301,7 +317,8 @@ const handleAvatarSuccess = async (response: any) => {
   }
 }
 
-const beforeAvatarUpload = (rawFile: File) => {
+// 处理上传，把当前模块的关键逻辑集中在这里。
+const beforeAvatarUpload = (rawFile) => {
   const isImage = ['image/jpeg', 'image/png'].includes(rawFile.type)
   if (!isImage) {
     ElMessage.error('请上传 JPG 或 PNG 图片')
@@ -317,14 +334,17 @@ const beforeAvatarUpload = (rawFile: File) => {
   return true
 }
 
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
 const handleSwiperSuccess = () => {
   loadSwiperList()
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const openChangePassword = () => {
   changeP.value.open()
 }
 
+// 保存名称，确保当前改动能在后续流程里被读取到。
 const saveName = async () => {
   const res = await changeName(userStore.name, userStore.id)
   if (res.status == 0) {
@@ -334,6 +354,7 @@ const saveName = async () => {
   }
 }
 
+// 保存当前改动，确保后续流程读取到的是最新结果。
 const saveSex = async () => {
   const res = await changeSex(userStore.sex, userStore.id)
   if (res.status == 0) {
@@ -343,6 +364,7 @@ const saveSex = async () => {
   }
 }
 
+// 保存当前改动，确保后续流程读取到的是最新结果。
 const saveEmail = async () => {
   const res = await changeEmail(userStore.email, userStore.id)
   if (res.status == 0) {
@@ -352,6 +374,7 @@ const saveEmail = async () => {
   }
 }
 
+// 重置名称，把当前流程恢复到干净初始状态。
 const resetCompanyName = async () => {
   const res = await changeCompanyName(companyName.value)
   if (res.status == 0) {
@@ -361,12 +384,14 @@ const resetCompanyName = async () => {
   }
 }
 
-const openEditor = async (id: number) => {
+// 处理编辑器，把当前模块的关键逻辑集中在这里。
+const openEditor = async (id) => {
   // 公司简介、愿景、企业文化和概览都复用同一个富文本弹窗，通过 id 区分当前配置项。
   editorP.value.open(id)
 }
 
-const handleClose = async (tag: string) => {
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
+const handleClose = async (tag) => {
   // 字典维护直接提交整个数组快照，后端按最新结果整体覆盖保存。
   dynamicTags.value = dynamicTags.value.filter((item) => item !== tag)
   const res = await setDepartment(JSON.stringify(toRaw(dynamicTags.value)))
@@ -377,7 +402,8 @@ const handleClose = async (tag: string) => {
   }
 }
 
-const handleProductClose = async (tag: string) => {
+// 处理产品，把当前分支的核心逻辑集中在这里。
+const handleProductClose = async (tag) => {
   dynamicProductTags.value = dynamicProductTags.value.filter((item) => item !== tag)
   const res = await setProduct(JSON.stringify(toRaw(dynamicProductTags.value)))
   if (res.status == 0) {
@@ -387,6 +413,7 @@ const handleProductClose = async (tag: string) => {
   }
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const showInput = () => {
   inputVisible.value = true
   nextTick(() => {
@@ -394,6 +421,7 @@ const showInput = () => {
   })
 }
 
+// 处理产品，把当前模块的关键逻辑集中在这里。
 const showProductInput = () => {
   inputProductVisible.value = true
   nextTick(() => {
@@ -401,6 +429,7 @@ const showProductInput = () => {
   })
 }
 
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
 const handleInputConfirm = async () => {
   if (inputValue.value) {
     dynamicTags.value = [...dynamicTags.value, inputValue.value]
@@ -416,6 +445,7 @@ const handleInputConfirm = async () => {
   inputValue.value = ''
 }
 
+// 处理产品，把当前分支的核心逻辑集中在这里。
 const handleInputProductConfirm = async () => {
   if (inputProductValue.value) {
     dynamicProductTags.value = [...dynamicProductTags.value, inputProductValue.value]
@@ -431,6 +461,7 @@ const handleInputProductConfirm = async () => {
   inputProductValue.value = ''
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   // 设置页虽然是聚合页，但各块数据彼此独立，适合在首屏并行加载。
   await Promise.all([loadCompanyName(), loadSwiperList(), loadDepartmentList(), loadProductList()])

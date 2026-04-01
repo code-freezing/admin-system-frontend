@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 后台首页。
-  2. 组合轮播图、公司简介、公司公告和系统消息，作为登录后的默认落点。
-  3. 首页的数据来源较分散，因此这里承担了多个接口的聚合加载。
--->
 <template>
   <breadCrumb :item="breadcrumbItem" />
   <div class="home-wrapped">
@@ -113,7 +107,6 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import breadCrumb from '@/components/bread_crumb.vue'
 import introduce from './components/introduce.vue'
 import bulletin from '@/components/common_msg.vue'
@@ -121,73 +114,60 @@ import { getAllSwiper, getAllCompanyIntroduce } from '@/api/setting'
 import { companyMessageList, systemMessageList } from '@/api/message'
 import { getViewCache, setViewCache } from '@/utils/view_cache'
 
-interface CompanyIntroduceItem {
-  id: number
-  set_name: string
-  set_value: string | null
-  set_text: string
-}
-
-interface BulletinRow {
-  message_title: string
-  message_content: string
-  message_category: string
-  message_level: string
-  message_publish_name: string
-  message_publish_department: string
-  message_publish_time: string
-  [key: string]: any
-}
-
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const breadcrumbItem = ref({
   first: '首页',
 })
 
-const imageUrls = ref<string[]>([])
-const companyIntroduce = ref<CompanyIntroduceItem[]>([])
-const companyMessages = ref<BulletinRow[]>([])
-const systemMessages = ref<BulletinRow[]>([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const imageUrls = ref([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const companyIntroduce = ref([])
+// 记录消息，方便后续逻辑统一读取和更新。
+const companyMessages = ref([])
+// 记录消息，方便后续逻辑统一读取和更新。
+const systemMessages = ref([])
+// 记录加载状态，方便后续逻辑统一读取和更新。
 const loadingSwiper = ref(true)
+// 记录加载状态，方便后续逻辑统一读取和更新。
 const loadingCompany = ref(true)
+// 记录加载状态消息，方便后续逻辑统一读取和更新。
 const loadingMessages = ref(true)
 
-const introduceRef = ref<InstanceType<typeof introduce> | null>(null)
-const bulletinRef = ref<InstanceType<typeof bulletin> | null>(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const introduceRef = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const bulletinRef = ref(null)
 const HOME_CACHE_KEY = 'home-dashboard'
 const HOME_CACHE_TTL = 60 * 1000
 
-const openIntroduce = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openIntroduce = (id) => {
   introduceRef.value?.open(id)
 }
 
-const openCompany = (row: BulletinRow) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openCompany = (row) => {
   bulletinRef.value?.openCompany(row)
 }
 
-const openSystem = (row: BulletinRow) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openSystem = (row) => {
   bulletinRef.value?.openSystem(row)
 }
 
-const applyHomePayload = (payload: {
-  imageUrls: string[]
-  companyIntroduce: CompanyIntroduceItem[]
-  companyMessages: BulletinRow[]
-  systemMessages: BulletinRow[]
-}) => {
+// 处理首页，把当前操作正式提交到业务流程里。
+const applyHomePayload = (payload) => {
   imageUrls.value = payload.imageUrls
   companyIntroduce.value = payload.companyIntroduce
   companyMessages.value = payload.companyMessages
   systemMessages.value = payload.systemMessages
 }
 
+// 加载首页数据，让后续逻辑直接复用准备好的数据。
 const loadHomeData = async () => {
   // 首页内容分散在多组接口里，命中短时缓存时直接复用上一轮聚合结果。
-  const cachedPayload = getViewCache<{
-    imageUrls: string[]
-    companyIntroduce: CompanyIntroduceItem[]
-    companyMessages: BulletinRow[]
-    systemMessages: BulletinRow[]
-  }>(HOME_CACHE_KEY)
+  const cachedPayload = getViewCache(HOME_CACHE_KEY)
 
   if (cachedPayload) {
     applyHomePayload(cachedPayload)
@@ -212,8 +192,8 @@ const loadHomeData = async () => {
     const payload = {
       imageUrls: swiperRes.data,
       companyIntroduce: companyRes.data,
-      companyMessages: companyMessageRes.data as BulletinRow[],
-      systemMessages: systemMessageRes.data as BulletinRow[],
+      companyMessages: companyMessageRes.data,
+      systemMessages: systemMessageRes.data,
     }
 
     applyHomePayload(payload)
@@ -230,6 +210,7 @@ const loadHomeData = async () => {
   }
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(() => {
   // 首页展示数据来源分散，这里统一做并发加载，并允许短时缓存复用。
   void loadHomeData()

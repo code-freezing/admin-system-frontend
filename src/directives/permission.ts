@@ -1,30 +1,24 @@
-/**
- * 模块说明：
- * 1. 按钮级权限指令。
- * 2. 用于在模板中按权限码控制元素显隐。
- * 3. 当前实现以 display:none 为主，足够覆盖后台按钮权限场景。
- */
-
-import type { App, DirectiveBinding } from 'vue'
 import pinia from '@/stores'
 import { usePermission } from '@/stores/permission'
 
-const updateElementVisibility = (el: HTMLElement, binding: DirectiveBinding<string | string[]>) => {
+// 更新当前状态，保持页面状态和实际数据一致。
+const updateElementVisibility = (el, binding) => {
   const permissionStore = usePermission(pinia)
-  const codes = (Array.isArray(binding.value) ? binding.value : [binding.value]).filter(Boolean) as string[]
+  const codes = (Array.isArray(binding.value) ? binding.value : [binding.value]).filter(Boolean)
   const visible = permissionStore.hasAnyPermission(codes)
 
   el.style.display = visible ? '' : 'none'
 }
 
-export const registerPermissionDirective = (app: App) => {
+// 处理权限，把当前账号或能力注册到系统里。
+export const registerPermissionDirective = (app) => {
   app.directive('permission', {
     // mounted 和 updated 都走同一套判断，保证权限数据刷新后模板显隐能及时同步。
     mounted(el, binding) {
-      updateElementVisibility(el as HTMLElement, binding)
+      updateElementVisibility(el, binding)
     },
     updated(el, binding) {
-      updateElementVisibility(el as HTMLElement, binding)
+      updateElementVisibility(el, binding)
     },
   })
 }

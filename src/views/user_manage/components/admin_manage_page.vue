@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 通用管理员列表页面。
-  2. 负责消息管理员、产品管理员、用户管理员三类账号的列表展示和弹窗操作。
-  3. 页面差异通过身份、标题和创建类型配置传入，避免三份重复页面长期漂移。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="breadcrumbItem" />
   <div class="table-wrapped">
@@ -79,13 +73,7 @@ import createA from './create_admin.vue'
 import deleteA from './delete_admin.vue'
 import editA from './edit_admin.vue'
 
-interface Props {
-  identity: string
-  title: string
-  createType: number
-}
-
-const props = defineProps<Props>()
+const props = defineProps(['identity', 'title', 'createType'])
 
 const { hasPermission } = usePermission()
 const {
@@ -99,28 +87,37 @@ const {
   refreshTable,
 } = useTable(props.identity)
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 基于现有状态派生单项数据，避免同一份结果在多个地方重复计算。
 const breadcrumbItem = computed(() => ({
   first: '用户管理',
   second: props.title,
 }))
+// 创建新记录，把当前输入正式写成业务数据。
 const createButtonText = computed(() => `新增${props.title}`)
 
+// 创建新记录，把当前输入正式写成业务数据。
 const create_admin = ref()
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const openCreate = () => {
   // 页面差异通过 createType 传给创建弹窗，弹窗内部再决定创建哪类管理员。
   if (!hasPermission('button.user.admin.create')) return
   create_admin.value.open(props.createType)
 }
 
+// 更新当前记录，确保最新输入能覆盖旧数据。
 const edit_admin = ref()
-const openEdit = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openEdit = (id) => {
   if (!hasPermission('button.user.admin.edit')) return
   edit_admin.value.open(id)
 }
 
+// 删除当前记录，避免旧数据继续影响后续流程。
 const delete_admin = ref()
-const openDelete = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const openDelete = (id) => {
   if (!hasPermission('button.user.admin.delete')) return
   delete_admin.value.open({ kind: 'admin', id })
 }

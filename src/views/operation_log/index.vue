@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 操作日志页面。
-  2. 展示后台关键业务操作的审计记录，辅助排查问题和追踪责任。
-  3. 前端 tracking 工具写入的内容最终会在这里查看。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -75,29 +69,29 @@ import breadCrumb from '@/components/bread_crumb.vue'
 import tips from './components/tips.vue'
 import { operationLogListLength, returnOperationListData, searchOperationLogList } from '@/api/log'
 
-interface OperationRow {
-  operation_person?: string
-  operation_content?: string
-  operation_level?: string
-  operation_time?: string
-}
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '操作日志',
   second: '',
 })
 
+// 记录名称，方便后续逻辑统一读取和更新。
 const name = ref('')
-const tableData = ref<OperationRow[]>([])
+// 记录表格数据数据，方便后续逻辑统一读取和更新。
+const tableData = ref([])
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const tip = ref()
 
+// 记录数据，方便后续逻辑统一读取和更新。
 const paginationData = reactive({
   operationTotal: 0,
   operationPageCount: 0,
   operationCurrentPage: 1,
 })
 
+// 加载当前数据，让后续逻辑直接复用准备好的结果。
 const loadOperationLength = async () => {
   // 总数单独维护，保持和当前操作日志分页组件的计算方式一致。
   const res = await operationLogListLength()
@@ -106,41 +100,49 @@ const loadOperationLength = async () => {
   paginationData.operationPageCount = Math.max(1, Math.ceil(total / 10))
 }
 
+// 获取页码列表，让后续逻辑统一使用这一份结果。
 const getOperationFirstPageList = async () => {
   paginationData.operationCurrentPage = 1
-  tableData.value = (await returnOperationListData(1)).data as OperationRow[]
+  tableData.value = (await returnOperationListData(1)).data
 }
 
-const operationCurrentChange = async (value: number) => {
+// 处理当前状态，把当前模块的关键逻辑集中在这里。
+const operationCurrentChange = async (value) => {
   paginationData.operationCurrentPage = value
-  tableData.value = (await returnOperationListData(value)).data as OperationRow[]
+  tableData.value = (await returnOperationListData(value)).data
 }
 
+// 按当前条件查询结果，避免页面层重复拼接筛选逻辑。
 const searchOperationPerson = async () => {
-  tableData.value = (await searchOperationLogList(name.value.trim())).data as OperationRow[]
+  tableData.value = (await searchOperationLogList(name.value.trim())).data
 }
 
-const levelClass = (value?: string) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const levelClass = (value) => {
   // 左侧色条和标签类型都基于同一套级别语义，先在这里统一归类。
   if (value == '高级' || value == '错误') return 'danger'
   if (value == '中级' || value == '警告') return 'warning'
   return 'normal'
 }
 
-const levelTagType = (value?: string) => {
-  if (value == '高级' || value == '错误') return 'danger' as const
-  if (value == '中级' || value == '警告') return 'warning' as const
-  return 'info' as const
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const levelTagType = (value) => {
+  if (value == '高级' || value == '错误') return 'danger'
+  if (value == '中级' || value == '警告') return 'warning'
+  return 'info'
 }
 
+// 清理列表，防止旧状态残留到下一次流程。
 const clearList = () => {
   tip.value.open()
 }
 
+// 处理列表，把当前模块的关键逻辑集中在这里。
 const reloadOperationList = async () => {
   await Promise.all([loadOperationLength(), getOperationFirstPageList()])
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await reloadOperationList()
 })

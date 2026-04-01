@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 普通用户列表页。
-  2. 负责查看员工列表、部门筛选、冻结解冻、赋权和编辑资料。
-  3. 这是用户管理员最常使用的主工作台。
--->
 <template>
   <breadCrumb ref="breadcrumb" :item="item" />
   <div class="table-wrapped">
@@ -122,28 +116,25 @@ import {
 } from '@/api/userinfor'
 import userinfo from '../components/user_infor.vue'
 
-interface UserRow {
-  id: number
-  status?: string
-  create_time?: string
-  update_time?: string
-  [key: string]: unknown
-}
-
-type UserListViewMode = 'all' | 'account' | 'department' | 'banned'
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const breadcrumb = ref()
 const { hasAnyPermission, hasPermission } = usePermission()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const item = ref({
   first: '用户管理',
   second: '用户列表',
 })
 
-const adminAccount = ref<string>()
-const departmentData = ref<string[]>([])
-const department = ref<string>()
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const adminAccount = ref()
+// 记录部门数据，方便后续逻辑统一读取和更新。
+const departmentData = ref([])
+// 记录部门，方便后续逻辑统一读取和更新。
+const department = ref()
+// 记录用户信息，方便后续逻辑统一读取和更新。
 const user_info = ref()
-const userListViewMode = ref<UserListViewMode>('all')
+// 记录用户列表页面视图，方便后续逻辑统一读取和更新。
+const userListViewMode = ref('all')
 const {
   tableData,
   total: adminTotal,
@@ -151,22 +142,25 @@ const {
   loadPage: loadUserPage,
   reload: reloadUserList,
   replaceWithList,
-} = usePagedTable<UserRow>({
-  loadList: async (page) => (await returnListData(page, '用户')).data as UserRow[],
+} = usePagedTable({
+  loadList: async (page) => (await returnListData(page, '用户')).data,
   loadTotal: async () => (await getAdminListLength('用户')).data.length,
 })
 
+// 加载部门，让后续逻辑直接复用准备好的数据。
 const loadDepartment = async () => {
   // 部门筛选项来自系统设置中的字典配置，不在页面里写死。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
+// 处理用户，把当前模块的关键逻辑集中在这里。
 const showAllUsers = async () => {
   userListViewMode.value = 'all'
   await reloadUserList()
 }
 
+// 处理当前操作，让页面动作真正进入业务流程。
 const applyAccountFilter = async () => {
   const account = adminAccount.value?.trim()
   if (!account) {
@@ -176,10 +170,11 @@ const applyAccountFilter = async () => {
 
   userListViewMode.value = 'account'
   const res = await searchUser(account, '用户')
-  replaceWithList(res.data as UserRow[])
+  replaceWithList(res.data)
 }
 
-const applyDepartmentFilter = async (value?: string) => {
+// 处理部门，把当前操作正式提交到业务流程里。
+const applyDepartmentFilter = async (value) => {
   if (!value) {
     await showAllUsers()
     return
@@ -187,19 +182,22 @@ const applyDepartmentFilter = async (value?: string) => {
 
   userListViewMode.value = 'department'
   const res = await searchDepartment(value)
-  replaceWithList(res.data as UserRow[])
+  replaceWithList(res.data)
 }
 
-const currentChange = async (value: number) => {
+// 处理当前状态，把当前模块的关键逻辑集中在这里。
+const currentChange = async (value) => {
   await loadUserPage(value)
 }
 
+// 处理用户列表，把当前模块的关键逻辑集中在这里。
 const banUserList = async () => {
   userListViewMode.value = 'banned'
   const res = await getBanList()
-  replaceWithList(res.data as UserRow[])
+  replaceWithList(res.data)
 }
 
+// 刷新用户列表当前状态页面视图，避免旧凭证过期后直接中断当前会话。
 const refreshUserListByCurrentView = async () => {
   // 用户列表有多种视图模式，刷新后要尽量保持用户当前正在看的那一类结果。
   if (userListViewMode.value === 'banned') {
@@ -220,24 +218,28 @@ const refreshUserListByCurrentView = async () => {
   await showAllUsers()
 }
 
+// 查询用户，按当前条件筛出目标结果。
 const searchUserByAccount = async () => {
   // 账号搜索和部门筛选互斥，切到账号搜索时先清空部门条件。
   department.value = undefined
   await applyAccountFilter()
 }
 
-const searchForDepartment = async (value?: string) => {
+// 查询部门，按当前条件筛出目标结果。
+const searchForDepartment = async (value) => {
   // 部门筛选和账号搜索互斥，切到部门筛选时先清空账号关键字。
   adminAccount.value = ''
   await applyDepartmentFilter(value)
 }
 
+// 清理当前状态，防止旧数据残留到下一次流程。
 const clearOperation = async () => {
   department.value = undefined
   await showAllUsers()
 }
 
-const banUserById = async (id: number) => {
+// 处理用户，把当前模块的关键逻辑集中在这里。
+const banUserById = async (id) => {
   if (!hasPermission('button.user.user.ban')) return
 
   const res = await banUser(id)
@@ -249,7 +251,8 @@ const banUserById = async (id: number) => {
   }
 }
 
-const hotUserById = async (id: number) => {
+// 处理用户，把当前模块的关键逻辑集中在这里。
+const hotUserById = async (id) => {
   if (!hasPermission('button.user.user.unban')) return
 
   const res = await hotUser(id)
@@ -261,11 +264,13 @@ const hotUserById = async (id: number) => {
   }
 }
 
+// 刷新用户，避免旧凭证过期后直接中断当前会话。
 const refreshAfterUserAction = async () => {
   await refreshUserListByCurrentView()
 }
 
-const openUser = (row: UserRow) => {
+// 处理用户，把当前模块的关键逻辑集中在这里。
+const openUser = (row) => {
   // 双击行只在具备至少一种操作权限时才打开详情弹窗。
   if (!hasAnyPermission(['button.user.user.edit', 'button.user.user.promote', 'button.user.user.delete'])) {
     return
@@ -274,6 +279,7 @@ const openUser = (row: UserRow) => {
   user_info.value.open(row)
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await Promise.all([loadDepartment(), showAllUsers()])
 })

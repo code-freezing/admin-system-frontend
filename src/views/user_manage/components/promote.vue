@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 权限提升弹窗。
-  2. 用于把普通用户提升为指定管理员角色。
-  3. 权限变更后，前后端菜单与可访问页面也会随之变化。
--->
 <template>
   <el-dialog v-model="dialogPromoteVisible" title="提升权限" center width="30%">
     <el-radio-group v-model="radio" class="ml-4">
@@ -25,16 +19,21 @@ import { ElMessage } from 'element-plus'
 import { changeIdentityToAdmin } from '@/api/userinfor'
 
 const emit = defineEmits(['success'])
+// 记录弹窗状态显示状态，方便后续逻辑统一读取和更新。
 const dialogPromoteVisible = ref(false)
-const userid = ref<number | null>(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const userid = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const radio = ref('')
 
-const open = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = (id) => {
   userid.value = id
   radio.value = ''
   dialogPromoteVisible.value = true
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const yes = async () => {
   // 提权前必须明确目标角色，避免把空身份直接提交给后端。
   if (!userid.value || !radio.value) {

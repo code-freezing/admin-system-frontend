@@ -1,88 +1,74 @@
-/**
- * 模块说明：
- * 1. 用户与权限模块接口封装。
- * 2. 覆盖个人资料、账号安全、用户管理、管理员管理等能力。
- * 3. 用户相关页面和通用分页 hook 都从这里拿数据。
- */
-
 import { post } from './request'
-import { toApiResult, toArray, toLengthData, toSessionUserProfile, type ApiResult } from '@/http/response'
+import { result, toArray, toLengthData, toSessionUserProfile } from '@/http/response'
 
-export type UserInfoData = ReturnType<typeof toSessionUserProfile>
+// 获取用户信息，让后续逻辑统一使用这一份结果。
+export const getUserInfo = (id) =>
+  post('/user/getUserInfo', { id }).then((raw) => result(raw, toSessionUserProfile(raw)))
 
-export interface LengthData {
-  length: number
-}
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const bind = (account, onlyId, url) =>
+  post('/user/bindAccount', { account, onlyId, url }).then((raw) => result(raw, null))
 
-export const getUserInfo = (id: number) => {
-  return post<ApiResult<UserInfoData>>('/user/getUserInfo', { id }).then((raw) =>
-    toApiResult(raw, toSessionUserProfile(raw)),
-  )
-}
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const changePassword = (id, oldPassword, newPassword) =>
+  post('/user/changePassword', { id, oldPassword, newPassword }).then((raw) => result(raw, null))
 
-export const bind = (account: string, onlyId: string | number, url: string) =>
-  post<ApiResult<null>>('/user/bindAccount', { account, onlyId, url }).then((raw) => toApiResult(raw, null))
+// 处理名称，把当前模块的关键逻辑集中在这里。
+export const changeName = (name, id) =>
+  post('/user/changeName', { name, id }).then((raw) => result(raw, null))
 
-export const changePassword = (id: number, oldPassword: string, newPassword: string) =>
-  post<ApiResult<null>>('/user/changePassword', { id, oldPassword, newPassword }).then((raw) =>
-    toApiResult(raw, null),
-  )
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const changeSex = (sex, id) =>
+  post('/user/changeSex', { sex, id }).then((raw) => result(raw, null))
 
-export const changeName = (name: string, id: number) =>
-  post<ApiResult<null>>('/user/changeName', { name, id }).then((raw) => toApiResult(raw, null))
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const changeEmail = (email, id) =>
+  post('/user/changeEmail', { email, id }).then((raw) => result(raw, null))
 
-export const changeSex = (sex: string, id: number) =>
-  post<ApiResult<null>>('/user/changeSex', { sex, id }).then((raw) => toApiResult(raw, null))
+// 创建新记录，把当前输入正式写成业务数据。
+export const createAdmin = (data) =>
+  post('/user/createAdmin', data).then((raw) => result(raw, null))
 
-export const changeEmail = (email: string, id: number) =>
-  post<ApiResult<null>>('/user/changeEmail', { email, id }).then((raw) => toApiResult(raw, null))
+// 更新当前记录，确保最新输入能覆盖旧数据。
+export const editAdmin = (data) =>
+  post('/user/editAdmin', data).then((raw) => result(raw, null))
 
-export const createAdmin = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/user/createAdmin', data).then((raw) => toApiResult(raw, null))
+// 处理用户，把当前模块的关键逻辑集中在这里。
+export const changeIdentityToUser = (id) =>
+  post('/user/changeIdentityToUser', { id }).then((raw) => result(raw, null))
 
-export const editAdmin = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/user/editAdmin', data).then((raw) => toApiResult(raw, null))
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const changeIdentityToAdmin = (id, identity) =>
+  post('/user/changeIdentityToAdmin', { id, identity }).then((raw) => result(raw, null))
 
-export const changeIdentityToUser = (id: number) =>
-  post<ApiResult<null>>('/user/changeIdentityToUser', { id }).then((raw) => toApiResult(raw, null))
+// 查询用户，按当前条件筛出目标结果。
+export const searchUser = (account, identity) =>
+  post('/user/searchUser', { account, identity }).then((raw) => result(raw, toArray(raw)))
 
-export const changeIdentityToAdmin = (id: number, identity: string) =>
-  post<ApiResult<null>>('/user/changeIdentityToAdmin', { id, identity }).then((raw) =>
-    toApiResult(raw, null),
-  )
+// 查询部门，按当前条件筛出目标结果。
+export const searchDepartment = (department) =>
+  post('/user/searchUserByDepartment', { department }).then((raw) => result(raw, toArray(raw)))
 
-export const searchUser = (account: string | number | undefined, identity: string) =>
-  post<ApiResult<UserInfoData[]>>('/user/searchUser', { account, identity }).then((raw) =>
-    toApiResult(raw, toArray<UserInfoData>(raw)),
-  )
+// 处理用户，把当前模块的关键逻辑集中在这里。
+export const banUser = (id) =>
+  post('/user/banUser', { id }).then((raw) => result(raw, null))
 
-export const searchDepartment = (department: string) =>
-  post<ApiResult<UserInfoData[]>>('/user/searchUserByDepartment', { department }).then((raw) =>
-    toApiResult(raw, toArray<UserInfoData>(raw)),
-  )
+// 处理用户，把当前模块的关键逻辑集中在这里。
+export const hotUser = (id) =>
+  post('/user/hotUser', { id }).then((raw) => result(raw, null))
 
-export const banUser = (id: number) =>
-  post<ApiResult<null>>('/user/banUser', { id }).then((raw) => toApiResult(raw, null))
-
-export const hotUser = (id: number) =>
-  post<ApiResult<null>>('/user/hotUser', { id }).then((raw) => toApiResult(raw, null))
-
+// 获取列表，让后续逻辑统一使用这一份结果。
 export const getBanList = () =>
-  post<ApiResult<UserInfoData[]>>('/user/getBanList').then((raw) =>
-    toApiResult(raw, toArray<UserInfoData>(raw)),
-  )
+  post('/user/getBanList').then((raw) => result(raw, toArray(raw)))
 
-export const deleteUser = (id: number, account: string) =>
-  post<ApiResult<null>>('/user/deleteUser', { id, account }).then((raw) => toApiResult(raw, null))
+// 删除用户，避免旧数据继续影响后续流程。
+export const deleteUser = (id, account) =>
+  post('/user/deleteUser', { id, account }).then((raw) => result(raw, null))
 
-export const getAdminListLength = (identity: string) => {
-  // 列表总数单独取值，保持和当前分页表格逻辑一致。
-  return post<ApiResult<LengthData>>('/user/getAdminListLength', { identity }).then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
-}
+// 获取列表，让后续逻辑统一使用这一份结果。
+export const getAdminListLength = (identity) =>
+  post('/user/getAdminListLength', { identity }).then((raw) => result(raw, toLengthData(raw)))
 
-export const returnListData = (pager: number, identity: string) =>
-  post<ApiResult<UserInfoData[]>>('/user/returnListData', { pager, identity }).then((raw) =>
-    toApiResult(raw, toArray<UserInfoData>(raw)),
-  )
+// 返回列表数据，让上层直接消费最终结果。
+export const returnListData = (pager, identity) =>
+  post('/user/returnListData', { pager, identity }).then((raw) => result(raw, toArray(raw)))

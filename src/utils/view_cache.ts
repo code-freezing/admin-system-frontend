@@ -1,16 +1,5 @@
-/**
- * 模块说明：
- * 1. 轻量视图缓存工具。
- * 2. 只用于首页这类读多写少的展示数据，减少短时间重复请求。
- * 3. 采用 sessionStorage，避免跨浏览器长期缓存导致界面内容过旧。
- */
-
-interface CacheRecord<T> {
-  expiresAt: number
-  value: T
-}
-
-const readCacheRecord = <T>(key: string): CacheRecord<T> | null => {
+// 处理已读信息缓存记录，把当前模块的关键逻辑集中在这里。
+const readCacheRecord = (key) => {
   if (typeof window === 'undefined') {
     return null
   }
@@ -21,15 +10,16 @@ const readCacheRecord = <T>(key: string): CacheRecord<T> | null => {
   }
 
   try {
-    return JSON.parse(rawValue) as CacheRecord<T>
+    return JSON.parse(rawValue)
   } catch {
     window.sessionStorage.removeItem(key)
     return null
   }
 }
 
-export const getViewCache = <T>(key: string): T | null => {
-  const record = readCacheRecord<T>(key)
+// 获取页面视图缓存，让后续逻辑统一使用这一份结果。
+export const getViewCache = (key) => {
+  const record = readCacheRecord(key)
   if (!record) {
     return null
   }
@@ -42,12 +32,13 @@ export const getViewCache = <T>(key: string): T | null => {
   return record.value
 }
 
-export const setViewCache = <T>(key: string, value: T, ttlMs: number) => {
+// 更新页面视图缓存，避免状态分散在多个位置维护。
+export const setViewCache = (key, value, ttlMs) => {
   if (typeof window === 'undefined') {
     return
   }
 
-  const payload: CacheRecord<T> = {
+  const payload = {
     expiresAt: Date.now() + ttlMs,
     value,
   }

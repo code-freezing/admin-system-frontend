@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 系统概览页面。
-  2. 通过统计卡片、图表和排行板块展示系统运行情况。
-  3. 这是超级管理员快速理解全局状态的可视化入口。
--->
 <template>
   <breadCrumb :item="breadcrumbItem" />
   <div class="overview-wrapped">
@@ -101,42 +95,44 @@ import {
   getLevelAndNumber,
 } from '@/api/overview'
 import { getUserInfo } from '@/api/userinfor'
-import type { EChartsType } from 'echarts/core'
-
-interface UserProfile {
-  name: string
-  sex: string
-  identity: string
-  department: string
-}
 
 const router = useRouter()
 const userStore = useUserInfo()
+// 记录单项数据，方便后续逻辑统一读取和更新。
 const breadcrumbItem = ref({
   first: '系统概览',
 })
-const chartAreaRef = ref<HTMLElement | null>(null)
-const pieRef = ref<HTMLElement | null>(null)
-const categoryBarRef = ref<HTMLElement | null>(null)
-const levelPieRef = ref<HTMLElement | null>(null)
-const dayLineRef = ref<HTMLElement | null>(null)
-const userProfile = reactive<UserProfile>({
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const chartAreaRef = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const pieRef = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const categoryBarRef = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const levelPieRef = ref(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const dayLineRef = ref(null)
+// 记录用户资料，方便后续逻辑统一读取和更新。
+const userProfile = reactive({
   name: '',
   sex: '',
   identity: '',
   department: '',
 })
+// 记录加载状态，方便后续逻辑统一读取和更新。
 const chartsLoading = ref(true)
 
-const charts: EChartsType[] = []
+const charts = []
 let chartObserver: IntersectionObserver | null = null
 let resizeHandler: (() => void) | null = null
 let hasStartedChartLoad = false
 
-const routerTo = (path: string) => {
+// 处理路由，把当前模块的关键逻辑集中在这里。
+const routerTo = (path) => {
   router.push(`/${path}`)
 }
 
+// 加载用户资料，让后续逻辑直接复用准备好的数据。
 const loadUserProfile = async () => {
   // 概览页头像直接复用 store，文字资料则按当前用户 id 再补一份最新详情。
   const currentUserId = userStore.id
@@ -151,11 +147,13 @@ const loadUserProfile = async () => {
   userProfile.department = data.department
 }
 
-const mountChart = (chart: EChartsType, option: Record<string, unknown>) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const mountChart = (chart, option) => {
   chart.setOption(option)
   charts.push(chart)
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const bindResize = () => {
   // 图表实例只绑定一次 resize，避免重复进入页面后叠加多个监听器。
   if (resizeHandler) {
@@ -168,6 +166,7 @@ const bindResize = () => {
   window.addEventListener('resize', resizeHandler)
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const renderCharts = async () => {
   // 图表数据和运行时代码都延后到真正需要时再加载，减少首屏图表开销。
   if (hasStartedChartLoad) {
@@ -316,6 +315,7 @@ const renderCharts = async () => {
   }
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const observeChartSection = () => {
   // 图表区域进入可视区后再渲染，避免用户还没滚到中部就提前初始化所有图表。
   if (!chartAreaRef.value || typeof window === 'undefined') {
@@ -344,6 +344,7 @@ const observeChartSection = () => {
   chartObserver.observe(chartAreaRef.value)
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
   await loadUserProfile()
   observeChartSection()

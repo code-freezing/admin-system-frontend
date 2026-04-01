@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 创建管理员弹窗。
-  2. 供超级管理员新增产品管理员、用户管理员或消息管理员账号。
-  3. 创建完成后会刷新对应身份的列表。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" :title="title" width="600px" align-center draggable>
     <div class="dialog-content">
@@ -47,24 +41,16 @@ import { ElMessage } from 'element-plus'
 import { createAdmin } from '@/api/userinfor'
 import { getDepartment } from '@/api/setting'
 
-type Identity = '产品管理员' | '用户管理员' | '消息管理员'
-
-interface FormData {
-  account: string
-  password: string
-  name: string
-  sex: string
-  email: string
-  department: string
-  identity: Identity | ''
-}
-
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const title = ref('')
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
-const departmentData = ref<string[]>([])
+// 记录部门数据，方便后续逻辑统一读取和更新。
+const departmentData = ref([])
 
-const formData = reactive<FormData>({
+// 记录表单数据，方便后续逻辑统一读取和更新。
+const formData = reactive({
   account: '',
   password: '',
   name: '',
@@ -74,12 +60,13 @@ const formData = reactive<FormData>({
   identity: '',
 })
 
-const identityMap: Record<number, { title: string; identity: Identity }> = {
+const identityMap = {
   1: { title: '新增用户管理员', identity: '用户管理员' },
   2: { title: '新增产品管理员', identity: '产品管理员' },
   3: { title: '新增消息管理员', identity: '消息管理员' },
 }
 
+// 记录校验规则，方便后续逻辑统一读取和更新。
 const rules = reactive({
   account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
@@ -89,13 +76,15 @@ const rules = reactive({
   department: [{ required: true, message: '请选择部门', trigger: 'blur' }],
 })
 
+// 加载部门，让后续逻辑直接复用准备好的数据。
 const loadDepartment = async () => {
   // 部门选项来自系统设置里的字典配置，创建管理员时直接复用。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
-const open = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = (id) => {
   // 每次打开前先清空旧表单，避免上一位管理员的资料残留到下一次创建。
   Object.assign(formData, {
     account: '',
@@ -116,6 +105,7 @@ const open = (id: number) => {
   dialogFormVisible.value = true
 }
 
+// 把新结果并入当前状态，避免调用方手动维护同一份数据。
 const addAdmin = async () => {
   // 创建成功后只通知父列表刷新，弹窗本身不接管外层列表状态。
   const res = await createAdmin(formData)

@@ -1,100 +1,62 @@
-/**
- * 模块说明：
- * 1. 产品出入库模块接口封装。
- * 2. 负责产品入库、出库申请、审核、分页和查询等库存业务请求。
- * 3. 产品列表页和审核弹窗都会复用这里的方法。
- */
-
 import { post } from './request'
-import { toApiResult, toArray, toLengthData, type ApiResult } from '@/http/response'
+import { result, toArray, toLengthData } from '@/http/response'
 
-export interface ProductRow {
-  id: number
-  product_id?: string | number
-  product_name?: string
-  product_category?: string
-  product_unit?: string
-  product_in_warehouse_number?: number
-  product_single_price?: number
-  product_all_price?: number
-  product_create_person?: string
-  product_create_time?: string
-  product_update_time?: string
-  in_memo?: string
-  product_out_status?: string
-  product_out_id?: string | number
-  product_out_number?: number
-  product_out_price?: number
-  product_out_apply_person?: string
-  product_out_apply_user_id?: number
-  product_out_apply_account?: string
-  apply_memo?: string
-  audit_memo?: string
-  product_apply_time?: string
-  product_audit_time?: string
-  product_out_audit_person?: string
-  [key: string]: unknown
-}
+// 创建产品，把当前输入转成新的业务记录。
+export const createProduct = (data) =>
+  post('/pro/createProduct', data).then((raw) => result(raw, null))
 
-export const createProduct = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/pro/createProduct', data).then((raw) => toApiResult(raw, null))
+// 删除产品，避免旧数据继续影响后续流程。
+export const deleteProduct = (id) =>
+  post('/pro/deleteProduct', { id }).then((raw) => result(raw, null))
 
-export const deleteProduct = (id: number) =>
-  post<ApiResult<null>>('/pro/deleteProduct', { id }).then((raw) => toApiResult(raw, null))
+// 更新产品，让当前记录按最新输入重新保存。
+export const editProduct = (data) =>
+  post('/pro/editProduct', data).then((raw) => result(raw, null))
 
-export const editProduct = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/pro/editProduct', data).then((raw) => toApiResult(raw, null))
+// 处理产品，把当前操作正式提交到业务流程里。
+export const applyOutProduct = (data) =>
+  post('/pro/applyOutProduct', data).then((raw) => result(raw, null))
 
-export const applyOutProduct = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/pro/applyOutProduct', data).then((raw) => toApiResult(raw, null))
+// 处理申请产品，把当前模块的关键逻辑集中在这里。
+export const withdrawApplyProduct = (id) =>
+  post('/pro/withdrawApplyProduct', { id }).then((raw) => result(raw, null))
 
-export const withdrawApplyProduct = (id: number) =>
-  post<ApiResult<null>>('/pro/withdrawApplyProduct', { id }).then((raw) => toApiResult(raw, null))
+// 处理产品，确保审核动作按当前规则落地。
+export const auditProduct = (data) =>
+  post('/pro/auditProduct', data).then((raw) => result(raw, null))
 
-export const auditProduct = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/pro/auditProduct', data).then((raw) => toApiResult(raw, null))
+// 查询产品，按当前条件筛出目标结果。
+export const searchProductForId = (product_id) =>
+  post('/pro/searchProductForId', { product_id }).then((raw) => result(raw, toArray(raw)))
 
-export const searchProductForId = (product_id: string | number) =>
-  post<ApiResult<ProductRow[]>>('/pro/searchProductForId', { product_id }).then((raw) =>
-    toApiResult(raw, toArray<ProductRow>(raw)),
-  )
+// 查询产品申请，按当前条件筛出目标结果。
+export const searchProductForApplyId = (product_out_id) =>
+  post('/pro/searchProductForApplyId', { product_out_id }).then((raw) => result(raw, toArray(raw)))
 
-export const searchProductForApplyId = (product_out_id: string | number) =>
-  post<ApiResult<ProductRow[]>>('/pro/searchProductForApplyId', { product_out_id }).then((raw) =>
-    toApiResult(raw, toArray<ProductRow>(raw)),
-  )
+// 查询产品，按当前条件筛出目标结果。
+export const searchProductForOutId = (product_out_id) =>
+  post('/pro/searchProductForOutId', { product_out_id }).then((raw) => result(raw, toArray(raw)))
 
-export const searchProductForOutId = (product_out_id: string | number) =>
-  post<ApiResult<ProductRow[]>>('/pro/searchProductForOutId', { product_out_id }).then((raw) =>
-    toApiResult(raw, toArray<ProductRow>(raw)),
-  )
-
+// 获取产品，让后续逻辑统一使用这一份结果。
 export const getProductLength = () =>
-  post<ApiResult<{ length: number }>>('/pro/getProductLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/pro/getProductLength').then((raw) => result(raw, toLengthData(raw)))
 
+// 获取申请产品，让后续逻辑统一使用这一份结果。
 export const getApplyProductLength = () =>
-  post<ApiResult<{ length: number }>>('/pro/getApplyProductLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/pro/getApplyProductLength').then((raw) => result(raw, toLengthData(raw)))
 
+// 获取产品，让后续逻辑统一使用这一份结果。
 export const getOutProductLength = () =>
-  post<ApiResult<{ length: number }>>('/pro/getOutProductLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/pro/getOutProductLength').then((raw) => result(raw, toLengthData(raw)))
 
-export const returnProductListData = (pager: number) =>
-  post<ApiResult<ProductRow[]>>('/pro/returnProductListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<ProductRow>(raw)),
-  )
+// 返回产品列表数据，让上层直接消费最终结果。
+export const returnProductListData = (pager) =>
+  post('/pro/returnProductListData', { pager }).then((raw) => result(raw, toArray(raw)))
 
-export const returnApplyProductListData = (pager: number) =>
-  post<ApiResult<ProductRow[]>>('/pro/returnApplyProductListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<ProductRow>(raw)),
-  )
+// 返回申请产品列表数据，让上层直接消费最终结果。
+export const returnApplyProductListData = (pager) =>
+  post('/pro/returnApplyProductListData', { pager }).then((raw) => result(raw, toArray(raw)))
 
-export const returnOutProductListData = (pager: number) =>
-  post<ApiResult<ProductRow[]>>('/pro/returnOutProductListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<ProductRow>(raw)),
-  )
+// 返回产品列表数据，让上层直接消费最终结果。
+export const returnOutProductListData = (pager) =>
+  post('/pro/returnOutProductListData', { pager }).then((raw) => result(raw, toArray(raw)))

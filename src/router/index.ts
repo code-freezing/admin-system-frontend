@@ -1,7 +1,7 @@
-import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 // 静态路由只保留公共页和后台壳子，业务页统一在登录后动态注入到 menu 下。
-const routes: RouteRecordRaw[] = [
+const routes = [
   {
     path: '/',
     redirect: '/login',
@@ -39,6 +39,7 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+// 创建前端路由实例，统一收口静态路由和动态路由配置。
 const router = createRouter({
   history: createWebHashHistory(),
   routes,

@@ -1,18 +1,10 @@
-/**
- * 模块说明：
- * 1. 统一请求助手。
- * 2. 对外暴露最常用的 POST 包装，屏蔽 axios 实例的底层细节。
- * 3. 其目标是让各个 api 文件保持轻量和一致。
- */
+import instance from '@/http/index'
 
-import instance, { type HttpRequestConfig } from '@/http/index'
-
-// API 层统一走这层轻包装，避免每个模块重复关心请求方法和实例细节。
-export const post = <T = any>(url: string, data?: any, config?: HttpRequestConfig) => {
-  return instance({
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const post = (url, data, config) =>
+  instance({
     url,
     method: 'POST',
     data,
     ...config,
-  }) as Promise<T>
-}
+  })

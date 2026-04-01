@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 登录页。
-  2. 负责账号登录、注册入口、菜单加载和登录后状态初始化。
-  3. 这是前端认证链路和动态路由恢复的起点。
--->
 <template>
   <div class="common-layout">
     <el-container>
@@ -84,34 +78,34 @@ import { useMenu } from '@/stores/menu'
 import { setAuthTokens } from '@/utils/auth'
 import { useMsg } from '@/stores/message'
 
-interface AuthForm {
-  account: number | null
-  password: string
-  rePassword?: string
-}
-
 const router = useRouter()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 const permissionStore = usePermission()
 const msgStore = useMsg()
 
+// 记录名称，方便后续逻辑统一读取和更新。
 const activeName = ref('first')
-const loginData = reactive<AuthForm>({
+// 处理数据，在认证通过后建立当前会话。
+const loginData = reactive({
   account: null,
   password: '',
 })
-const registerData = reactive<AuthForm>({
+// 处理数据，把当前账号或能力注册到系统里。
+const registerData = reactive({
   account: null,
   password: '',
   rePassword: '',
 })
-const forgetP = ref<InstanceType<typeof forget> | null>(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const forgetP = ref(null)
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const openForget = () => {
   forgetP.value?.open()
 }
 
+// 处理当前登录流程，在认证通过后建立当前会话。
 const loginAction = async () => {
   // 登录成功后立即补齐权限、菜单和用户信息，让后台壳子直接按最新会话启动。
   const res = await login(loginData)
@@ -133,7 +127,7 @@ const loginAction = async () => {
   const profile = await authProfile()
   permissionStore.setAccessProfile(profile.data)
   menuStore.setRouter(permissionStore.menuTree)
-  userStore.applyProfile(profile.data.user ?? {})
+  userStore.applyProfile(profile.data.user)
   msgStore.reset()
 
   ElMessage.success('登录成功')
@@ -141,6 +135,7 @@ const loginAction = async () => {
   await router.push('/menu')
 }
 
+// 处理当前注册流程，把账号信息正式写入系统。
 const registerAction = async () => {
   // 注册页只做最小校验，账号密码规则交给后端统一裁决。
   if (registerData.password !== registerData.rePassword) {

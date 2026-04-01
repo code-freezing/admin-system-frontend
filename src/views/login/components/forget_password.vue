@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 登录页找回密码弹窗。
-  2. 用户先校验账号与邮箱，再通过该组件完成密码重置。
-  3. 它复用后端的账号安全接口，但不依赖已登录状态。
--->
 <template>
   <el-dialog v-model="forgetVisible" title="忘记密码" width="400px" destroy-on-close>
     <el-form
@@ -56,53 +50,52 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import type { FormInstance, FormProps, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { reset, verify } from '@/api/login'
 
-interface VerifyFormModel {
-  account: string
-  email: string
-}
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const labelPosition = ref('top')
+// 校验表单，确保当前请求符合业务要求。
+const verifyFormRef = ref()
+// 重置表单，把当前流程恢复到干净初始状态。
+const resetFormRef = ref()
 
-interface ResetFormModel {
-  password: string
-  nextPassword: string
-}
-
-const labelPosition = ref<FormProps['labelPosition']>('top')
-const verifyFormRef = ref<FormInstance>()
-const resetFormRef = ref<FormInstance>()
-
+// 记录显示状态，方便后续逻辑统一读取和更新。
 const forgetVisible = ref(false)
+// 重置显示状态，把当前流程恢复到干净初始状态。
 const resetVisible = ref(false)
-const resetUserId = ref<number | null>(null)
+// 重置用户，把当前流程恢复到干净初始状态。
+const resetUserId = ref(null)
 
-const verifyForm = reactive<VerifyFormModel>({
+// 校验表单，确保当前请求符合业务要求。
+const verifyForm = reactive({
   account: '',
   email: '',
 })
 
-const resetForm = reactive<ResetFormModel>({
+// 重置表单，把当前流程恢复到干净初始状态。
+const resetForm = reactive({
   password: '',
   nextPassword: '',
 })
 
-const verifyRules: FormRules<VerifyFormModel> = {
+const verifyRules = {
   account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
   email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
 }
 
-const resetRules: FormRules<ResetFormModel> = {
+const resetRules = {
   password: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
   nextPassword: [{ required: true, message: '请再次输入新密码', trigger: 'blur' }],
 }
 
+// 清理表单，防止旧状态残留到下一次流程。
 const clearResetForm = () => {
   resetForm.password = ''
   resetForm.nextPassword = ''
 }
 
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
 const handleVerify = async () => {
   // 先验证账号和邮箱，再进入重置密码步骤，避免直接暴露重置入口。
   const valid = await verifyFormRef.value?.validate().catch(() => false)
@@ -122,6 +115,7 @@ const handleVerify = async () => {
   ElMessage.error('账号或邮箱验证失败')
 }
 
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
 const handleReset = async () => {
   // 重置密码前先校验两次输入一致，再把当前用户 id 和新密码一起提交给后端。
   const valid = await resetFormRef.value?.validate().catch(() => false)
@@ -150,6 +144,7 @@ const handleReset = async () => {
   ElMessage.error('密码修改失败')
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const open = () => {
   forgetVisible.value = true
 }

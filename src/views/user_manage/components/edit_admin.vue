@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 编辑管理员信息弹窗。
-  2. 负责修改管理员的姓名、性别、邮箱、部门等资料。
-  3. 若部门变更，后端还会顺带调整部门消息已读状态。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="编辑管理员" width="600px" align-center draggable>
     <div class="dialog-content">
@@ -44,20 +38,14 @@ import { ElMessage } from 'element-plus'
 import { editAdmin, getUserInfo } from '@/api/userinfor'
 import { getDepartment } from '@/api/setting'
 
-interface FormData {
-  id: number | null
-  account: number | null
-  name: string
-  sex: string
-  email: string
-  department: string
-}
-
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
-const departmentData = ref<string[]>([])
+// 记录部门数据，方便后续逻辑统一读取和更新。
+const departmentData = ref([])
 
-const formDataInfo = reactive<FormData>({
+// 记录表单数据信息，方便后续逻辑统一读取和更新。
+const formDataInfo = reactive({
   id: null,
   account: null,
   name: '',
@@ -66,6 +54,7 @@ const formDataInfo = reactive<FormData>({
   department: '',
 })
 
+// 记录校验规则，方便后续逻辑统一读取和更新。
 const rules = reactive({
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   sex: [{ required: true, message: '请选择性别', trigger: 'blur' }],
@@ -73,13 +62,15 @@ const rules = reactive({
   department: [{ required: true, message: '请选择部门', trigger: 'blur' }],
 })
 
+// 加载部门，让后续逻辑直接复用准备好的数据。
 const loadDepartment = async () => {
   // 部门字典来自系统设置，管理员编辑和用户编辑共用同一份选项。
   const res = await getDepartment()
   departmentData.value = res.data
 }
 
-const open = async (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = async (id) => {
   // 打开编辑弹窗时先拉一份最新用户资料，避免列表展示字段和真实资料发生偏差。
   const res = await getUserInfo(id)
   formDataInfo.id = res.data.id
@@ -91,6 +82,7 @@ const open = async (id: number) => {
   dialogFormVisible.value = true
 }
 
+// 更新当前记录，确保最新输入能覆盖旧数据。
 const edit = async () => {
   // 编辑成功后只通知父列表刷新，具体分页回填逻辑交给外层页面处理。
   const res = await editAdmin(formDataInfo)

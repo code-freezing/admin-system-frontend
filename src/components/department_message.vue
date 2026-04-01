@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 部门消息弹窗组件。
-  2. 展示当前用户所在部门的消息列表、未读状态和详情查看。
-  3. 顶部铃铛点击后会打开这个组件。
--->
 <template>
   <el-dialog v-model="dialog" title="部门消息" width="912px" center destroy-on-close>
     <el-container>
@@ -64,27 +58,21 @@ import { updateClick } from '@/api/message'
 import { useMsg } from '@/stores/message'
 import { useUserInfo } from '@/stores/userinfor'
 
-interface DepartmentMessageRow {
-  id: number
-  message_title: string
-  message_content: string
-  message_level?: string
-  message_publish_time?: string
-  message_click_number: number
-}
-
 const msgStore = useMsg()
 const userStore = useUserInfo()
 
+// 记录消息信息，方便后续逻辑统一读取和更新。
 const messageInfo = reactive({
   message_title: '',
   message_content: '',
 })
 
 // 已读列表用于控制左侧圆点状态。
-const readList = ref<number[]>([])
+const readList = ref([])
+// 记录弹窗状态，方便后续逻辑统一读取和更新。
 const dialog = ref(false)
 
+// 获取用户部门消息，让后续逻辑统一使用这一份结果。
 const getUserDepartmentMessage = async () => {
   const id = userStore.id
   const department = userStore.department
@@ -108,7 +96,7 @@ const getUserDepartmentMessage = async () => {
 getUserDepartmentMessage()
 
 // 点击列表项后先更新阅读状态，再刷新列表并展示详情。
-const getDetail = async (row: DepartmentMessageRow) => {
+const getDetail = async (row) => {
   await updateClick(row.message_click_number, row.id)
 
   if (userStore.id) {
@@ -120,7 +108,8 @@ const getDetail = async (row: DepartmentMessageRow) => {
   await getUserDepartmentMessage()
 }
 
-const idInList = (id: number) => {
+// 处理列表，把当前模块的关键逻辑集中在这里。
+const idInList = (id) => {
   return readList.value.indexOf(id) !== -1 ? 0 : 1
 }
 

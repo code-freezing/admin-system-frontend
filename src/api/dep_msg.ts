@@ -1,57 +1,31 @@
-/**
- * 模块说明：
- * 1. 部门消息接口封装。
- * 2. 供部门消息弹窗和未读状态 store 调用，统一声明消息读取相关接口。
- * 3. 这一层只组织参数和 URL，不处理页面交互。
- */
-
 import { post } from './request'
-import { getArrayField, getNumberField, toApiResult, toArray, type ApiResult } from '@/http/response'
+import { getArrayField, getNumberField, result, toArray } from '@/http/response'
 
-export interface DepartmentMessageItem {
-  id: number
-  message_title: string
-  message_content: string
-  message_level?: string
-  message_publish_time?: string
-  message_click_number?: number
-  [key: string]: unknown
-}
-
-export interface ReadStatusItem {
-  read_list?: string
-  read_status?: number
-}
-
-// 部门消息接口。
-export const getDepartmentMsg = (id: number, department: string) =>
-  post<ApiResult<{ id: number; read_list: number[] }>>('/dm/getDepartmentMsg', { id, department }).then(
-    (raw) =>
-      toApiResult(raw, {
-        id: getNumberField(raw, 'id'),
-        read_list: getArrayField<number>(raw, 'read_list'),
-      }),
+// 获取部门消息，让后续逻辑统一使用这一份结果。
+export const getDepartmentMsg = (id, department) =>
+  post('/dm/getDepartmentMsg', { id, department }).then((raw) =>
+    result(raw, {
+      id: getNumberField(raw, 'id'),
+      read_list: getArrayField(raw, 'read_list'),
+    }),
   )
 
-export const getDepartmentMsgList = (department: string) =>
-  post<ApiResult<DepartmentMessageItem[]>>('/dm/getDepartmentMsgList', { department }).then((raw) =>
-    toApiResult(raw, toArray<DepartmentMessageItem>(raw)),
-  )
+// 获取部门消息列表，让后续逻辑统一使用这一份结果。
+export const getDepartmentMsgList = (department) =>
+  post('/dm/getDepartmentMsgList', { department }).then((raw) => result(raw, toArray(raw)))
 
-export const getReadListAndStatus = (id: number) =>
-  post<ApiResult<ReadStatusItem[]>>('/dm/getReadListAndStatus', { id }).then((raw) =>
-    toApiResult(raw, toArray<ReadStatusItem>(raw)),
-  )
+// 获取已读信息列表状态，让后续逻辑统一使用这一份结果。
+export const getReadListAndStatus = (id) =>
+  post('/dm/getReadListAndStatus', { id }).then((raw) => result(raw, toArray(raw)))
 
-export const clickDelete = (readId: number, id: number) =>
-  post<ApiResult<null>>('/dm/clickDelete', { readId, id }).then((raw) => toApiResult(raw, null))
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const clickDelete = (readId, id) =>
+  post('/dm/clickDelete', { readId, id }).then((raw) => result(raw, null))
 
-export const changeUserReadList = (newId: number, department: string) =>
-  post<ApiResult<null>>('/dm/changeUserReadList', { newId, department }).then((raw) =>
-    toApiResult(raw, null),
-  )
+// 处理用户已读信息列表，把当前模块的关键逻辑集中在这里。
+export const changeUserReadList = (newId, department) =>
+  post('/dm/changeUserReadList', { newId, department }).then((raw) => result(raw, null))
 
-export const changeUserReadListButDelete = (deleteId: number, department: string) =>
-  post<ApiResult<null>>('/dm/changeUserReadListButDelete', { deleteId, department }).then((raw) =>
-    toApiResult(raw, null),
-  )
+// 处理用户已读信息列表，把当前模块的关键逻辑集中在这里。
+export const changeUserReadListButDelete = (deleteId, department) =>
+  post('/dm/changeUserReadListButDelete', { deleteId, department }).then((raw) => result(raw, null))

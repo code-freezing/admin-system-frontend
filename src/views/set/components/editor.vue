@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 富文本编辑弹窗。
-  2. 用于编辑公司简介、愿景、文化等富文本配置内容。
-  3. 设置页中的多个编辑按钮都会复用这个组件。
--->
 <template>
   <el-dialog v-model="state.dialogFormVisible" :title="title" width="600px" destroy-on-close>
     <div style="border: 1px solid #ccc">
@@ -38,11 +32,16 @@ import { ElMessage } from 'element-plus'
 import { changeCompanyIntroduce, getCompanyIntroduce } from '@/api/setting'
 import { buildApiUrl, toAbsoluteResourceUrl } from '@/utils/runtime_url'
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const title = ref('')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const currentKey = ref('')
-const editorRef = shallowRef<any>(null)
+const editorRef = shallowRef(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const mode = ref('default')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const valueHtml = ref('')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const state = reactive({
   dialogFormVisible: false,
 })
@@ -65,7 +64,7 @@ const toolbarConfig = {
     'codeBlock',
     'divider',
     'fullScreen',
-  ] as never[],
+  ],
 }
 
 const editorConfig = {
@@ -76,7 +75,7 @@ const editorConfig = {
       fieldName: 'file',
       methods: 'post',
       metaWithUrl: true,
-      customInsert(res: { url?: string }, insertFn: (url: string) => void) {
+      customInsert(res, insertFn) {
         if (res.url) {
           insertFn(toAbsoluteResourceUrl(res.url))
         }
@@ -85,9 +84,10 @@ const editorConfig = {
   },
 }
 
-const open = async (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = async (id) => {
   // 页面侧只传一个简单 id，这里统一映射到具体的设置项标题和 set_name。
-  const mapping: Record<number, { title: string; key: string }> = {
+  const mapping = {
     1: { title: '编辑公司简介', key: '公司简介' },
     2: { title: '编辑公司愿景', key: '公司愿景' },
     3: { title: '编辑企业文化', key: '企业文化' },
@@ -102,6 +102,7 @@ const open = async (id: number) => {
   state.dialogFormVisible = true
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const yes = async () => {
   // 保存时直接用当前 set_name 覆盖对应内容，不在弹窗里再区分具体配置项。
   const res = await changeCompanyIntroduce(valueHtml.value, currentKey.value)
@@ -114,10 +115,12 @@ const yes = async () => {
   }
 }
 
-const handleCreated = (editor: any) => {
+// 处理当前分支的核心逻辑，避免同类操作散落在多个位置。
+const handleCreated = (editor) => {
   editorRef.value = editor
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const cancel = () => {
   state.dialogFormVisible = false
 }

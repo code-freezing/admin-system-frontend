@@ -1,12 +1,6 @@
-/**
- * 模块说明：
- * 1. 操作日志埋点工具。
- * 2. 把页面里的操作行为转换成统一的日志文案，再调用日志接口落库。
- * 3. 这样能避免每个页面手写重复的日志拼接逻辑。
- */
-
 import { operationLog } from '@/api/log'
 
+// 整理当前输入，确保后续流程直接消费统一结构。
 const buildOperationContent = (module: string, operation_object: string, operation_status?: string) => {
   if (module.includes('删除用户')) {
     return `删除了用户“${operation_object}”`
@@ -23,6 +17,7 @@ const buildOperationContent = (module: string, operation_object: string, operati
   return `对${module}“${operation_object}”进行了操作`
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const normalizeOperationLevel = (value: string) => {
   const normalized = value.trim().toLowerCase()
 

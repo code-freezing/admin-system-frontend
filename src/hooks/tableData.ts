@@ -1,18 +1,11 @@
-/**
- * 模块说明：
- * 1. 用户管理表格分页 hook。
- * 2. 封装列表分页、搜索、总数同步和删除后页码回退等通用逻辑。
- * 3. 不同管理员页面只需传入身份类型即可复用这套流程。
- */
-
 import { getAdminListLength, returnListData, searchUser } from '@/api/userinfor'
 import { ref } from 'vue'
 import { usePagedTable } from './usePagedTable'
 
-type TableRow = Record<string, unknown>
-
-export const useTable = (identity: string) => {
-  const adminAccount = ref<number | string | undefined>(undefined)
+// 提供表格数据，让调用方通过统一入口复用这段逻辑。
+export const useTable = (identity) => {
+  // 记录当前状态，方便后续逻辑统一读取和更新。
+  const adminAccount = ref()
   const {
     tableData,
     total: adminTotal,
@@ -21,10 +14,10 @@ export const useTable = (identity: string) => {
     loadPage,
     loadFirstPage: getFirstPageList,
     replaceWithList,
-  } = usePagedTable<TableRow>({
+  } = usePagedTable({
     loadList: async (page) => {
       const list = await returnListData(page, identity)
-      return list.data as TableRow[]
+      return list.data
     },
     loadTotal: async () => {
       const res = await getAdminListLength(identity)
@@ -32,8 +25,10 @@ export const useTable = (identity: string) => {
     },
   })
 
-  const currentChange = async (value: number) => loadPage(value)
+  // 处理当前状态，把当前模块的关键逻辑集中在这里。
+  const currentChange = async (value) => loadPage(value)
 
+  // 按当前条件查询结果，避免页面层重复拼接筛选逻辑。
   const searchAdmin = async () => {
     if (adminAccount.value === undefined || adminAccount.value === '') {
       await getFirstPageList()
@@ -41,9 +36,10 @@ export const useTable = (identity: string) => {
     }
 
     const list = await searchUser(String(adminAccount.value).trim(), identity)
-    replaceWithList(list.data as TableRow[])
+    replaceWithList(list.data)
   }
 
+  // 清理当前状态，防止旧数据残留到下一次流程。
   const clearInput = async () => {
     await getFirstPageList()
   }
@@ -53,7 +49,7 @@ export const useTable = (identity: string) => {
     await syncTotalCount()
 
     const list = await returnListData(paginationData.currentPage, identity)
-    const normalizedList = list.data as TableRow[]
+    const normalizedList = list.data
 
     if (action === 'delete' && normalizedList.length === 0 && paginationData.currentPage > 1) {
       paginationData.currentPage -= 1

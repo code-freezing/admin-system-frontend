@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 修改密码弹窗。
-  2. 已登录用户通过这里校验旧密码并提交新密码。
-  3. 密码相关规则由后端 Joi 校验和 bcrypt 哈希共同保证。
--->
 <template>
   <el-dialog v-model="state.changePasswordDialog" title="修改密码" width="400px">
     <el-form class="login-form" :label-position="labelPosition" :rules="rules">
@@ -31,30 +25,30 @@ import { changePassword } from '@/api/userinfor'
 import { useMenu } from '@/stores/menu'
 import { useUserInfo } from '@/stores/userinfor'
 
-interface PasswordData {
-  oldPassword: string
-  newPassword: string
-}
-
 const router = useRouter()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const labelPosition = ref('top')
+// 记录当前状态，方便后续逻辑统一读取和更新。
 const state = reactive({
   changePasswordDialog: false,
 })
 
-const passwordData = reactive<PasswordData>({
+// 记录数据，方便后续逻辑统一读取和更新。
+const passwordData = reactive({
   oldPassword: '',
   newPassword: '',
 })
 
+// 记录校验规则，方便后续逻辑统一读取和更新。
 const rules = reactive({
   oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
   newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
 })
 
+// 处理用户，把当前模块的关键逻辑集中在这里。
 const changeUserPassword = async () => {
   // 修改密码成功后强制重新登录，避免继续复用旧会话和旧动态路由。
   if (!passwordData.oldPassword || !passwordData.newPassword) {
@@ -79,6 +73,7 @@ const changeUserPassword = async () => {
   }
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const open = () => {
   state.changePasswordDialog = true
 }

@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 后台主布局页。
-  2. 负责渲染左侧菜单、顶部用户区、消息入口和内部 router-view。
-  3. 登录成功后，几乎所有业务页面都会在这个壳子里切换。
--->
 <template>
   <div class="common-layout">
     <el-container>
@@ -90,6 +84,7 @@ const permissionStore = usePermissionStore()
 const userStore = useUserInfo()
 const menuStore = useMenu()
 const router = useRouter()
+// 基于现有状态派生名称，避免同一份结果在多个地方重复计算。
 const welcomeName = computed(() => userStore.name || '')
 
 const iconMap = {
@@ -104,18 +99,14 @@ const iconMap = {
   Memo,
 }
 
+// 解析当前结果，让后续分支基于统一数据继续执行。
 const resolveIcon = (iconName?: string) => {
-  return iconName ? iconMap[iconName as keyof typeof iconMap] || Document : Document
+  return iconName ? iconMap[iconName] || Document : Document
 }
-
-type IdleWindow = Window &
-  typeof globalThis & {
-    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number
-    cancelIdleCallback?: (handle: number) => void
-  }
 
 let unreadTaskHandle: number | null = null
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const scheduleUnreadLoad = () => {
   if (!userStore.id) {
     return
@@ -123,7 +114,7 @@ const scheduleUnreadLoad = () => {
 
   // 未读消息属于非阻塞信息，放到空闲时机加载能减少首屏竞争。
   const task = () => void msgStore.returnReadList(userStore.id)
-  const idleWindow = window as IdleWindow
+  const idleWindow = window
 
   if (typeof idleWindow.requestIdleCallback === 'function') {
     unreadTaskHandle = idleWindow.requestIdleCallback(() => task(), { timeout: 1000 })
@@ -133,12 +124,13 @@ const scheduleUnreadLoad = () => {
   unreadTaskHandle = window.setTimeout(task, 300)
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const cancelUnreadLoad = () => {
   if (unreadTaskHandle === null) {
     return
   }
 
-  const idleWindow = window as IdleWindow
+  const idleWindow = window
 
   if (typeof idleWindow.cancelIdleCallback === 'function') {
     idleWindow.cancelIdleCallback(unreadTaskHandle)
@@ -149,6 +141,7 @@ const cancelUnreadLoad = () => {
   unreadTaskHandle = null
 }
 
+// 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(() => {
   scheduleUnreadLoad()
 })
@@ -157,6 +150,7 @@ onBeforeUnmount(() => {
   cancelUnreadLoad()
 })
 
+// 处理登录，把当前模块的关键逻辑集中在这里。
 const goLogin = async () => {
   // 退出登录后同时清空本地上下文，避免下一次进入后台时复用旧菜单和旧用户信息。
   await logout()
@@ -169,7 +163,9 @@ const goLogin = async () => {
   router.push('/login')
 }
 
-const departmentMsgRef = ref<InstanceType<typeof departmentMsg> | null>(null)
+// 记录部门消息，方便后续逻辑统一读取和更新。
+const departmentMsgRef = ref(null)
+// 处理部门消息，把当前模块的关键逻辑集中在这里。
 const openDepartmentMessage = () => {
   departmentMsgRef.value?.open()
 }

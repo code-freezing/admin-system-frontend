@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 出库申请弹窗。
-  2. 从库存列表发起出库申请，填写申请编号、数量、申请人和备注。
-  3. 提交后产品不会立即扣库，而是进入待审核状态。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="产品出库申请" width="600px" align-center draggable>
     <div class="product-name">产品名称：{{ formDataInfo.product_name }}</div>
@@ -47,28 +41,19 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import type { FormProps } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { applyOutProduct } from '@/api/product'
 import { useUserInfo } from '@/stores/userinfor'
 
-interface FormData {
-  id: number | null
-  product_name: string
-  product_out_id: number | null
-  product_in_warehouse_number: number | null
-  product_single_price: number | null
-  product_out_number: number | null
-  product_out_apply_person: string | null
-  apply_memo: string
-}
-
-const labelPosition = ref<FormProps['labelPosition']>('left')
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const labelPosition = ref('left')
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 const userStore = useUserInfo()
 
-const formDataInfo = reactive<FormData>({
+// 记录表单数据信息，方便后续逻辑统一读取和更新。
+const formDataInfo = reactive({
   id: null,
   product_name: '',
   product_out_id: null,
@@ -79,12 +64,14 @@ const formDataInfo = reactive<FormData>({
   apply_memo: '',
 })
 
+// 记录校验规则，方便后续逻辑统一读取和更新。
 const rules = reactive({
   product_out_id: [{ required: true, message: '请输入出库编号', trigger: 'blur' }],
   product_out_number: [{ required: true, message: '请输入出库数量', trigger: 'blur' }],
   product_out_apply_person: [{ required: true, message: '申请人不能为空', trigger: 'blur' }],
 })
 
+// 基于现有状态派生申请，避免同一份结果在多个地方重复计算。
 const canSubmitOutApply = computed(() => {
   // 申请数量不能超过当前库存，前端先做一层即时限制减少无效提交。
   const warehouseNumber = formDataInfo.product_in_warehouse_number
@@ -93,7 +80,8 @@ const canSubmitOutApply = computed(() => {
   return warehouseNumber >= outNumber
 })
 
-const open = (row: any) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = (row) => {
   // 每次打开都重置申请字段，避免上一条库存记录的编号和备注串到下一次申请。
   formDataInfo.id = row.id
   formDataInfo.product_in_warehouse_number = row.product_in_warehouse_number
@@ -106,6 +94,7 @@ const open = (row: any) => {
   dialogFormVisible.value = true
 }
 
+// 添加产品，把新结果并入当前状态。
 const addProduct = async () => {
   // 申请只会写回当前 product 记录，真正扣库存要等审核通过后才发生。
   const res = await applyOutProduct(formDataInfo)

@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 撤回出库申请弹窗。
-  2. 允许申请人在审核前撤销已提交的出库申请。
-  3. 撤回后产品记录会回到未申请状态。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="撤回出库申请" width="30%" center>
     <span>确认后将撤回该出库申请。</span>
@@ -20,18 +14,22 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { withdrawApplyProduct } from '@/api/product'
 
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
-const withdrawId = ref<number | null>(null)
+// 记录当前状态，方便后续逻辑统一读取和更新。
+const withdrawId = ref(null)
 
-const open = (id: number) => {
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+const open = (id) => {
   withdrawId.value = id
   dialogFormVisible.value = true
 }
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const withdraw = async () => {
   // 撤回成功后后端会清空当前产品记录上的申请字段，让库存回到未申请状态。
-  const res = await withdrawApplyProduct(withdrawId.value as number)
+  const res = await withdrawApplyProduct(withdrawId.value)
   if (res.status == 0) {
     ElMessage.success('撤回成功')
     emit('success')

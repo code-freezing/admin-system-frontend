@@ -1,120 +1,81 @@
-/**
- * 模块说明：
- * 1. 消息公告模块接口封装。
- * 2. 负责公告发布、编辑、回收站、详情和首页消息列表等请求。
- * 3. 消息页面和首页公告面板都依赖这一层。
- */
-
 import { post } from './request'
-import {
-  getNumberField,
-  getStringField,
-  toApiResult,
-  toArray,
-  toLengthData,
-  type ApiResult,
-} from '@/http/response'
+import { getNumberField, getStringField, result, toArray, toLengthData } from '@/http/response'
 
-export interface MessageRow {
-  id: number
-  message_title?: string
-  message_category?: string
-  message_publish_department?: string
-  message_publish_name?: string
-  message_publish_time?: string
-  message_update_time?: string
-  message_delete_time?: string
-  message_click_number?: number
-  message_status?: number | string
-  message_receipt_object?: string
-  message_level?: string
-  message_content?: string
-  [key: string]: unknown
-}
-
-export const publishMessage = (data: Record<string, unknown>) => {
-  // 发布消息后前端还要继续同步部门已读列表，所以这里额外带回消息 id 和接收部门。
-  return post<ApiResult<{ id: number; department: string }>>('/msg/publishMessage', data).then((raw) =>
-    toApiResult(raw, {
+// 处理消息，把当前模块的关键逻辑集中在这里。
+export const publishMessage = (data) =>
+  post('/msg/publishMessage', data).then((raw) =>
+    result(raw, {
       id: getNumberField(raw, 'id'),
       department: getStringField(raw, 'department'),
     }),
   )
-}
 
+// 处理消息列表，把当前模块的关键逻辑集中在这里。
 export const companyMessageList = () =>
-  post<ApiResult<MessageRow[]>>('/msg/companyMessageList').then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+  post('/msg/companyMessageList').then((raw) => result(raw, toArray(raw)))
 
+// 处理消息列表，把当前模块的关键逻辑集中在这里。
 export const systemMessageList = () =>
-  post<ApiResult<MessageRow[]>>('/msg/systemMessageList').then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
+  post('/msg/systemMessageList').then((raw) => result(raw, toArray(raw)))
+
+// 更新消息，让当前记录按最新输入重新保存。
+export const editMessage = (data) =>
+  post('/msg/editMessage', data).then((raw) => result(raw, null))
+
+// 查询消息，按当前条件筛出目标结果。
+export const searchMessageBydepartment = (message_publish_department) =>
+  post('/msg/searchMessageBydepartment', { message_publish_department }).then((raw) =>
+    result(raw, toArray(raw)),
   )
 
-export const editMessage = (data: Record<string, unknown>) =>
-  post<ApiResult<null>>('/msg/editMessage', data).then((raw) => toApiResult(raw, null))
+// 查询消息，按当前条件筛出目标结果。
+export const searchMessageByLevel = (message_level) =>
+  post('/msg/searchMessageByLevel', { message_level }).then((raw) => result(raw, toArray(raw)))
 
-export const searchMessageBydepartment = (message_publish_department: string) =>
-  post<ApiResult<MessageRow[]>>('/msg/searchMessageBydepartment', { message_publish_department }).then(
-    (raw) => toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+// 获取消息，让后续逻辑统一使用这一份结果。
+export const getMessage = (id) =>
+  post('/msg/getMessage', { id }).then((raw) => result(raw, toArray(raw)))
 
-export const searchMessageByLevel = (message_level: string) =>
-  post<ApiResult<MessageRow[]>>('/msg/searchMessageByLevel', { message_level }).then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+// 更新当前状态，保持页面状态和实际数据一致。
+export const updateClick = (message_click_number, id) =>
+  post('/msg/updateClick', { message_click_number, id }).then((raw) => result(raw, null))
 
-export const getMessage = (id: number) =>
-  post<ApiResult<MessageRow[]>>('/msg/getMessage', { id }).then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const firstDelete = (id) =>
+  post('/msg/firstDelete', { id }).then((raw) => result(raw, null))
 
-export const updateClick = (message_click_number: number, id: number) =>
-  post<ApiResult<null>>('/msg/updateClick', { message_click_number, id }).then((raw) =>
-    toApiResult(raw, null),
-  )
-
-export const firstDelete = (id: number) =>
-  post<ApiResult<null>>('/msg/firstDelete', { id }).then((raw) => toApiResult(raw, null))
-
+// 处理列表，把当前模块的关键逻辑集中在这里。
 export const recycleList = () =>
-  post<ApiResult<MessageRow[]>>('/msg/recycleList').then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+  post('/msg/recycleList').then((raw) => result(raw, toArray(raw)))
 
+// 获取消息，让后续逻辑统一使用这一份结果。
 export const getRecycleMessageLength = () =>
-  post<ApiResult<{ length: number }>>('/msg/getRecycleMessageLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/msg/getRecycleMessageLength').then((raw) => result(raw, toLengthData(raw)))
 
-export const returnRecycleListData = (pager: number) =>
-  post<ApiResult<MessageRow[]>>('/msg/returnRecycleListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+// 返回列表数据，让上层直接消费最终结果。
+export const returnRecycleListData = (pager) =>
+  post('/msg/returnRecycleListData', { pager }).then((raw) => result(raw, toArray(raw)))
 
-export const recover = (id: number) =>
-  post<ApiResult<null>>('/msg/recover', { id }).then((raw) => toApiResult(raw, null))
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
+export const recover = (id) =>
+  post('/msg/recover', { id }).then((raw) => result(raw, null))
 
-export const deleteMessage = (id: number) =>
-  post<ApiResult<null>>('/msg/deleteMessage', { id }).then((raw) => toApiResult(raw, null))
+// 删除消息，避免旧数据继续影响后续流程。
+export const deleteMessage = (id) =>
+  post('/msg/deleteMessage', { id }).then((raw) => result(raw, null))
 
+// 获取消息，让后续逻辑统一使用这一份结果。
 export const getCompanyMessageLength = () =>
-  post<ApiResult<{ length: number }>>('/msg/getCompanyMessageLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/msg/getCompanyMessageLength').then((raw) => result(raw, toLengthData(raw)))
 
+// 获取消息，让后续逻辑统一使用这一份结果。
 export const getSystemMessageLength = () =>
-  post<ApiResult<{ length: number }>>('/msg/getSystemMessageLength').then((raw) =>
-    toApiResult(raw, toLengthData(raw)),
-  )
+  post('/msg/getSystemMessageLength').then((raw) => result(raw, toLengthData(raw)))
 
-export const returnCompanyListData = (pager: number) =>
-  post<ApiResult<MessageRow[]>>('/msg/returnCompanyListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+// 返回列表数据，让上层直接消费最终结果。
+export const returnCompanyListData = (pager) =>
+  post('/msg/returnCompanyListData', { pager }).then((raw) => result(raw, toArray(raw)))
 
-export const returnSystemListData = (pager: number) =>
-  post<ApiResult<MessageRow[]>>('/msg/returnSystemListData', { pager }).then((raw) =>
-    toApiResult(raw, toArray<MessageRow>(raw)),
-  )
+// 返回列表数据，让上层直接消费最终结果。
+export const returnSystemListData = (pager) =>
+  post('/msg/returnSystemListData', { pager }).then((raw) => result(raw, toArray(raw)))

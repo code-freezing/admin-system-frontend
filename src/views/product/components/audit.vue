@@ -1,9 +1,3 @@
-<!--
-  组件说明：
-  1. 出库审核弹窗。
-  2. 供审核人查看申请详情并给出同意或否决结果。
-  3. 审核通过后会真正扣减库存并写入出库历史。
--->
 <template>
   <el-dialog v-model="dialogFormVisible" title="审核出库申请" width="30%" center>
     <div class="describe">确认审核结果后再提交。</div>
@@ -27,26 +21,13 @@ import { auditProduct } from '@/api/product'
 import { tracking } from '@/utils/operation'
 import { useUserInfo } from '@/stores/userinfor'
 
-interface AuditForm {
-  id: number
-  product_name: string
-  product_out_id: number
-  product_out_status: string
-  audit_memo: string
-  product_out_price: number
-  product_out_audit_person: string | null
-  product_out_apply_person: string
-  product_in_warehouse_number: number
-  product_single_price: number
-  product_out_number: string
-  product_apply_time: string
-}
-
+// 记录弹窗状态表单显示状态，方便后续逻辑统一读取和更新。
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['success'])
 const userStore = useUserInfo()
 
-const formData = reactive<AuditForm>({
+// 记录表单数据，方便后续逻辑统一读取和更新。
+const formData = reactive({
   id: 0,
   product_name: '',
   product_out_id: 0,
@@ -61,6 +42,7 @@ const formData = reactive<AuditForm>({
   product_apply_time: '',
 })
 
+// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
 const open = (row: any) => {
   // 审核提交依赖整条申请快照，避免后端再额外查询拼装库存和申请上下文。
   formData.id = row.id
@@ -78,6 +60,7 @@ const open = (row: any) => {
   dialogFormVisible.value = true
 }
 
+// 处理当前审核流程，确保审核动作按当前规则落地。
 const audit = async () => {
   // 审核成功后顺手补一条操作日志，方便后台回溯具体审批行为。
   const res = await auditProduct(formData)
