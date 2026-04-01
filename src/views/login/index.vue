@@ -38,7 +38,10 @@
                     <el-input v-model="registerData.account" placeholder="账号长度6-12位" />
                   </el-form-item>
                   <el-form-item label="密码">
-                    <el-input v-model="registerData.password" placeholder="密码需长度6-12位含字母数字" />
+                    <el-input
+                      v-model="registerData.password"
+                      placeholder="密码需长度6-12位含字母数字"
+                    />
                   </el-form-item>
                   <el-form-item label="确认密码">
                     <el-input v-model="registerData.rePassword" placeholder="请再次输入密码" />

@@ -29,7 +29,11 @@
         <el-header>
           <span class="header-left-content">尊敬的 {{ welcomeName }} 欢迎您登录本系统</span>
           <div class="header-right-content">
-            <el-badge :is-dot="msgStore.read_list.length > 0" class="item" @click="openDepartmentMessage">
+            <el-badge
+              :is-dot="msgStore.read_list.length > 0"
+              class="item"
+              @click="openDepartmentMessage"
+            >
               <el-icon :size="20" class="message">
                 <Message />
               </el-icon>

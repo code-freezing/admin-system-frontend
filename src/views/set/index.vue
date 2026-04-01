@@ -11,7 +11,10 @@
                 class="avatar-uploader"
                 :action="avatarUrl"
                 :show-file-list="false"
+                :headers="uploadHeaders"
+                :with-credentials="true"
                 :on-success="handleAvatarSuccess"
+                :on-error="handleUploadError"
                 :before-upload="beforeAvatarUpload"
               >
                 <img
@@ -127,7 +130,10 @@
                 class="avatar-uploader"
                 :action="swiperUrl"
                 :show-file-list="false"
+                :headers="uploadHeaders"
+                :with-credentials="true"
                 :on-success="handleSwiperSuccess"
+                :on-error="handleUploadError"
                 :before-upload="beforeAvatarUpload"
                 :data="item"
               >
@@ -216,6 +222,7 @@ import {
   setProduct,
 } from '@/api/setting'
 import { useUserInfo } from '@/stores/userinfor'
+import { getAccessToken } from '@/utils/auth'
 import { buildApiUrl } from '@/utils/runtime_url'
 import change from './components/change_password.vue'
 import editor from './components/editor.vue'
@@ -234,6 +241,10 @@ const activeName = ref('first')
 const avatarUrl = ref(buildApiUrl('/user/uploadAvatar'))
 // 记录当前状态，方便后续逻辑统一读取和更新。
 const swiperUrl = ref(buildApiUrl('/set/uploadSwiper'))
+// 上传组件不会走 axios 拦截器，这里手动补上鉴权头，避免文件直传时丢掉 access token。
+const uploadHeaders = ref({
+  Authorization: getAccessToken(),
+})
 // 记录名称，方便后续逻辑统一读取和更新。
 const companyName = ref('')
 // 记录当前状态，方便后续逻辑统一读取和更新。
@@ -319,6 +330,11 @@ const handleAvatarSuccess = async (response) => {
 
 // 处理上传，把当前模块的关键逻辑集中在这里。
 const beforeAvatarUpload = (rawFile) => {
+  // 每次真正开始上传前都重新取一次 token，避免页面停留过久后仍拿旧凭证发请求。
+  uploadHeaders.value = {
+    Authorization: getAccessToken(),
+  }
+
   const isImage = ['image/jpeg', 'image/png'].includes(rawFile.type)
   if (!isImage) {
     ElMessage.error('请上传 JPG 或 PNG 图片')
@@ -332,6 +348,11 @@ const beforeAvatarUpload = (rawFile) => {
   }
 
   return true
+}
+
+// 上传接口是浏览器直传，请求失败时不会走项目 axios 提示链，这里单独补一层可见反馈。
+const handleUploadError = () => {
+  ElMessage.error('上传失败，请确认登录状态和当前权限')
 }
 
 // 处理当前分支的核心逻辑，避免同类操作散落在多个位置。

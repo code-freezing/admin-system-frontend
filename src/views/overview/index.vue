@@ -19,14 +19,18 @@
           <p>权限：最高权限</p>
         </div>
       </div>
-      <div ref="pieRef" class="manage-user pie">
-        <div v-if="chartsLoading" class="chart-placeholder">统计图表加载中...</div>
+      <div class="manage-user pie">
+        <OverviewChart :option="adminPieOption" :loading="chartsLoading" loading-text="统计图表加载中..." />
       </div>
     </div>
 
-    <div ref="chartAreaRef" class="mid-content-wrapped">
-      <div ref="categoryBarRef" class="product-category-bar mid-content-left">
-        <div v-if="chartsLoading" class="chart-placeholder">正在准备产品统计...</div>
+    <div class="mid-content-wrapped">
+      <div class="product-category-bar mid-content-left">
+        <OverviewChart
+          :option="categoryBarOption"
+          :loading="chartsLoading"
+          loading-text="正在准备产品统计..."
+        />
       </div>
       <div class="mid-content-right">
         <div class="title">常用管理</div>
@@ -72,21 +76,22 @@
     </div>
 
     <div class="footer-content-wrapped">
-      <div ref="levelPieRef" class="massage-level footer-content-left">
-        <div v-if="chartsLoading" class="chart-placeholder">正在准备公告统计...</div>
+      <div class="massage-level footer-content-left">
+        <OverviewChart :option="levelPieOption" :loading="chartsLoading" loading-text="正在准备公告统计..." />
       </div>
-      <div ref="dayLineRef" class="login-week footer-content-right">
-        <div v-if="chartsLoading" class="chart-placeholder">正在准备登录趋势...</div>
+      <div class="login-week footer-content-right">
+        <OverviewChart :option="dayLineOption" :loading="chartsLoading" loading-text="正在准备登录趋势..." />
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import breadCrumb from '@/components/bread_crumb.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
+import OverviewChart from './components/OverviewChart.vue'
 import { useUserInfo } from '@/stores/userinfor'
 import {
   getAdminAndNumber,
@@ -102,16 +107,6 @@ const userStore = useUserInfo()
 const breadcrumbItem = ref({
   first: '系统概览',
 })
-// 记录当前状态，方便后续逻辑统一读取和更新。
-const chartAreaRef = ref(null)
-// 记录当前状态，方便后续逻辑统一读取和更新。
-const pieRef = ref(null)
-// 记录当前状态，方便后续逻辑统一读取和更新。
-const categoryBarRef = ref(null)
-// 记录当前状态，方便后续逻辑统一读取和更新。
-const levelPieRef = ref(null)
-// 记录当前状态，方便后续逻辑统一读取和更新。
-const dayLineRef = ref(null)
 // 记录用户资料，方便后续逻辑统一读取和更新。
 const userProfile = reactive({
   name: '',
@@ -121,11 +116,15 @@ const userProfile = reactive({
 })
 // 记录加载状态，方便后续逻辑统一读取和更新。
 const chartsLoading = ref(true)
-
-const charts = []
-let chartObserver: IntersectionObserver | null = null
-let resizeHandler: (() => void) | null = null
-let hasStartedChartLoad = false
+// 概览页只保留图表原始数据，真正的实例生命周期交给子组件各自处理。
+const chartData = reactive({
+  admin: [],
+  category: [],
+  price: [],
+  level: [],
+  week: [],
+  number: [],
+})
 
 // 处理路由，把当前模块的关键逻辑集中在这里。
 const routerTo = (path) => {
@@ -147,215 +146,155 @@ const loadUserProfile = async () => {
   userProfile.department = data.department
 }
 
-// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
-const mountChart = (chart, option) => {
-  chart.setOption(option)
-  charts.push(chart)
-}
-
-// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
-const bindResize = () => {
-  // 图表实例只绑定一次 resize，避免重复进入页面后叠加多个监听器。
-  if (resizeHandler) {
-    return
-  }
-
-  resizeHandler = () => {
-    charts.forEach((chart) => chart.resize())
-  }
-  window.addEventListener('resize', resizeHandler)
-}
-
-// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
-const renderCharts = async () => {
-  // 图表数据和运行时代码都延后到真正需要时再加载，减少首屏图表开销。
-  if (hasStartedChartLoad) {
-    return
-  }
-
-  hasStartedChartLoad = true
+// 图表数据和图表实例拆开后，概览页只负责把接口数据整理成 option 所需结构。
+const loadChartData = async () => {
   chartsLoading.value = true
 
   try {
-    const [{ createOverviewChart }, adminData, categoryData, levelData, dayData] = await Promise.all([
-      import('./chart_runtime'),
+    const [adminData, categoryData, levelData, dayData] = await Promise.all([
       getAdminAndNumber(),
       getCategoryAndNumber(),
       getLevelAndNumber(),
       getDayAndNumber(),
     ])
 
-    await nextTick()
-
-    if (!pieRef.value || !categoryBarRef.value || !levelPieRef.value || !dayLineRef.value) {
-      return
-    }
-
-    mountChart(createOverviewChart(pieRef.value), {
-      title: {
-        text: '管理与用户对比图',
-        left: 'center',
-      },
-      tooltip: { trigger: 'item' },
-      legend: {
-        orient: 'vertical',
-        left: 'left',
-        padding: [20, 20, 20, 20],
-      },
-      series: [
-        {
-          type: 'pie',
-          radius: '65%',
-          data: adminData.data.data,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
-          },
-        },
-      ],
-    })
-
-    mountChart(createOverviewChart(categoryBarRef.value), {
-      title: {
-        text: '产品类别库存总价图',
-        top: '3%',
-        textStyle: {
-          fontSize: 16,
-        },
-      },
-      tooltip: { trigger: 'axis' },
-      xAxis: {
-        type: 'category',
-        data: categoryData.data.category,
-      },
-      yAxis: {
-        type: 'value',
-      },
-      series: [
-        {
-          data: categoryData.data.price,
-          type: 'bar',
-          barWidth: 40,
-          colorBy: 'data',
-        },
-      ],
-    })
-
-    mountChart(createOverviewChart(levelPieRef.value), {
-      title: {
-        text: '公告等级分布图',
-        top: '3%',
-        textStyle: {
-          fontSize: 16,
-        },
-      },
-      tooltip: { trigger: 'item' },
-      legend: {
-        top: '5%',
-        left: 'center',
-      },
-      series: [
-        {
-          type: 'pie',
-          radius: ['35%', '65%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2,
-          },
-          label: {
-            show: false,
-            position: 'center',
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: 40,
-              fontWeight: 'bold',
-            },
-          },
-          labelLine: {
-            show: false,
-          },
-          data: levelData.data.data,
-        },
-      ],
-    })
-
-    mountChart(createOverviewChart(dayLineRef.value), {
-      title: {
-        text: '每日登录人数图',
-        top: '3%',
-        textStyle: {
-          fontSize: 16,
-        },
-      },
-      tooltip: { trigger: 'item' },
-      xAxis: {
-        type: 'category',
-        data: dayData.data.week,
-      },
-      yAxis: {
-        type: 'value',
-      },
-      series: [
-        {
-          data: dayData.data.number,
-          type: 'line',
-        },
-      ],
-    })
-    bindResize()
+    chartData.admin = adminData.data.data
+    chartData.category = categoryData.data.category
+    chartData.price = categoryData.data.price
+    chartData.level = levelData.data.data
+    chartData.week = dayData.data.week
+    chartData.number = dayData.data.number
   } finally {
     chartsLoading.value = false
   }
 }
 
-// 处理当前模块的核心逻辑，避免同类分支散落在多个位置。
-const observeChartSection = () => {
-  // 图表区域进入可视区后再渲染，避免用户还没滚到中部就提前初始化所有图表。
-  if (!chartAreaRef.value || typeof window === 'undefined') {
-    void renderCharts()
-    return
-  }
-
-  if (!('IntersectionObserver' in window)) {
-    void renderCharts()
-    return
-  }
-
-  chartObserver = new window.IntersectionObserver(
-    (entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        chartObserver?.disconnect()
-        chartObserver = null
-        void renderCharts()
-      }
-    },
+// 把图表配置做成计算属性后，子组件只需要接收 option 并负责渲染。
+const adminPieOption = computed(() => ({
+  title: {
+    text: '管理与用户对比图',
+    left: 'center',
+  },
+  tooltip: { trigger: 'item' },
+  legend: {
+    orient: 'vertical',
+    left: 'left',
+    padding: [20, 20, 20, 20],
+  },
+  series: [
     {
-      rootMargin: '120px',
+      type: 'pie',
+      radius: '65%',
+      data: chartData.admin,
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)',
+        },
+      },
     },
-  )
+  ],
+}))
 
-  chartObserver.observe(chartAreaRef.value)
-}
+// 产品分类柱状图只依赖分类和金额数组，数据准备好后就能直接渲染。
+const categoryBarOption = computed(() => ({
+  title: {
+    text: '产品类别库存总价图',
+    top: '3%',
+    textStyle: {
+      fontSize: 16,
+    },
+  },
+  tooltip: { trigger: 'axis' },
+  xAxis: {
+    type: 'category',
+    data: chartData.category,
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      data: chartData.price,
+      type: 'bar',
+      barWidth: 40,
+      colorBy: 'data',
+    },
+  ],
+}))
+
+// 公告等级图保持原来的环形配置，只是把实例初始化移到子组件内部。
+const levelPieOption = computed(() => ({
+  title: {
+    text: '公告等级分布图',
+    top: '3%',
+    textStyle: {
+      fontSize: 16,
+    },
+  },
+  tooltip: { trigger: 'item' },
+  legend: {
+    top: '5%',
+    left: 'center',
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: ['35%', '65%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 10,
+        borderColor: '#fff',
+        borderWidth: 2,
+      },
+      label: {
+        show: false,
+        position: 'center',
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 40,
+          fontWeight: 'bold',
+        },
+      },
+      labelLine: {
+        show: false,
+      },
+      data: chartData.level,
+    },
+  ],
+}))
+
+// 登录趋势图和其他图表一样改成声明式配置，避免父页面手工干预图表实例。
+const dayLineOption = computed(() => ({
+  title: {
+    text: '每日登录人数图',
+    top: '3%',
+    textStyle: {
+      fontSize: 16,
+    },
+  },
+  tooltip: { trigger: 'item' },
+  xAxis: {
+    type: 'category',
+    data: chartData.week,
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      data: chartData.number,
+      type: 'line',
+    },
+  ],
+}))
 
 // 页面首次进入后从这里拉起首屏数据或初始化流程。
 onMounted(async () => {
-  await loadUserProfile()
-  observeChartSection()
-})
-
-onBeforeUnmount(() => {
-  chartObserver?.disconnect()
-  charts.forEach((chart) => chart.dispose())
-  if (resizeHandler) {
-    window.removeEventListener('resize', resizeHandler)
-  }
+  await Promise.all([loadUserProfile(), loadChartData()])
 })
 
 void userStore
@@ -486,24 +425,6 @@ void userStore
       width: calc(70%);
       background: #fff;
     }
-  }
-
-  .pie,
-  .mid-content-left,
-  .footer-content-left,
-  .footer-content-right {
-    position: relative;
-  }
-
-  .chart-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #909399;
-    font-size: 14px;
-    background: linear-gradient(90deg, #f8fafc, #eef3fb, #f8fafc);
   }
 }
 </style>
